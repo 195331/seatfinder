@@ -5,6 +5,8 @@ import OwnerDashboard from './pages/OwnerDashboard';
 import OwnerAnalytics from './pages/OwnerAnalytics';
 import CreateRestaurant from './pages/CreateRestaurant';
 import RestaurantSettings from './pages/RestaurantSettings';
+import AdminDashboard from './pages/AdminDashboard';
+import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
@@ -15,9 +17,11 @@ export const PAGES = {
     "OwnerAnalytics": OwnerAnalytics,
     "CreateRestaurant": CreateRestaurant,
     "RestaurantSettings": RestaurantSettings,
+    "AdminDashboard": AdminDashboard,
 }
 
 export const pagesConfig = {
     mainPage: "Home",
     Pages: PAGES,
+    Layout: __Layout,
 };
