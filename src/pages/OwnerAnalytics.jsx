@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
-  LineChart, Line, AreaChart, Area, BarChart, Bar, 
+  LineChart, Line, AreaChart, Area, BarChart, Bar, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend 
 } from 'recharts';
 import moment from 'moment';
@@ -402,6 +402,3 @@ export default function OwnerAnalytics() {
     </div>
   );
 }
-
-// Cell component for recharts
-const Cell = ({ fill, ...props }) => <rect {...props} fill={fill} />;
