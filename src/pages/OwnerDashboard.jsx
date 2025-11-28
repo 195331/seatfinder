@@ -17,6 +17,11 @@ import WaitlistManager from '@/components/owner/WaitlistManager';
 import AreaManager from '@/components/owner/AreaManager';
 import ReservationManager from '@/components/owner/ReservationManager';
 import FloorPlanEditorOwner from '@/components/owner/FloorPlanEditorOwner.jsx';
+import AITableAssigner from '@/components/ai/AITableAssigner';
+import OccupancyForecaster from '@/components/ai/OccupancyForecaster';
+import AIRecommendations from '@/components/ai/AIRecommendations';
+import AIReviewAnalyzer from '@/components/ai/AIReviewAnalyzer';
+import AIReservationManager from '@/components/ai/AIReservationManager';
 import { cn } from "@/lib/utils";
 
 export default function OwnerDashboard() {
@@ -375,14 +380,20 @@ export default function OwnerDashboard() {
                   )}
                 </TabsTrigger>
                 <TabsTrigger value="reservations" className="rounded-full">
-                  Reservations
-                  {reservations.filter(r => r.status === 'pending').length > 0 && (
-                    <Badge className="ml-2 bg-amber-500">
-                      {reservations.filter(r => r.status === 'pending').length}
-                    </Badge>
-                  )}
-                </TabsTrigger>
-              </TabsList>
+                        Reservations
+                        {reservations.filter(r => r.status === 'pending').length > 0 && (
+                          <Badge className="ml-2 bg-amber-500">
+                            {reservations.filter(r => r.status === 'pending').length}
+                          </Badge>
+                        )}
+                      </TabsTrigger>
+                      <TabsTrigger value="ai" className="rounded-full gap-1.5">
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                        </svg>
+                        AI Insights
+                      </TabsTrigger>
+                    </TabsList>
 
               <TabsContent value="seating">
                 <SeatingControl
@@ -401,20 +412,54 @@ export default function OwnerDashboard() {
               </TabsContent>
 
               <TabsContent value="waitlist">
-                <WaitlistManager
-                  entries={waitlist}
-                  onSeat={(entry) => seatEntryMutation.mutate(entry)}
-                  onCancel={(entry) => cancelEntryMutation.mutate(entry)}
-                  isUpdating={seatEntryMutation.isPending || cancelEntryMutation.isPending}
-                />
-              </TabsContent>
+                    <div className="space-y-6">
+                      <WaitlistManager
+                        entries={waitlist}
+                        onSeat={(entry) => seatEntryMutation.mutate(entry)}
+                        onCancel={(entry) => cancelEntryMutation.mutate(entry)}
+                        isUpdating={seatEntryMutation.isPending || cancelEntryMutation.isPending}
+                        restaurantId={selectedRestaurant?.id}
+                      />
+
+                      {/* AI Table Assigner */}
+                      {waitlist.filter(e => e.status === 'waiting').length > 0 && (
+                        <AITableAssigner
+                          restaurantId={selectedRestaurant?.id}
+                          waitlistEntries={waitlist}
+                          tables={tables || []}
+                          onAssignmentMade={() => queryClient.invalidateQueries(['waitlist'])}
+                        />
+                      )}
+                    </div>
+                  </TabsContent>
 
               <TabsContent value="reservations">
-                <ReservationManager
-                  reservations={reservations}
-                  restaurantName={currentRestaurant?.name}
-                />
-              </TabsContent>
+                    <div className="grid lg:grid-cols-2 gap-6">
+                      <ReservationManager
+                        reservations={reservations}
+                        restaurantName={currentRestaurant?.name}
+                      />
+                      <AIReservationManager
+                        restaurantId={selectedRestaurant?.id}
+                        restaurantName={currentRestaurant?.name}
+                        reservations={reservations}
+                        tables={tables || []}
+                      />
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="ai">
+                    <div className="grid lg:grid-cols-2 gap-6">
+                      <OccupancyForecaster restaurantId={selectedRestaurant?.id} />
+                      <AIRecommendations 
+                        restaurantId={selectedRestaurant?.id} 
+                        restaurant={currentRestaurant}
+                      />
+                      <div className="lg:col-span-2">
+                        <AIReviewAnalyzer restaurantId={selectedRestaurant?.id} />
+                      </div>
+                    </div>
+                  </TabsContent>
             </Tabs>
           </>
         ) : null}
