@@ -5,7 +5,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { 
   Store, Users, Clock, BarChart3, Settings, Plus, 
-  ChevronRight, Eye, Heart, MousePointerClick
+  ChevronRight, Eye, Heart, MousePointerClick, LayoutGrid
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -235,6 +235,12 @@ export default function OwnerDashboard() {
                 <Button variant="outline" className="rounded-full gap-2">
                   <BarChart3 className="w-4 h-4" />
                   Analytics
+                </Button>
+              </Link>
+              <Link to={createPageUrl('FloorPlanDesigner') + (selectedRestaurant ? `?id=${selectedRestaurant.id}` : '')}>
+                <Button className="rounded-full gap-2 bg-emerald-600 hover:bg-emerald-700">
+                  <LayoutGrid className="w-4 h-4" />
+                  Floor Plan
                 </Button>
               </Link>
             </div>
