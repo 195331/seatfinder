@@ -235,6 +235,9 @@ export default function RestaurantDetail() {
 
   const estimatedWait = waitlist.length * 10;
 
+  // Get floor plan data from restaurant
+  const floorPlanData = restaurant?.floor_plan_data;
+
   // Use floor plan data if available, otherwise construct from areas
   const floorPlanAreas = floorPlanData?.areas || areas.map(a => ({
     id: a.id,
