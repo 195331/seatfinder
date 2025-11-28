@@ -235,8 +235,8 @@ export default function RestaurantDetail() {
 
   const estimatedWait = waitlist.length * 10;
 
-  // Transform areas for FloorPlanView
-  const floorPlanAreas = areas.map(a => ({
+  // Use floor plan data if available, otherwise construct from areas
+  const floorPlanAreas = floorPlanData?.areas || areas.map(a => ({
     id: a.id,
     name: a.name,
     color: '#3B82F6',
@@ -245,6 +245,20 @@ export default function RestaurantDetail() {
     width: 400,
     height: 300
   }));
+
+  // Merge table data - use stored positions from floor plan if available
+  const displayTables = tables.map(t => {
+    const fpTable = floorPlanData?.tables?.find(fp => fp.label === t.label);
+    return {
+      ...t,
+      x: t.position_x || fpTable?.x || 100,
+      y: t.position_y || fpTable?.y || 100,
+      seats: t.capacity,
+      width: fpTable?.width || 50,
+      height: fpTable?.height || 50,
+      shape: t.shape || fpTable?.shape || 'square'
+    };
+  });
 
   return (
     <div className="min-h-screen bg-slate-50 pb-24">
@@ -488,9 +502,9 @@ export default function RestaurantDetail() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {tables.length > 0 ? (
+                {displayTables.length > 0 ? (
                   <FloorPlanView
-                    tables={tables}
+                    tables={displayTables}
                     areas={floorPlanAreas}
                     onReserveTable={(data) => reserveTableMutation.mutate(data)}
                     isSubmitting={reserveTableMutation.isPending}

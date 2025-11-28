@@ -12,20 +12,39 @@ export default function ReservationManager({ reservations, restaurantName }) {
   const queryClient = useQueryClient();
 
   const updateReservationMutation = useMutation({
-    mutationFn: async ({ reservationId, status, userEmail, userName }) => {
+    mutationFn: async ({ reservationId, status, userEmail, userName, userId, partySize, date, time }) => {
       await base44.entities.Reservation.update(reservationId, {
         status,
         owner_response_at: new Date().toISOString()
       });
 
-      // Send notification email to user
+      // Create in-app notification
+      const notificationTitle = status === 'approved' 
+        ? 'Reservation Confirmed!'
+        : 'Reservation Update';
+      
+      const notificationMessage = status === 'approved'
+        ? `Your reservation for ${partySize} guests on ${date} at ${time} has been confirmed. See you soon!`
+        : `Unfortunately, your reservation request for ${date} at ${time} could not be confirmed. Please try a different time or contact the restaurant.`;
+
+      await base44.entities.Notification.create({
+        user_id: userId,
+        user_email: userEmail,
+        type: status === 'approved' ? 'reservation_approved' : 'reservation_declined',
+        title: notificationTitle,
+        message: notificationMessage,
+        restaurant_name: restaurantName,
+        reservation_id: reservationId
+      });
+
+      // Send email notification
       const subject = status === 'approved' 
         ? `Your reservation at ${restaurantName} is confirmed!`
         : `Reservation update from ${restaurantName}`;
       
       const body = status === 'approved'
-        ? `Great news! Your reservation has been confirmed. We look forward to seeing you!`
-        : `Unfortunately, we were unable to confirm your reservation at this time. Please try a different time or contact us directly.`;
+        ? `Great news, ${userName}!\n\nYour reservation has been confirmed:\n- Restaurant: ${restaurantName}\n- Date: ${date}\n- Time: ${time}\n- Party Size: ${partySize} guests\n\nWe look forward to seeing you!`
+        : `Hi ${userName},\n\nUnfortunately, we were unable to confirm your reservation at ${restaurantName} for ${date} at ${time}.\n\nPlease try a different time or contact us directly.`;
 
       await base44.integrations.Core.SendEmail({
         to: userEmail,
@@ -50,7 +69,11 @@ export default function ReservationManager({ reservations, restaurantName }) {
       reservationId: reservation.id,
       status: 'approved',
       userEmail: reservation.user_email,
-      userName: reservation.user_name
+      userName: reservation.user_name,
+      userId: reservation.user_id,
+      partySize: reservation.party_size,
+      date: reservation.reservation_date,
+      time: reservation.reservation_time
     });
   };
 
@@ -59,7 +82,11 @@ export default function ReservationManager({ reservations, restaurantName }) {
       reservationId: reservation.id,
       status: 'declined',
       userEmail: reservation.user_email,
-      userName: reservation.user_name
+      userName: reservation.user_name,
+      userId: reservation.user_id,
+      partySize: reservation.party_size,
+      date: reservation.reservation_date,
+      time: reservation.reservation_time
     });
   };
 
