@@ -5,7 +5,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { 
   Store, Users, Clock, BarChart3, Settings, Plus, 
-  ChevronRight, Eye, Heart, MousePointerClick, CalendarCheck
+  ChevronRight, Eye, Heart, MousePointerClick, LayoutGrid
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +16,7 @@ import SeatingControl from '@/components/owner/SeatingControl';
 import WaitlistManager from '@/components/owner/WaitlistManager';
 import AreaManager from '@/components/owner/AreaManager';
 import ReservationManager from '@/components/owner/ReservationManager';
+import FloorPlanEditorOwner from '@/components/owner/FloorPlanEditorOwner';
 import { cn } from "@/lib/utils";
 
 export default function OwnerDashboard() {
@@ -357,12 +358,13 @@ export default function OwnerDashboard() {
 
             {/* Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="mb-6 bg-white shadow-sm rounded-full p-1">
+              <TabsList className="mb-6 bg-white shadow-sm rounded-full p-1 flex-wrap">
                 <TabsTrigger value="seating" className="rounded-full">
                   Live Seating
                 </TabsTrigger>
-                <TabsTrigger value="areas" className="rounded-full">
-                  Areas
+                <TabsTrigger value="floorplan" className="rounded-full gap-1.5">
+                  <LayoutGrid className="w-4 h-4" />
+                  Floor Plan
                 </TabsTrigger>
                 <TabsTrigger value="waitlist" className="rounded-full">
                   Waitlist
@@ -391,13 +393,10 @@ export default function OwnerDashboard() {
                 />
               </TabsContent>
 
-              <TabsContent value="areas">
-                <AreaManager
-                  areas={areas}
-                  onAreaCreate={(data) => createAreaMutation.mutate(data)}
-                  onAreaUpdate={(id, data) => updateAreaMutation.mutate({ id, data })}
-                  onAreaDelete={(id) => deleteAreaMutation.mutate(id)}
-                  isUpdating={createAreaMutation.isPending || updateAreaMutation.isPending || deleteAreaMutation.isPending}
+              <TabsContent value="floorplan">
+                <FloorPlanEditorOwner
+                  restaurant={currentRestaurant}
+                  onSave={() => queryClient.invalidateQueries(['ownedRestaurants'])}
                 />
               </TabsContent>
 
