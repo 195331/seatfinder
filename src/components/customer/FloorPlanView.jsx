@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -6,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Clock, Users, Loader2 } from 'lucide-react';
+import { CalendarIcon, Clock, Users, Loader2, LogIn } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from "@/lib/utils";
 
@@ -32,6 +33,7 @@ export default function FloorPlanView({
 }) {
   const [selectedTable, setSelectedTable] = useState(null);
   const [showReserveDialog, setShowReserveDialog] = useState(false);
+  const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [reservationData, setReservationData] = useState({
     date: null,
     time: '',
@@ -39,11 +41,24 @@ export default function FloorPlanView({
     notes: ''
   });
 
-  const handleTableClick = (table) => {
+  const handleTableClick = async (table) => {
     if (table.status === 'occupied' || table.status === 'reserved') return;
+    
+    // Check if user is logged in
+    const isAuth = await base44.auth.isAuthenticated();
+    if (!isAuth) {
+      setSelectedTable(table);
+      setShowLoginDialog(true);
+      return;
+    }
+    
     setSelectedTable(table);
     setReservationData(prev => ({ ...prev, partySize: table.capacity || table.seats }));
     setShowReserveDialog(true);
+  };
+
+  const handleLogin = () => {
+    base44.auth.redirectToLogin(window.location.href);
   };
 
   const handleSubmitReservation = () => {
@@ -209,6 +224,40 @@ export default function FloorPlanView({
       <p className="text-sm text-slate-500 text-center">
         Click on an available table to request a reservation
       </p>
+
+      {/* Login Required Dialog */}
+      <Dialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-center">Sign In Required</DialogTitle>
+          </DialogHeader>
+          <div className="py-6 text-center space-y-4">
+            <div className="w-16 h-16 mx-auto rounded-full bg-emerald-100 flex items-center justify-center">
+              <LogIn className="w-8 h-8 text-emerald-600" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-lg">Create an account to reserve</h3>
+              <p className="text-sm text-slate-500 mt-1">
+                Sign in with Google or email to make a reservation at this restaurant.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg text-sm">
+              <Users className="w-5 h-5 text-slate-500" />
+              <span>Table {selectedTable?.label} • {selectedTable?.capacity || selectedTable?.seats} seats</span>
+            </div>
+            <Button
+              onClick={handleLogin}
+              className="w-full h-12 rounded-full bg-emerald-600 hover:bg-emerald-700 gap-2"
+            >
+              <LogIn className="w-5 h-5" />
+              Sign In to Continue
+            </Button>
+            <p className="text-xs text-slate-400">
+              You'll be redirected back here after signing in
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Reservation Dialog */}
       <Dialog open={showReserveDialog} onOpenChange={setShowReserveDialog}>
