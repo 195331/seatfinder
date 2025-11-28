@@ -5,7 +5,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { 
   Store, Users, Clock, BarChart3, Settings, Plus, 
-  ChevronRight, Eye, Heart, MousePointerClick, LayoutGrid
+  ChevronRight, Eye, Heart, MousePointerClick, CalendarCheck
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import SeatingControl from '@/components/owner/SeatingControl';
 import WaitlistManager from '@/components/owner/WaitlistManager';
 import AreaManager from '@/components/owner/AreaManager';
+import ReservationManager from '@/components/owner/ReservationManager';
 import { cn } from "@/lib/utils";
 
 export default function OwnerDashboard() {
@@ -108,6 +109,15 @@ export default function OwnerDashboard() {
     queryFn: () => base44.entities.AnalyticsEvent.filter({ 
       restaurant_id: selectedRestaurant.id 
     }, '-created_date', 100),
+    enabled: !!selectedRestaurant,
+  });
+
+  // Fetch reservations
+  const { data: reservations = [] } = useQuery({
+    queryKey: ['reservations', selectedRestaurant?.id],
+    queryFn: () => base44.entities.Reservation.filter({ 
+      restaurant_id: selectedRestaurant.id 
+    }, '-created_date'),
     enabled: !!selectedRestaurant,
   });
 
@@ -237,12 +247,6 @@ export default function OwnerDashboard() {
                   Analytics
                 </Button>
               </Link>
-              <Link to={createPageUrl('FloorPlanDesigner') + (selectedRestaurant ? `?id=${selectedRestaurant.id}` : '')}>
-                <Button className="rounded-full gap-2 bg-emerald-600 hover:bg-emerald-700">
-                  <LayoutGrid className="w-4 h-4" />
-                  Floor Plan
-                </Button>
-              </Link>
             </div>
           </div>
 
@@ -368,6 +372,14 @@ export default function OwnerDashboard() {
                     </Badge>
                   )}
                 </TabsTrigger>
+                <TabsTrigger value="reservations" className="rounded-full">
+                  Reservations
+                  {reservations.filter(r => r.status === 'pending').length > 0 && (
+                    <Badge className="ml-2 bg-amber-500">
+                      {reservations.filter(r => r.status === 'pending').length}
+                    </Badge>
+                  )}
+                </TabsTrigger>
               </TabsList>
 
               <TabsContent value="seating">
@@ -395,6 +407,13 @@ export default function OwnerDashboard() {
                   onSeat={(entry) => seatEntryMutation.mutate(entry)}
                   onCancel={(entry) => cancelEntryMutation.mutate(entry)}
                   isUpdating={seatEntryMutation.isPending || cancelEntryMutation.isPending}
+                />
+              </TabsContent>
+
+              <TabsContent value="reservations">
+                <ReservationManager
+                  reservations={reservations}
+                  restaurantName={currentRestaurant?.name}
                 />
               </TabsContent>
             </Tabs>
