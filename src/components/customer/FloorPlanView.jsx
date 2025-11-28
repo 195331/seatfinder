@@ -5,11 +5,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Clock, Users, Loader2, LogIn } from 'lucide-react';
+import { CalendarIcon, Clock, Users, Loader2, LogIn, Sparkles } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from "@/lib/utils";
+import AITableSuggester from '@/components/ai/AITableSuggester';
 
 const GRID_SIZE = 40;
 const TIME_SLOTS = [
@@ -34,6 +36,8 @@ export default function FloorPlanView({
   const [selectedTable, setSelectedTable] = useState(null);
   const [showReserveDialog, setShowReserveDialog] = useState(false);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
+  const [showAISuggestions, setShowAISuggestions] = useState(false);
+  const [tablePreferences, setTablePreferences] = useState('');
   const [reservationData, setReservationData] = useState({
     date: null,
     time: '',
@@ -137,8 +141,79 @@ export default function FloorPlanView({
   const canvasWidth = Math.max(600, ...tables.map(t => (t.position_x || t.x || 0) + 120));
   const canvasHeight = Math.max(400, ...tables.map(t => (t.position_y || t.y || 0) + 100));
 
+  // Parse preferences for AI
+  const parsedPreferences = tablePreferences
+    .toLowerCase()
+    .split(/[,\s]+/)
+    .filter(p => p.length > 2);
+
   return (
     <div className="space-y-4">
+      {/* AI Table Finder */}
+      <div className="p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl border border-indigo-100">
+        <div className="flex items-start justify-between gap-4 mb-3">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-indigo-500" />
+            <span className="font-medium text-indigo-900">AI Table Finder</span>
+          </div>
+          <Button
+            size="sm"
+            variant={showAISuggestions ? "default" : "outline"}
+            onClick={() => setShowAISuggestions(!showAISuggestions)}
+            className={cn(
+              "gap-1.5",
+              showAISuggestions && "bg-indigo-600 hover:bg-indigo-700"
+            )}
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            {showAISuggestions ? 'Hide Suggestions' : 'Find Best Table'}
+          </Button>
+        </div>
+        
+        <div className="grid md:grid-cols-2 gap-3">
+          <div>
+            <Label className="text-xs text-indigo-700">Party Size</Label>
+            <Input
+              type="number"
+              min={1}
+              max={12}
+              value={reservationData.partySize}
+              onChange={(e) => setReservationData(prev => ({ 
+                ...prev, 
+                partySize: parseInt(e.target.value) || 1 
+              }))}
+              className="mt-1 bg-white"
+            />
+          </div>
+          <div>
+            <Label className="text-xs text-indigo-700">Preferences (optional)</Label>
+            <Input
+              value={tablePreferences}
+              onChange={(e) => setTablePreferences(e.target.value)}
+              placeholder="e.g., quiet corner, window view, outdoor"
+              className="mt-1 bg-white"
+            />
+          </div>
+        </div>
+
+        {showAISuggestions && (
+          <div className="mt-4">
+            <AITableSuggester
+              tables={tables}
+              areas={areas}
+              partySize={reservationData.partySize}
+              preferences={parsedPreferences}
+              onSelectTable={(table) => {
+                setSelectedTable(table);
+                setReservationData(prev => ({ ...prev, partySize: table.capacity || table.seats }));
+                setShowReserveDialog(true);
+              }}
+              selectedTableId={selectedTable?.id}
+            />
+          </div>
+        )}
+      </div>
+
       {/* Legend */}
       <div className="flex flex-wrap gap-4 p-3 bg-slate-50 rounded-xl">
         <div className="flex items-center gap-2">
