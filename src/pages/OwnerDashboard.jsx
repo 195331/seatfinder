@@ -100,6 +100,15 @@ export default function OwnerDashboard() {
     enabled: !!selectedRestaurant,
   });
 
+  // Fetch tables for selected restaurant
+  const { data: tables = [] } = useQuery({
+    queryKey: ['tables', selectedRestaurant?.id],
+    queryFn: () => base44.entities.Table.filter({ 
+      restaurant_id: selectedRestaurant.id 
+    }),
+    enabled: !!selectedRestaurant,
+  });
+
   // Fetch waitlist for selected restaurant
   const { data: waitlist = [] } = useQuery({
     queryKey: ['waitlist', selectedRestaurant?.id],
