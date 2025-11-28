@@ -21,6 +21,7 @@ import SeatingBar from "@/components/ui/SeatingBar";
 import PriceLevel from "@/components/ui/PriceLevel";
 import StarRating from "@/components/ui/StarRating";
 import FloorPlanView from "@/components/customer/FloorPlanView";
+import AIWaitTimePredictor from "@/components/ai/AIWaitTimePredictor";
 import moment from 'moment';
 import { cn } from "@/lib/utils";
 
@@ -233,6 +234,7 @@ export default function RestaurantDetail() {
     );
   }
 
+  // AI-enhanced wait time will be shown in the component
   const estimatedWait = waitlist.length * 10;
 
   // Get floor plan data from restaurant
@@ -429,11 +431,22 @@ export default function RestaurantDetail() {
                   <div>
                     <h3 className="font-semibold text-lg">Join Waitlist</h3>
                     <p className="text-slate-500 text-sm">
-                      {waitlist.length} ahead • Est. wait: {estimatedWait} min
+                      {waitlist.length} ahead
                     </p>
                   </div>
                   <Clock className="w-6 h-6 text-slate-400" />
                 </div>
+                
+                {/* AI Wait Time Prediction */}
+                {restaurantId && (
+                  <div className="mb-4">
+                    <AIWaitTimePredictor
+                      restaurantId={restaurantId}
+                      partySize={partySize}
+                      currentWaitlistLength={waitlist.length}
+                    />
+                  </div>
+                )}
                 
                 <Dialog open={showWaitlistDialog} onOpenChange={setShowWaitlistDialog}>
                   <DialogTrigger asChild>
