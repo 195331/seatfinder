@@ -87,6 +87,7 @@ export default function CreateRestaurant() {
         total_seats: totalSeats,
         available_seats: totalSeats,
         status: 'pending',
+        floor_plan_data: floorPlanData, // Store floor plan data
       });
 
       // Create areas
