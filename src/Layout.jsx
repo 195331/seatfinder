@@ -42,7 +42,8 @@ export default function Layout({ children, currentPageName }) {
   // Pages that have their own header/navigation
   const standalonePages = [
     'Home', 'RestaurantDetail', 'Favorites', 'OwnerDashboard', 
-    'OwnerAnalytics', 'CreateRestaurant', 'RestaurantSettings', 'AdminDashboard'
+    'OwnerAnalytics', 'CreateRestaurant', 'RestaurantSettings', 'AdminDashboard',
+    'FloorPlanDesigner'
   ];
 
   if (standalonePages.includes(currentPageName)) {
