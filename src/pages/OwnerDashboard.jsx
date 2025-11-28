@@ -16,7 +16,7 @@ import SeatingControl from '@/components/owner/SeatingControl';
 import WaitlistManager from '@/components/owner/WaitlistManager';
 import AreaManager from '@/components/owner/AreaManager';
 import ReservationManager from '@/components/owner/ReservationManager';
-import FloorPlanEditorOwner from '@/components/owner/FloorPlanEditorOwner';
+import FloorPlanEditorOwner from '@/components/owner/FloorPlanEditorOwner.jsx';
 import { cn } from "@/lib/utils";
 
 export default function OwnerDashboard() {
