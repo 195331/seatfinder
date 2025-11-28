@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
+import { useQuery } from '@tanstack/react-query';
 import { createPageUrl } from '@/utils';
 import { 
-  Home, Heart, Store, Shield, User, LogOut, Menu, X, ChevronRight
+  Home, Heart, Store, Shield, User, LogOut, Menu, X, ChevronRight, Bell, Settings
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 export default function Layout({ children, currentPageName }) {
@@ -22,6 +24,10 @@ export default function Layout({ children, currentPageName }) {
         if (isAuth) {
           const user = await base44.auth.me();
           setCurrentUser(user);
+          // Redirect new users to complete profile
+          if (!user.profile_complete && currentPageName !== 'Profile') {
+            navigate(createPageUrl('Profile'));
+          }
         }
       } catch (e) {
         // Guest mode
@@ -29,7 +35,16 @@ export default function Layout({ children, currentPageName }) {
       setIsLoading(false);
     };
     fetchUser();
-  }, []);
+  }, [currentPageName]);
+
+  // Fetch unread notifications count
+  const { data: notifications = [] } = useQuery({
+    queryKey: ['notifications', currentUser?.id],
+    queryFn: () => base44.entities.Notification.filter({ user_id: currentUser.id, is_read: false }),
+    enabled: !!currentUser,
+  });
+
+  const unreadCount = notifications.length;
 
   const handleLogout = async () => {
     await base44.auth.logout(createPageUrl('Home'));
@@ -42,7 +57,8 @@ export default function Layout({ children, currentPageName }) {
   // Pages that have their own header/navigation
   const standalonePages = [
     'Home', 'RestaurantDetail', 'Favorites', 'OwnerDashboard', 
-    'OwnerAnalytics', 'CreateRestaurant', 'RestaurantSettings', 'AdminDashboard'
+    'OwnerAnalytics', 'CreateRestaurant', 'RestaurantSettings', 'AdminDashboard',
+    'Inbox', 'Profile'
   ];
 
   if (standalonePages.includes(currentPageName)) {
@@ -65,16 +81,32 @@ export default function Layout({ children, currentPageName }) {
               </Link>
               
               {currentUser && (
-                <Link to={createPageUrl('Favorites')}>
-                  <button className={cn(
-                    "flex flex-col items-center gap-1 px-4 py-2",
-                    currentPageName === 'Favorites' ? "text-emerald-600" : "text-slate-500"
-                  )}>
-                    <Heart className="w-5 h-5" />
-                    <span className="text-xs">Favorites</span>
-                  </button>
-                </Link>
-              )}
+                  <>
+                    <Link to={createPageUrl('Favorites')}>
+                      <button className={cn(
+                        "flex flex-col items-center gap-1 px-4 py-2",
+                        currentPageName === 'Favorites' ? "text-emerald-600" : "text-slate-500"
+                      )}>
+                        <Heart className="w-5 h-5" />
+                        <span className="text-xs">Favorites</span>
+                      </button>
+                    </Link>
+                    <Link to={createPageUrl('Inbox')}>
+                      <button className={cn(
+                        "flex flex-col items-center gap-1 px-4 py-2 relative",
+                        currentPageName === 'Inbox' ? "text-emerald-600" : "text-slate-500"
+                      )}>
+                        <Bell className="w-5 h-5" />
+                        {unreadCount > 0 && (
+                          <span className="absolute top-1 right-2 w-4 h-4 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center">
+                            {unreadCount}
+                          </span>
+                        )}
+                        <span className="text-xs">Inbox</span>
+                      </button>
+                    </Link>
+                  </>
+                )}
               
               {(currentUser?.user_type === 'owner' || currentUser?.role === 'admin') && (
                 <Link to={createPageUrl('OwnerDashboard')}>
@@ -124,28 +156,41 @@ export default function Layout({ children, currentPageName }) {
                         </div>
                       </div>
                       
-                      {currentUser.user_type !== 'owner' && currentUser.role !== 'admin' && (
-                        <Link 
-                          to={createPageUrl('CreateRestaurant')}
+                      <Link 
+                          to={createPageUrl('Profile')}
                           onClick={() => setMobileMenuOpen(false)}
                         >
                           <button className="w-full flex items-center justify-between p-3 hover:bg-slate-50 rounded-xl">
                             <div className="flex items-center gap-3">
-                              <Store className="w-5 h-5 text-slate-600" />
-                              <span>List Your Restaurant</span>
+                              <Settings className="w-5 h-5 text-slate-600" />
+                              <span>Edit Profile</span>
                             </div>
                             <ChevronRight className="w-5 h-5 text-slate-400" />
                           </button>
                         </Link>
-                      )}
-                      
-                      <button 
-                        onClick={handleLogout}
-                        className="w-full flex items-center gap-3 p-3 text-red-600 hover:bg-red-50 rounded-xl"
-                      >
-                        <LogOut className="w-5 h-5" />
-                        <span>Sign Out</span>
-                      </button>
+
+                        {currentUser.user_type !== 'owner' && currentUser.role !== 'admin' && (
+                          <Link 
+                            to={createPageUrl('CreateRestaurant')}
+                            onClick={() => setMobileMenuOpen(false)}
+                          >
+                            <button className="w-full flex items-center justify-between p-3 hover:bg-slate-50 rounded-xl">
+                              <div className="flex items-center gap-3">
+                                <Store className="w-5 h-5 text-slate-600" />
+                                <span>List Your Restaurant</span>
+                              </div>
+                              <ChevronRight className="w-5 h-5 text-slate-400" />
+                            </button>
+                          </Link>
+                        )}
+
+                        <button 
+                          onClick={handleLogout}
+                          className="w-full flex items-center gap-3 p-3 text-red-600 hover:bg-red-50 rounded-xl"
+                        >
+                          <LogOut className="w-5 h-5" />
+                          <span>Sign Out</span>
+                        </button>
                     </div>
                   </SheetContent>
                 </Sheet>
