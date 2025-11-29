@@ -4,10 +4,10 @@ import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { createPageUrl } from '@/utils';
 import { 
-  Home, Heart, Store, Shield, User, LogOut, Menu, X, ChevronRight, Bell, Settings, Calendar, Award
+  Home, Heart, Store, Shield, User, Bell
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
@@ -15,7 +15,7 @@ export default function Layout({ children, currentPageName }) {
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
 
   useEffect(() => {
     const fetchUser = async () => {
