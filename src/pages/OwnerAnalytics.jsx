@@ -22,7 +22,7 @@ import TableTurnoverTracker from '@/components/analytics/TableTurnoverTracker';
 import CustomerLifetimeValue from '@/components/analytics/CustomerLifetimeValue';
 import CompetitorBenchmark from '@/components/analytics/CompetitorBenchmark';
 import LoyaltyAnalytics from '@/components/analytics/LoyaltyAnalytics';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TabsContent } from "@/components/ui/tabs";
 
 export default function OwnerAnalytics() {
   const navigate = useNavigate();
