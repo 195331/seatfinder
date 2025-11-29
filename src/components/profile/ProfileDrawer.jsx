@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { 
-  User, LogOut, ChevronRight, Calendar, Award, Settings, Heart, 
-  Store, Shield, Check, Loader2, Clock, Gift, Star, X,
-  Camera
+  LogOut, ChevronRight, Calendar, Award, Heart, 
+  Store, Shield, Loader2, Clock, Gift, X,
+  Camera, Pencil
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -116,12 +116,17 @@ export default function ProfileDrawer({ currentUser, onLogout }) {
   );
 
   const getUserAvatar = () => {
+    if (currentUser?.profile_image) {
+      return null; // Will use image instead
+    }
     if (currentUser?.avatar) {
       const avatar = FOOD_AVATARS.find(a => a.id === currentUser.avatar);
       return avatar?.emoji || currentUser.full_name?.[0] || currentUser.email?.[0]?.toUpperCase();
     }
-    return currentUser?.full_name?.[0] || currentUser?.email?.[0]?.toUpperCase();
+    return currentUser?.full_name?.[0] || currentUser?.email?.[0]?.toUpperCase() || 'S';
   };
+
+  const hasProfileImage = !!currentUser?.profile_image;
 
   const getRestaurantForLoyalty = (loyalty) => {
     return restaurants.find(r => r.id === loyalty.restaurant_id);
@@ -136,10 +141,18 @@ export default function ProfileDrawer({ currentUser, onLogout }) {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <button className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center hover:opacity-90 transition-opacity">
-          <span className="text-xl">
-            {getUserAvatar()}
-          </span>
+        <button className="w-10 h-10 rounded-xl overflow-hidden bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center hover:opacity-90 transition-opacity">
+          {hasProfileImage ? (
+            <img 
+              src={currentUser.profile_image} 
+              alt={currentUser.full_name || 'Profile'} 
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <span className="text-xl text-white">
+              {getUserAvatar()}
+            </span>
+          )}
         </button>
       </SheetTrigger>
       <SheetContent side="left" className="w-full sm:max-w-md p-0">
@@ -148,14 +161,22 @@ export default function ProfileDrawer({ currentUser, onLogout }) {
           <div className="bg-gradient-to-br from-emerald-500 to-teal-600 p-6 text-white">
             <div className="flex items-center gap-4">
               <div className="relative">
-                <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center text-3xl">
-                  {getUserAvatar()}
+                <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center text-3xl overflow-hidden">
+                  {hasProfileImage ? (
+                    <img 
+                      src={currentUser.profile_image} 
+                      alt={currentUser.full_name || 'Profile'} 
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    getUserAvatar()
+                  )}
                 </div>
                 <button 
                   onClick={() => setEditingAvatar(true)}
                   className="absolute -bottom-1 -right-1 w-7 h-7 bg-white rounded-full flex items-center justify-center shadow-lg"
                 >
-                  <Camera className="w-4 h-4 text-emerald-600" />
+                  <Pencil className="w-4 h-4 text-emerald-600" />
                 </button>
               </div>
               <div className="flex-1">
@@ -223,6 +244,24 @@ export default function ProfileDrawer({ currentUser, onLogout }) {
 
             <ScrollArea className="flex-1">
               <TabsContent value="profile" className="p-4 space-y-2 m-0">
+                {/* User Role Badge */}
+                <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-xl mb-2">
+                  <span className="text-sm text-slate-500">Role:</span>
+                  <span className="px-2 py-0.5 bg-slate-200 rounded text-sm font-medium capitalize">
+                    {currentUser.role || currentUser.user_type || 'User'}
+                  </span>
+                </div>
+
+                <Link to={createPageUrl('Profile')} onClick={() => setOpen(false)}>
+                  <div className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-xl">
+                    <div className="flex items-center gap-3">
+                      <Pencil className="w-5 h-5 text-slate-600" />
+                      <span>Edit Profile</span>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-slate-400" />
+                  </div>
+                </Link>
+
                 <Link to={createPageUrl('Favorites')} onClick={() => setOpen(false)}>
                   <div className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-xl">
                     <div className="flex items-center gap-3">
