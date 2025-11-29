@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { ArrowLeft, Check, Loader2 } from 'lucide-react';
+import { ArrowLeft, Check, Loader2, Camera, X } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -47,9 +47,12 @@ export default function Profile() {
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(null);
   const [selectedAvatar, setSelectedAvatar] = useState(null);
+  const [profileImage, setProfileImage] = useState(null);
   const [fullName, setFullName] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [isNewUser, setIsNewUser] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -63,6 +66,7 @@ export default function Profile() {
         setCurrentUser(user);
         setFullName(user.full_name || '');
         setSelectedAvatar(user.avatar || null);
+        setProfileImage(user.profile_image || null);
         setIsNewUser(!user.profile_complete);
       } catch (e) {
         navigate(createPageUrl('Home'));
@@ -71,9 +75,37 @@ export default function Profile() {
     fetchUser();
   }, [navigate]);
 
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      setProfileImage(file_url);
+      setSelectedAvatar(null); // Clear emoji avatar when using image
+      toast.success('Image uploaded!');
+    } catch (error) {
+      toast.error('Failed to upload image');
+    }
+    setUploading(false);
+  };
+
+  const handleRemoveImage = () => {
+    setProfileImage(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const handleSave = async () => {
-    if (!selectedAvatar) {
-      toast.error("Please select an avatar");
+    if (!selectedAvatar && !profileImage) {
+      toast.error("Please select an avatar or upload a photo");
       return;
     }
     
@@ -81,6 +113,7 @@ export default function Profile() {
     try {
       await base44.auth.updateMe({
         avatar: selectedAvatar,
+        profile_image: profileImage,
         profile_complete: true
       });
 
@@ -137,34 +170,73 @@ export default function Profile() {
         {/* Current Avatar Preview */}
         <Card className="border-0 shadow-lg">
           <CardContent className="py-8 text-center">
-            <div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-emerald-100 to-teal-100 flex items-center justify-center text-5xl mb-4">
-              {selectedAvatar ? FOOD_AVATARS.find(a => a.id === selectedAvatar)?.emoji : '🍽️'}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              className="hidden"
+            />
+            <div className="relative w-24 h-24 mx-auto mb-4">
+              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-emerald-100 to-teal-100 flex items-center justify-center text-5xl overflow-hidden">
+                {uploading ? (
+                  <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
+                ) : profileImage ? (
+                  <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
+                ) : selectedAvatar ? (
+                  FOOD_AVATARS.find(a => a.id === selectedAvatar)?.emoji
+                ) : (
+                  '🍽️'
+                )}
+              </div>
+              {profileImage && (
+                <button
+                  onClick={handleRemoveImage}
+                  className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="absolute -bottom-1 -right-1 w-8 h-8 bg-emerald-500 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-emerald-600 transition-colors"
+              >
+                <Camera className="w-4 h-4" />
+              </button>
             </div>
             <h2 className="text-xl font-semibold">{fullName || currentUser.email}</h2>
             <p className="text-slate-500">{currentUser.email}</p>
+            <p className="text-xs text-slate-400 mt-2">
+              {currentUser.role || currentUser.user_type || 'User'}
+            </p>
           </CardContent>
         </Card>
 
         {/* Avatar Selection */}
         <Card className="border-0 shadow-lg">
           <CardHeader>
-            <CardTitle>Choose Your Food Avatar</CardTitle>
+            <CardTitle>Or Choose a Food Avatar</CardTitle>
+            <p className="text-sm text-slate-500">Pick an emoji if you don't want to upload a photo</p>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-5 sm:grid-cols-6 gap-3">
               {FOOD_AVATARS.map((avatar) => (
                 <button
                   key={avatar.id}
-                  onClick={() => setSelectedAvatar(avatar.id)}
+                  onClick={() => {
+                    setSelectedAvatar(avatar.id);
+                    setProfileImage(null); // Clear uploaded image when selecting emoji
+                  }}
                   className={cn(
                     "relative aspect-square rounded-xl flex flex-col items-center justify-center transition-all hover:scale-105",
-                    selectedAvatar === avatar.id
+                    selectedAvatar === avatar.id && !profileImage
                       ? "bg-emerald-100 ring-2 ring-emerald-500 ring-offset-2"
                       : "bg-slate-100 hover:bg-slate-200"
                   )}
                 >
                   <span className="text-3xl">{avatar.emoji}</span>
-                  {selectedAvatar === avatar.id && (
+                  {selectedAvatar === avatar.id && !profileImage && (
                     <div className="absolute -top-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center">
                       <Check className="w-3 h-3 text-white" />
                     </div>
@@ -178,7 +250,7 @@ export default function Profile() {
         {/* Save Button */}
         <Button
           onClick={handleSave}
-          disabled={isSaving || !selectedAvatar}
+          disabled={isSaving || (!selectedAvatar && !profileImage)}
           className="w-full h-12 rounded-full text-base bg-emerald-600 hover:bg-emerald-700"
         >
           {isSaving ? (
