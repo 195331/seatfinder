@@ -24,7 +24,7 @@ const PLANS = [
       'No analytics',
       'No AI features',
       'No waitlist management',
-      'Limited floor plan'
+      'No loyalty program'
     ],
     stripeLink: null
   },
@@ -36,9 +36,14 @@ const PLANS = [
     features: [
       'Everything in Free',
       'Full analytics dashboard',
+      'Peak demand analysis',
+      'Table turnover tracking',
       'AI wait time predictions',
       'Advanced floor plan editor',
       'Waitlist management',
+      'Customer loyalty program',
+      'Menu management',
+      'Promotions & offers',
       'SMS notifications (100/mo)',
       'Priority support'
     ],
@@ -57,6 +62,10 @@ const PLANS = [
       'AI occupancy forecasting',
       'AI review analyzer',
       'AI reservation manager',
+      'AI floor plan optimizer',
+      'Customer lifetime value',
+      'Competitor benchmarking',
+      'Loyalty analytics',
       'Custom SMS templates',
       'Unlimited SMS',
       'API access',
@@ -249,6 +258,12 @@ export function useFeatureAccess(restaurantId) {
     hasUnlimitedSMS: plan === 'plus',
     hasAIReservations: plan === 'plus',
     hasAIAnalyzer: plan === 'plus',
+    hasLoyalty: plan === 'pro' || plan === 'plus',
+    hasLoyaltyAnalytics: plan === 'plus',
+    hasCLV: plan === 'plus',
+    hasBenchmarking: plan === 'plus',
+    hasMenu: plan === 'pro' || plan === 'plus',
+    hasPromotions: plan === 'pro' || plan === 'plus',
     isPro: plan === 'pro',
     isPlus: plan === 'plus',
     isFree: plan === 'free'
