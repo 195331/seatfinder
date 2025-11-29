@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { 
   ArrowLeft, Heart, Phone, Navigation, Globe, Clock, Users, 
-  Star, MapPin, Minus, Plus, LayoutGrid
+  Star, MapPin, Minus, Plus, LayoutGrid, Award, Gift, UtensilsCrossed
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,6 +22,9 @@ import PriceLevel from "@/components/ui/PriceLevel";
 import StarRating from "@/components/ui/StarRating";
 import FloorPlanView from "@/components/customer/FloorPlanView";
 import AIWaitTimePredictor from "@/components/ai/AIWaitTimePredictor";
+import MenuView from "@/components/customer/MenuView";
+import PromotionBanner from "@/components/customer/PromotionBanner";
+import LoyaltyCard from "@/components/customer/LoyaltyCard";
 import moment from 'moment';
 import { cn } from "@/lib/utils";
 
@@ -103,6 +106,63 @@ export default function RestaurantDetail() {
       status: 'waiting' 
     }),
     enabled: !!restaurantId,
+  });
+
+  // Fetch menu items
+  const { data: menuItems = [] } = useQuery({
+    queryKey: ['menu', restaurantId],
+    queryFn: () => base44.entities.MenuItem.filter({ restaurant_id: restaurantId, is_available: true }),
+    enabled: !!restaurantId,
+  });
+
+  // Fetch promotions
+  const { data: promotions = [] } = useQuery({
+    queryKey: ['promotions', restaurantId],
+    queryFn: () => base44.entities.Promotion.filter({ restaurant_id: restaurantId, is_active: true }),
+    enabled: !!restaurantId,
+  });
+
+  // Fetch loyalty program and user's membership
+  const { data: loyaltyProgram } = useQuery({
+    queryKey: ['loyaltyProgram', restaurantId],
+    queryFn: async () => {
+      const programs = await base44.entities.LoyaltyProgram.filter({ restaurant_id: restaurantId, is_active: true });
+      return programs[0];
+    },
+    enabled: !!restaurantId,
+  });
+
+  const { data: userLoyalty } = useQuery({
+    queryKey: ['userLoyalty', restaurantId, currentUser?.id],
+    queryFn: async () => {
+      const memberships = await base44.entities.CustomerLoyalty.filter({ 
+        restaurant_id: restaurantId, 
+        user_id: currentUser.id 
+      });
+      return memberships[0];
+    },
+    enabled: !!restaurantId && !!currentUser,
+  });
+
+  // Join loyalty program mutation
+  const joinLoyaltyMutation = useMutation({
+    mutationFn: async () => {
+      await base44.entities.CustomerLoyalty.create({
+        user_id: currentUser.id,
+        restaurant_id: restaurantId,
+        program_id: loyaltyProgram.id,
+        total_points: loyaltyProgram.signup_bonus || 0,
+        available_points: loyaltyProgram.signup_bonus || 0,
+        lifetime_points: loyaltyProgram.signup_bonus || 0,
+        current_tier: loyaltyProgram.tiers?.[0]?.name || 'Bronze',
+        visits: 0,
+        total_spent: 0
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['userLoyalty']);
+      toast.success(`Welcome! You earned ${loyaltyProgram?.signup_bonus || 0} bonus points!`);
+    }
   });
 
   const isFavorite = favorites.some(f => f.restaurant_id === restaurantId);
@@ -325,9 +385,13 @@ export default function RestaurantDetail() {
             <TabsTrigger value="overview" className="flex-1 rounded-full">
               Overview
             </TabsTrigger>
+            <TabsTrigger value="menu" className="flex-1 rounded-full gap-1.5">
+              <UtensilsCrossed className="w-4 h-4" />
+              Menu
+            </TabsTrigger>
             <TabsTrigger value="floorplan" className="flex-1 rounded-full gap-1.5">
               <LayoutGrid className="w-4 h-4" />
-              Reserve Table
+              Reserve
             </TabsTrigger>
             <TabsTrigger value="reviews" className="flex-1 rounded-full">
               Reviews
@@ -335,6 +399,50 @@ export default function RestaurantDetail() {
           </TabsList>
 
           <TabsContent value="overview" className="mt-6 space-y-6">
+            {/* Promotions */}
+            {promotions.length > 0 && (
+              <PromotionBanner promotions={promotions} />
+            )}
+
+            {/* Loyalty Program */}
+            {loyaltyProgram && (
+              <Card className="border-0 shadow-lg overflow-hidden">
+                <CardContent className="p-0">
+                  {userLoyalty ? (
+                    <LoyaltyCard 
+                      loyalty={userLoyalty} 
+                      program={loyaltyProgram}
+                      onClick={() => navigate(createPageUrl('MyLoyalty'))}
+                    />
+                  ) : (
+                    <div className="p-6 bg-gradient-to-r from-amber-500 to-orange-500 text-white">
+                      <div className="flex items-center gap-3 mb-3">
+                        <Award className="w-8 h-8" />
+                        <div>
+                          <h3 className="font-bold text-lg">{loyaltyProgram.name}</h3>
+                          <p className="text-sm opacity-90">
+                            Earn {loyaltyProgram.points_per_dollar} point per dollar spent
+                          </p>
+                        </div>
+                      </div>
+                      {loyaltyProgram.signup_bonus > 0 && (
+                        <p className="text-sm mb-4 bg-white/20 inline-block px-3 py-1 rounded-full">
+                          🎁 Get {loyaltyProgram.signup_bonus} bonus points on signup!
+                        </p>
+                      )}
+                      <Button 
+                        onClick={() => currentUser ? joinLoyaltyMutation.mutate() : base44.auth.redirectToLogin(window.location.href)}
+                        disabled={joinLoyaltyMutation.isPending}
+                        className="w-full bg-white text-amber-600 hover:bg-amber-50"
+                      >
+                        <Gift className="w-4 h-4 mr-2" />
+                        {joinLoyaltyMutation.isPending ? 'Joining...' : 'Join Rewards Program'}
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
             {/* Live Seating Card */}
             <Card className="border-0 shadow-lg overflow-hidden">
               <CardContent className="p-6">
@@ -505,6 +613,20 @@ export default function RestaurantDetail() {
                     <p className="text-slate-500 text-sm">{restaurant.neighborhood}</p>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="menu" className="mt-6">
+            <Card className="border-0 shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <UtensilsCrossed className="w-5 h-5" />
+                  Menu
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <MenuView items={menuItems} restaurantName={restaurant.name} />
               </CardContent>
             </Card>
           </TabsContent>
