@@ -91,12 +91,8 @@ export default function SubscriptionPlans({ restaurantId, currentPlan = 'free' }
   const activePlan = subscription?.plan || currentPlan;
 
   const handleUpgrade = async (plan) => {
-    if (plan.id === 'free') return;
-    
     setUpgrading(plan.id);
     
-    // In production, redirect to Stripe Checkout
-    // For now, simulate the upgrade
     try {
       const existingSub = await base44.entities.Subscription.filter({ restaurant_id: restaurantId });
       
@@ -123,9 +119,11 @@ export default function SubscriptionPlans({ restaurantId, currentPlan = 'free' }
 
       queryClient.invalidateQueries(['subscription']);
       queryClient.invalidateQueries(['ownedRestaurants']);
-      toast.success(`Upgraded to ${plan.name}!`);
+      queryClient.invalidateQueries(['restaurant']);
+      
+      toast.success(`Successfully ${plan.id === 'free' ? 'downgraded to' : 'upgraded to'} ${plan.name}! Features are now unlocked.`);
     } catch (error) {
-      toast.error('Failed to upgrade: ' + error.message);
+      toast.error('Failed to change plan: ' + error.message);
     }
     
     setUpgrading(null);
@@ -221,11 +219,14 @@ export default function SubscriptionPlans({ restaurantId, currentPlan = 'free' }
                       Processing...
                     </>
                   ) : isCurrentPlan ? (
-                    'Current Plan'
+                    <>
+                      <Check className="w-4 h-4 mr-2" />
+                      Current Plan
+                    </>
                   ) : isUpgrade ? (
                     `Upgrade to ${plan.name}`
                   ) : (
-                    'Downgrade'
+                    `Switch to ${plan.name}`
                   )}
                 </Button>
               </CardContent>
