@@ -27,6 +27,7 @@ import AISMSNotifications from '@/components/ai/AISMSNotifications';
 import AIReservationRules from '@/components/ai/AIReservationRules';
 import FeatureGate from '@/components/subscription/FeatureGate';
 import { useFeatureAccess } from '@/components/subscription/SubscriptionPlans';
+import LoyaltyProgramManager from '@/components/owner/LoyaltyProgramManager';
 import { cn } from "@/lib/utils";
 
 export default function OwnerDashboard() {
@@ -403,12 +404,15 @@ export default function OwnerDashboard() {
                         )}
                       </TabsTrigger>
                       <TabsTrigger value="ai" className="rounded-full gap-1.5">
-                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-                        </svg>
-                        AI Insights
-                      </TabsTrigger>
-                    </TabsList>
+                              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                              </svg>
+                              AI Insights
+                            </TabsTrigger>
+                            <TabsTrigger value="loyalty" className="rounded-full">
+                              Loyalty
+                            </TabsTrigger>
+                          </TabsList>
 
               <TabsContent value="seating">
                 <SeatingControl
@@ -519,7 +523,22 @@ export default function OwnerDashboard() {
                       </div>
                     </FeatureGate>
                   </TabsContent>
-            </Tabs>
+
+                  <TabsContent value="loyalty">
+                    <FeatureGate
+                      restaurantId={selectedRestaurant?.id}
+                      feature="loyalty"
+                      requiredPlan="pro"
+                      title="Customer Loyalty Program"
+                      description="Create and manage your own loyalty program to reward repeat customers."
+                    >
+                      <LoyaltyProgramManager 
+                        restaurantId={selectedRestaurant?.id}
+                        restaurantName={currentRestaurant?.name}
+                      />
+                    </FeatureGate>
+                  </TabsContent>
+                  </Tabs>
           </>
         ) : null}
       </main>
