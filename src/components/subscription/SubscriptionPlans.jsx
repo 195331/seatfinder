@@ -1,0 +1,256 @@
+import React, { useState } from 'react';
+import { base44 } from '@/api/base44Client';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Check, Crown, Sparkles, Zap, Lock, Loader2 } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+
+const PLANS = [
+  {
+    id: 'free',
+    name: 'Free',
+    price: 0,
+    description: 'Basic features for small restaurants',
+    features: [
+      'Basic seating management',
+      'Up to 20 tables',
+      'Basic reservations',
+      'Customer reviews'
+    ],
+    limitations: [
+      'No analytics',
+      'No AI features',
+      'No waitlist management',
+      'Limited floor plan'
+    ],
+    stripeLink: null
+  },
+  {
+    id: 'pro',
+    name: 'Pro',
+    price: 49,
+    description: 'Advanced tools for growing restaurants',
+    features: [
+      'Everything in Free',
+      'Full analytics dashboard',
+      'AI wait time predictions',
+      'Advanced floor plan editor',
+      'Waitlist management',
+      'SMS notifications (100/mo)',
+      'Priority support'
+    ],
+    limitations: [],
+    stripeLink: 'https://buy.stripe.com/test_pro_plan',
+    popular: true
+  },
+  {
+    id: 'plus',
+    name: 'Plus',
+    price: 99,
+    description: 'Full suite for premium restaurants',
+    features: [
+      'Everything in Pro',
+      'AI table assignments',
+      'AI occupancy forecasting',
+      'AI review analyzer',
+      'AI reservation manager',
+      'Custom SMS templates',
+      'Unlimited SMS',
+      'API access',
+      'White-label options',
+      'Dedicated support'
+    ],
+    limitations: [],
+    stripeLink: 'https://buy.stripe.com/test_plus_plan'
+  }
+];
+
+export default function SubscriptionPlans({ restaurantId, currentPlan = 'free' }) {
+  const queryClient = useQueryClient();
+  const [upgrading, setUpgrading] = useState(null);
+
+  const { data: subscription } = useQuery({
+    queryKey: ['subscription', restaurantId],
+    queryFn: () => base44.entities.Subscription.filter({ restaurant_id: restaurantId }),
+    enabled: !!restaurantId,
+    select: (data) => data[0]
+  });
+
+  const activePlan = subscription?.plan || currentPlan;
+
+  const handleUpgrade = async (plan) => {
+    if (plan.id === 'free') return;
+    
+    setUpgrading(plan.id);
+    
+    // In production, redirect to Stripe Checkout
+    // For now, simulate the upgrade
+    try {
+      const existingSub = await base44.entities.Subscription.filter({ restaurant_id: restaurantId });
+      
+      if (existingSub.length > 0) {
+        await base44.entities.Subscription.update(existingSub[0].id, {
+          plan: plan.id,
+          status: 'active',
+          current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+        });
+      } else {
+        await base44.entities.Subscription.create({
+          restaurant_id: restaurantId,
+          plan: plan.id,
+          status: 'active',
+          current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+        });
+      }
+
+      // Update restaurant subscription plan
+      await base44.entities.Restaurant.update(restaurantId, {
+        subscription_plan: plan.id,
+        subscription_expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+      });
+
+      queryClient.invalidateQueries(['subscription']);
+      queryClient.invalidateQueries(['ownedRestaurants']);
+      toast.success(`Upgraded to ${plan.name}!`);
+    } catch (error) {
+      toast.error('Failed to upgrade: ' + error.message);
+    }
+    
+    setUpgrading(null);
+  };
+
+  const getPlanIcon = (planId) => {
+    switch (planId) {
+      case 'pro': return <Zap className="w-5 h-5" />;
+      case 'plus': return <Crown className="w-5 h-5" />;
+      default: return <Sparkles className="w-5 h-5" />;
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="text-center">
+        <h2 className="text-2xl font-bold text-slate-900">Choose Your Plan</h2>
+        <p className="text-slate-500 mt-1">Unlock powerful features to grow your restaurant</p>
+      </div>
+
+      <div className="grid md:grid-cols-3 gap-6">
+        {PLANS.map((plan) => {
+          const isCurrentPlan = activePlan === plan.id;
+          const isUpgrade = PLANS.findIndex(p => p.id === plan.id) > PLANS.findIndex(p => p.id === activePlan);
+          
+          return (
+            <Card 
+              key={plan.id}
+              className={cn(
+                "relative border-2 transition-all",
+                plan.popular && "border-indigo-500 shadow-lg shadow-indigo-100",
+                isCurrentPlan && "border-emerald-500 bg-emerald-50/50"
+              )}
+            >
+              {plan.popular && (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                  <Badge className="bg-indigo-500 text-white">Most Popular</Badge>
+                </div>
+              )}
+              
+              {isCurrentPlan && (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                  <Badge className="bg-emerald-500 text-white">Current Plan</Badge>
+                </div>
+              )}
+
+              <CardHeader className="text-center pb-2">
+                <div className={cn(
+                  "w-12 h-12 rounded-xl mx-auto mb-3 flex items-center justify-center",
+                  plan.id === 'free' && "bg-slate-100 text-slate-600",
+                  plan.id === 'pro' && "bg-indigo-100 text-indigo-600",
+                  plan.id === 'plus' && "bg-amber-100 text-amber-600"
+                )}>
+                  {getPlanIcon(plan.id)}
+                </div>
+                <CardTitle className="text-xl">{plan.name}</CardTitle>
+                <div className="mt-2">
+                  <span className="text-3xl font-bold">${plan.price}</span>
+                  {plan.price > 0 && <span className="text-slate-500">/mo</span>}
+                </div>
+                <p className="text-sm text-slate-500 mt-2">{plan.description}</p>
+              </CardHeader>
+
+              <CardContent className="pt-4">
+                <ul className="space-y-3 mb-6">
+                  {plan.features.map((feature, i) => (
+                    <li key={i} className="flex items-start gap-2">
+                      <Check className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" />
+                      <span className="text-sm text-slate-700">{feature}</span>
+                    </li>
+                  ))}
+                  {plan.limitations.map((limitation, i) => (
+                    <li key={i} className="flex items-start gap-2 opacity-50">
+                      <Lock className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" />
+                      <span className="text-sm text-slate-500">{limitation}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <Button
+                  className={cn(
+                    "w-full",
+                    isCurrentPlan && "bg-emerald-600 hover:bg-emerald-700",
+                    plan.popular && !isCurrentPlan && "bg-indigo-600 hover:bg-indigo-700"
+                  )}
+                  variant={!plan.popular && !isCurrentPlan ? "outline" : "default"}
+                  disabled={isCurrentPlan || upgrading !== null}
+                  onClick={() => handleUpgrade(plan)}
+                >
+                  {upgrading === plan.id ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Processing...
+                    </>
+                  ) : isCurrentPlan ? (
+                    'Current Plan'
+                  ) : isUpgrade ? (
+                    `Upgrade to ${plan.name}`
+                  ) : (
+                    'Downgrade'
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// Helper hook to check feature access
+export function useFeatureAccess(restaurantId) {
+  const { data: subscription } = useQuery({
+    queryKey: ['subscription', restaurantId],
+    queryFn: () => base44.entities.Subscription.filter({ restaurant_id: restaurantId }),
+    enabled: !!restaurantId,
+    select: (data) => data[0]
+  });
+
+  const plan = subscription?.plan || 'free';
+
+  return {
+    plan,
+    hasAnalytics: plan === 'pro' || plan === 'plus',
+    hasWaitlist: plan === 'pro' || plan === 'plus',
+    hasAIFeatures: plan === 'plus',
+    hasAdvancedFloorPlan: plan === 'pro' || plan === 'plus',
+    hasSMS: plan === 'pro' || plan === 'plus',
+    hasUnlimitedSMS: plan === 'plus',
+    hasAIReservations: plan === 'plus',
+    hasAIAnalyzer: plan === 'plus',
+    isPro: plan === 'pro',
+    isPlus: plan === 'plus',
+    isFree: plan === 'free'
+  };
+}
