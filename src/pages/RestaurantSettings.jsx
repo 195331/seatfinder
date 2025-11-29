@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { 
   ArrowLeft, Store, Users, Save, Trash2, Mail, Plus,
-  Crown, Check, X
+  Crown, Check, X, Clock, UtensilsCrossed
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +19,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import SubscriptionPlans from '@/components/subscription/SubscriptionPlans';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ImageUploader from '@/components/owner/ImageUploader';
+import OpeningHoursEditor from '@/components/owner/OpeningHoursEditor';
+import MenuBuilder from '@/components/owner/MenuBuilder';
 
 const CUISINES = [
   "Italian", "Japanese", "Mexican", "Chinese", "Indian", "Thai", 
@@ -122,6 +125,8 @@ export default function RestaurantSettings() {
       is_kid_friendly: formData.is_kid_friendly,
       latitude: formData.latitude,
       longitude: formData.longitude,
+      cover_image: formData.cover_image,
+      opening_hours: formData.opening_hours,
     });
   };
 
@@ -172,13 +177,35 @@ export default function RestaurantSettings() {
       {/* Content */}
       <main className="max-w-4xl mx-auto px-4 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-6 bg-white shadow-sm rounded-full p-1">
+          <TabsList className="mb-6 bg-white shadow-sm rounded-full p-1 flex-wrap">
             <TabsTrigger value="general" className="rounded-full">General</TabsTrigger>
+            <TabsTrigger value="hours" className="rounded-full gap-1.5">
+              <Clock className="w-4 h-4" />
+              Hours
+            </TabsTrigger>
+            <TabsTrigger value="menu" className="rounded-full gap-1.5">
+              <UtensilsCrossed className="w-4 h-4" />
+              Menu
+            </TabsTrigger>
             <TabsTrigger value="staff" className="rounded-full">Staff</TabsTrigger>
             <TabsTrigger value="subscription" className="rounded-full">Subscription</TabsTrigger>
           </TabsList>
 
           <TabsContent value="general" className="space-y-6">
+            {/* Cover Image */}
+            <Card className="border-0 shadow-lg">
+              <CardHeader>
+                <CardTitle>Cover Image</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ImageUploader
+                  currentImage={formData.cover_image}
+                  onImageUploaded={(url) => updateField('cover_image', url)}
+                  placeholder="Upload restaurant cover photo"
+                />
+              </CardContent>
+            </Card>
+
             {/* Basic Info */}
             <Card className="border-0 shadow-lg">
           <CardHeader>
@@ -304,6 +331,27 @@ export default function RestaurantSettings() {
             </div>
           </CardContent>
         </Card>
+          </TabsContent>
+
+          <TabsContent value="hours">
+            <Card className="border-0 shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="w-5 h-5" />
+                  Opening Hours
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <OpeningHoursEditor
+                  hours={formData.opening_hours || {}}
+                  onChange={(hours) => updateField('opening_hours', hours)}
+                />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="menu">
+            <MenuBuilder restaurantId={restaurantId} />
           </TabsContent>
 
           <TabsContent value="staff">
