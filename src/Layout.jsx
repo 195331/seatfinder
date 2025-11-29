@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { createPageUrl } from '@/utils';
 import { 
-  Home, Heart, Store, Shield, User, LogOut, Menu, X, ChevronRight, Bell, Settings
+  Home, Heart, Store, Shield, User, LogOut, Menu, X, ChevronRight, Bell, Settings, Calendar, Award
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -58,7 +58,7 @@ export default function Layout({ children, currentPageName }) {
   const standalonePages = [
     'Home', 'RestaurantDetail', 'Favorites', 'OwnerDashboard', 
     'OwnerAnalytics', 'CreateRestaurant', 'RestaurantSettings', 'AdminDashboard',
-    'Inbox', 'Profile'
+    'Inbox', 'Profile', 'MyReservations', 'MyLoyalty'
   ];
 
   if (standalonePages.includes(currentPageName)) {
@@ -164,6 +164,32 @@ export default function Layout({ children, currentPageName }) {
                             <div className="flex items-center gap-3">
                               <Settings className="w-5 h-5 text-slate-600" />
                               <span>Edit Profile</span>
+                            </div>
+                            <ChevronRight className="w-5 h-5 text-slate-400" />
+                          </button>
+                        </Link>
+
+                        <Link 
+                          to={createPageUrl('MyReservations')}
+                          onClick={() => setMobileMenuOpen(false)}
+                        >
+                          <button className="w-full flex items-center justify-between p-3 hover:bg-slate-50 rounded-xl">
+                            <div className="flex items-center gap-3">
+                              <Calendar className="w-5 h-5 text-slate-600" />
+                              <span>My Reservations</span>
+                            </div>
+                            <ChevronRight className="w-5 h-5 text-slate-400" />
+                          </button>
+                        </Link>
+
+                        <Link 
+                          to={createPageUrl('MyLoyalty')}
+                          onClick={() => setMobileMenuOpen(false)}
+                        >
+                          <button className="w-full flex items-center justify-between p-3 hover:bg-slate-50 rounded-xl">
+                            <div className="flex items-center gap-3">
+                              <Award className="w-5 h-5 text-slate-600" />
+                              <span>My Rewards</span>
                             </div>
                             <ChevronRight className="w-5 h-5 text-slate-400" />
                           </button>
