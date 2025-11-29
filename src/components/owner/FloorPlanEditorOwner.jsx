@@ -1,12 +1,14 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Plus, Trash2, Move, Save, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Move, Save, Loader2, Sparkles } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import AIFloorPlanOptimizer from '@/components/ai/AIFloorPlanOptimizer';
+import { useFeatureAccess } from '@/components/subscription/SubscriptionPlans';
 
 const GRID_SIZE = 40;
 const CANVAS_WIDTH = 800;
@@ -29,6 +31,7 @@ const TABLE_TYPES = [
 
 export default function FloorPlanEditorOwner({ restaurant, onSave }) {
   const canvasRef = useRef(null);
+  const featureAccess = useFeatureAccess(restaurant?.id);
   const [isSaving, setIsSaving] = useState(false);
   const [data, setData] = useState({ areas: [], tables: [] });
   const [selectedTableId, setSelectedTableId] = useState(null);
@@ -401,6 +404,15 @@ export default function FloorPlanEditorOwner({ restaurant, onSave }) {
               </Button>
             </CardContent>
           </Card>
+        )}
+
+        {/* AI Floor Plan Optimizer - Plus feature */}
+        {featureAccess.isPlus && (
+          <AIFloorPlanOptimizer
+            restaurantId={restaurant?.id}
+            currentLayout={data}
+            onApplySuggestion={(newLayout) => setData(newLayout)}
+          />
         )}
       </div>
 
