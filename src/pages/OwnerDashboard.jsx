@@ -22,6 +22,11 @@ import OccupancyForecaster from '@/components/ai/OccupancyForecaster';
 import AIRecommendations from '@/components/ai/AIRecommendations';
 import AIReviewAnalyzer from '@/components/ai/AIReviewAnalyzer';
 import AIReservationManager from '@/components/ai/AIReservationManager';
+import AIFloorPlanOptimizer from '@/components/ai/AIFloorPlanOptimizer';
+import AISMSNotifications from '@/components/ai/AISMSNotifications';
+import AIReservationRules from '@/components/ai/AIReservationRules';
+import FeatureGate from '@/components/subscription/FeatureGate';
+import { useFeatureAccess } from '@/components/subscription/SubscriptionPlans';
 import { cn } from "@/lib/utils";
 
 export default function OwnerDashboard() {
@@ -215,6 +220,7 @@ export default function OwnerDashboard() {
   const waitlistJoins = recentEvents.filter(e => e.event_type === 'waitlist_join').length;
 
   const currentRestaurant = allRestaurants.find(r => r.id === selectedRestaurant?.id) || selectedRestaurant;
+  const featureAccess = useFeatureAccess(selectedRestaurant?.id);
 
   if (!currentUser || loadingRestaurants) {
     return (
@@ -421,53 +427,97 @@ export default function OwnerDashboard() {
               </TabsContent>
 
               <TabsContent value="waitlist">
-                    <div className="space-y-6">
-                      <WaitlistManager
-                        entries={waitlist}
-                        onSeat={(entry) => seatEntryMutation.mutate(entry)}
-                        onCancel={(entry) => cancelEntryMutation.mutate(entry)}
-                        isUpdating={seatEntryMutation.isPending || cancelEntryMutation.isPending}
-                        restaurantId={selectedRestaurant?.id}
-                      />
+                    <FeatureGate
+                      restaurantId={selectedRestaurant?.id}
+                      feature="waitlist"
+                      requiredPlan="pro"
+                      title="Waitlist Management"
+                      description="Upgrade to Pro to manage your waitlist with AI-powered features."
+                    >
+                      <div className="grid lg:grid-cols-2 gap-6">
+                        <div className="space-y-6">
+                          <WaitlistManager
+                            entries={waitlist}
+                            onSeat={(entry) => seatEntryMutation.mutate(entry)}
+                            onCancel={(entry) => cancelEntryMutation.mutate(entry)}
+                            isUpdating={seatEntryMutation.isPending || cancelEntryMutation.isPending}
+                            restaurantId={selectedRestaurant?.id}
+                          />
 
-                      {/* AI Table Assigner */}
-                      {waitlist.filter(e => e.status === 'waiting').length > 0 && (
-                        <AITableAssigner
-                          restaurantId={selectedRestaurant?.id}
-                          waitlistEntries={waitlist}
-                          tables={tables || []}
-                          onAssignmentMade={() => queryClient.invalidateQueries(['waitlist'])}
+                          {/* AI Table Assigner */}
+                          {featureAccess.isPlus && waitlist.filter(e => e.status === 'waiting').length > 0 && (
+                            <AITableAssigner
+                              restaurantId={selectedRestaurant?.id}
+                              waitlistEntries={waitlist}
+                              tables={tables || []}
+                              onAssignmentMade={() => queryClient.invalidateQueries(['waitlist'])}
+                            />
+                          )}
+                        </div>
+
+                        {/* AI SMS Notifications */}
+                        {featureAccess.hasSMS && (
+                          <AISMSNotifications
+                            restaurantId={selectedRestaurant?.id}
+                            restaurantName={currentRestaurant?.name}
+                            waitlistEntries={waitlist}
+                          />
+                        )}
+                      </div>
+                    </FeatureGate>
+                  </TabsContent>
+
+              <TabsContent value="reservations">
+                    <div className="space-y-6">
+                      <div className="grid lg:grid-cols-2 gap-6">
+                        <ReservationManager
+                          reservations={reservations}
+                          restaurantName={currentRestaurant?.name}
                         />
+                        <FeatureGate
+                          restaurantId={selectedRestaurant?.id}
+                          feature="aiReservations"
+                          requiredPlan="plus"
+                          title="AI Reservation Manager"
+                          description="Let AI automatically handle reservations based on your rules."
+                        >
+                          <AIReservationManager
+                            restaurantId={selectedRestaurant?.id}
+                            restaurantName={currentRestaurant?.name}
+                            reservations={reservations}
+                            tables={tables || []}
+                          />
+                        </FeatureGate>
+                      </div>
+
+                      {/* AI Reservation Rules */}
+                      {featureAccess.isPlus && (
+                        <AIReservationRules restaurantId={selectedRestaurant?.id} />
                       )}
                     </div>
                   </TabsContent>
 
-              <TabsContent value="reservations">
-                    <div className="grid lg:grid-cols-2 gap-6">
-                      <ReservationManager
-                        reservations={reservations}
-                        restaurantName={currentRestaurant?.name}
-                      />
-                      <AIReservationManager
-                        restaurantId={selectedRestaurant?.id}
-                        restaurantName={currentRestaurant?.name}
-                        reservations={reservations}
-                        tables={tables || []}
-                      />
-                    </div>
-                  </TabsContent>
-
                   <TabsContent value="ai">
-                    <div className="grid lg:grid-cols-2 gap-6">
-                      <OccupancyForecaster restaurantId={selectedRestaurant?.id} />
-                      <AIRecommendations 
-                        restaurantId={selectedRestaurant?.id} 
-                        restaurant={currentRestaurant}
-                      />
-                      <div className="lg:col-span-2">
+                    <FeatureGate
+                      restaurantId={selectedRestaurant?.id}
+                      feature="ai"
+                      requiredPlan="plus"
+                      title="AI Insights & Analytics"
+                      description="Get powerful AI-driven insights, occupancy forecasting, and review analysis."
+                    >
+                      <div className="grid lg:grid-cols-2 gap-6">
+                        <OccupancyForecaster restaurantId={selectedRestaurant?.id} />
+                        <AIRecommendations 
+                          restaurantId={selectedRestaurant?.id} 
+                          restaurant={currentRestaurant}
+                        />
+                        <AIFloorPlanOptimizer
+                          restaurantId={selectedRestaurant?.id}
+                          currentLayout={currentRestaurant?.floor_plan_data}
+                        />
                         <AIReviewAnalyzer restaurantId={selectedRestaurant?.id} />
                       </div>
-                    </div>
+                    </FeatureGate>
                   </TabsContent>
             </Tabs>
           </>
