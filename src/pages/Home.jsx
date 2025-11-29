@@ -12,6 +12,7 @@ import CitySelector from '@/components/customer/CitySelector';
 import FilterPanel from '@/components/customer/FilterPanel';
 import RestaurantCard from '@/components/customer/RestaurantCard';
 import RestaurantMap from '@/components/customer/RestaurantMap';
+import ProfileDrawer from '@/components/profile/ProfileDrawer';
 
 const DEFAULT_PRESETS = [
   { id: 'date-night', name: 'Date Night', icon: '💕', filters: { priceLevel: 3, seatingLevel: 'chill' } },
