@@ -28,6 +28,7 @@ import AIReservationRules from '@/components/ai/AIReservationRules';
 import FeatureGate from '@/components/subscription/FeatureGate';
 import { useFeatureAccess } from '@/components/subscription/SubscriptionPlans';
 import LoyaltyProgramManager from '@/components/owner/LoyaltyProgramManager';
+import MenuBuilder from '@/components/owner/MenuBuilder';
 import { cn } from "@/lib/utils";
 
 export default function OwnerDashboard() {
@@ -410,9 +411,12 @@ export default function OwnerDashboard() {
                               AI Insights
                             </TabsTrigger>
                             <TabsTrigger value="loyalty" className="rounded-full">
-                              Loyalty
-                            </TabsTrigger>
-                          </TabsList>
+                                  Loyalty
+                                </TabsTrigger>
+                                <TabsTrigger value="menu" className="rounded-full">
+                                  Menu
+                                </TabsTrigger>
+                              </TabsList>
 
               <TabsContent value="seating">
                 <SeatingControl
@@ -536,6 +540,18 @@ export default function OwnerDashboard() {
                         restaurantId={selectedRestaurant?.id}
                         restaurantName={currentRestaurant?.name}
                       />
+                    </FeatureGate>
+                  </TabsContent>
+
+                  <TabsContent value="menu">
+                    <FeatureGate
+                      restaurantId={selectedRestaurant?.id}
+                      feature="menu"
+                      requiredPlan="pro"
+                      title="Menu Management"
+                      description="Create and manage your restaurant's menu with categories, items, and dietary info."
+                    >
+                      <MenuBuilder restaurantId={selectedRestaurant?.id} />
                     </FeatureGate>
                   </TabsContent>
                   </Tabs>
