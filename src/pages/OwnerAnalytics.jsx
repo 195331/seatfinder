@@ -5,7 +5,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { 
   ArrowLeft, Eye, MousePointerClick, Heart, Users, Phone, 
-  Navigation, Globe, Calendar, TrendingUp, Clock
+  Navigation, Globe, Calendar, TrendingUp, Clock, Award
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,6 +17,12 @@ import {
 } from 'recharts';
 import moment from 'moment';
 import { cn } from "@/lib/utils";
+import PeakDemandAnalysis from '@/components/analytics/PeakDemandAnalysis';
+import TableTurnoverTracker from '@/components/analytics/TableTurnoverTracker';
+import CustomerLifetimeValue from '@/components/analytics/CustomerLifetimeValue';
+import CompetitorBenchmark from '@/components/analytics/CompetitorBenchmark';
+import LoyaltyAnalytics from '@/components/analytics/LoyaltyAnalytics';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function OwnerAnalytics() {
   const navigate = useNavigate();
@@ -24,6 +30,7 @@ export default function OwnerAnalytics() {
   const restaurantId = urlParams.get('id');
   const [currentUser, setCurrentUser] = useState(null);
   const [dateRange, setDateRange] = useState('7d');
+  const [analyticsTab, setAnalyticsTab] = useState('overview');
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -192,6 +199,15 @@ export default function OwnerAnalytics() {
 
       {/* Content */}
       <main className="max-w-6xl mx-auto px-4 py-6 space-y-6">
+        {/* Analytics Tabs */}
+        <Tabs value={analyticsTab} onValueChange={setAnalyticsTab}>
+          <TabsList className="bg-white shadow-sm rounded-full p-1 mb-6">
+            <TabsTrigger value="overview" className="rounded-full">Overview</TabsTrigger>
+            <TabsTrigger value="advanced" className="rounded-full">Advanced</TabsTrigger>
+            <TabsTrigger value="loyalty" className="rounded-full">Loyalty</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview">
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <Card className="border-0 shadow-sm">
@@ -398,6 +414,25 @@ export default function OwnerAnalytics() {
             </Card>
           )}
         </div>
+          </TabsContent>
+
+          <TabsContent value="advanced">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <PeakDemandAnalysis restaurantId={restaurantId} />
+              <TableTurnoverTracker restaurantId={restaurantId} />
+              <CustomerLifetimeValue restaurantId={restaurantId} />
+              <CompetitorBenchmark 
+                restaurantId={restaurantId} 
+                cityId={restaurant?.city_id}
+                cuisine={restaurant?.cuisine}
+              />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="loyalty">
+            <LoyaltyAnalytics restaurantId={restaurantId} />
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );
