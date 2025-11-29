@@ -5,7 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { 
   ArrowLeft, Heart, Phone, Navigation, Globe, Clock, Users, 
-  Star, MapPin, Minus, Plus, LayoutGrid, Award, Gift, UtensilsCrossed
+  Star, MapPin, Minus, Plus, LayoutGrid, Award, Gift, UtensilsCrossed,
+  CalendarDays
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,6 +26,7 @@ import AIWaitTimePredictor from "@/components/ai/AIWaitTimePredictor";
 import MenuView from "@/components/customer/MenuView";
 import PromotionBanner from "@/components/customer/PromotionBanner";
 import LoyaltyCard from "@/components/customer/LoyaltyCard";
+import { OpeningHoursDisplay } from "@/components/owner/OpeningHoursEditor";
 import moment from 'moment';
 import { cn } from "@/lib/utils";
 
@@ -600,6 +602,21 @@ export default function RestaurantDetail() {
                 </Dialog>
               </CardContent>
             </Card>
+
+            {/* Opening Hours */}
+            {restaurant.opening_hours && Object.keys(restaurant.opening_hours).length > 0 && (
+              <Card className="border-0 shadow-lg">
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <CalendarDays className="w-5 h-5" />
+                    Opening Hours
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <OpeningHoursDisplay hours={restaurant.opening_hours} />
+                </CardContent>
+              </Card>
+            )}
 
             {/* Location */}
             <Card className="border-0 shadow-lg">
