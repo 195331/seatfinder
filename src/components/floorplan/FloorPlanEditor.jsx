@@ -1,10 +1,11 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { Plus, Trash2, Move, Info } from 'lucide-react';
+import { Plus, Trash2, Move, Info, Sparkles } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import AIFloorPlanOptimizer from '@/components/ai/AIFloorPlanOptimizer';
 
 const GRID_SIZE = 40;
 const CANVAS_WIDTH = 800;
@@ -25,7 +26,7 @@ const TABLE_TYPES = [
   { seats: 10, shape: 'large', label: '10 Seats', icon: '╋', width: 100, height: 60 },
 ];
 
-export default function FloorPlanEditor({ data, onChange, restaurantName }) {
+export default function FloorPlanEditor({ data, onChange, restaurantName, restaurantId, showAIOptimizer = false }) {
   const canvasRef = useRef(null);
   const [selectedTableId, setSelectedTableId] = useState(null);
   const [selectedAreaId, setSelectedAreaId] = useState(null);
@@ -394,6 +395,15 @@ export default function FloorPlanEditor({ data, onChange, restaurantName }) {
             </div>
           </CardContent>
         </Card>
+
+        {/* AI Optimizer */}
+        {showAIOptimizer && restaurantId && (
+          <AIFloorPlanOptimizer
+            restaurantId={restaurantId}
+            currentLayout={data}
+            onApplySuggestion={(newLayout) => onChange(newLayout)}
+          />
+        )}
 
         {/* Selected Table Options */}
         {selectedTableId && (
