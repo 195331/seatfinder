@@ -4,7 +4,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { 
-  ArrowLeft, Store, Check, Loader2
+  ArrowLeft, Store, Check, Loader2, Clock
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,8 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 import FloorPlanEditor from '@/components/floorplan/FloorPlanEditor';
+import ImageUploader from '@/components/owner/ImageUploader';
+import OpeningHoursEditor from '@/components/owner/OpeningHoursEditor';
 
 const CUISINES = [
   "Italian", "Japanese", "Mexican", "Chinese", "Indian", "Thai", 
@@ -40,6 +42,8 @@ export default function CreateRestaurant() {
     has_outdoor: false,
     has_bar_seating: false,
     is_kid_friendly: false,
+    cover_image: '',
+    opening_hours: {},
   });
 
   const [floorPlanData, setFloorPlanData] = useState({
@@ -219,6 +223,16 @@ export default function CreateRestaurant() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-5">
+              {/* Cover Image */}
+              <div>
+                <Label className="mb-2 block">Cover Image</Label>
+                <ImageUploader
+                  currentImage={formData.cover_image}
+                  onImageUploaded={(url) => updateField('cover_image', url)}
+                  placeholder="Upload restaurant cover photo"
+                />
+              </div>
+
               <div>
                 <Label>Restaurant Name *</Label>
                 <Input
@@ -358,6 +372,18 @@ export default function CreateRestaurant() {
                     onCheckedChange={(checked) => updateField('is_kid_friendly', checked)}
                   />
                 </div>
+              </div>
+
+              {/* Opening Hours */}
+              <div className="pt-2 space-y-3">
+                <Label className="text-base flex items-center gap-2">
+                  <Clock className="w-4 h-4" />
+                  Opening Hours
+                </Label>
+                <OpeningHoursEditor
+                  hours={formData.opening_hours}
+                  onChange={(hours) => updateField('opening_hours', hours)}
+                />
               </div>
 
               <Button
