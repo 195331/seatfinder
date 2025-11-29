@@ -17,6 +17,8 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import SubscriptionPlans from '@/components/subscription/SubscriptionPlans';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const CUISINES = [
   "Italian", "Japanese", "Mexican", "Chinese", "Indian", "Thai", 
@@ -35,6 +37,7 @@ export default function RestaurantSettings() {
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState('host');
   const [showInviteDialog, setShowInviteDialog] = useState(false);
+  const [activeTab, setActiveTab] = useState(urlParams.get('tab') || 'general');
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -167,9 +170,17 @@ export default function RestaurantSettings() {
       </header>
 
       {/* Content */}
-      <main className="max-w-2xl mx-auto px-4 py-6 space-y-6">
-        {/* Basic Info */}
-        <Card className="border-0 shadow-lg">
+      <main className="max-w-4xl mx-auto px-4 py-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="mb-6 bg-white shadow-sm rounded-full p-1">
+            <TabsTrigger value="general" className="rounded-full">General</TabsTrigger>
+            <TabsTrigger value="staff" className="rounded-full">Staff</TabsTrigger>
+            <TabsTrigger value="subscription" className="rounded-full">Subscription</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="general" className="space-y-6">
+            {/* Basic Info */}
+            <Card className="border-0 shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Store className="w-5 h-5" />
@@ -293,7 +304,9 @@ export default function RestaurantSettings() {
             </div>
           </CardContent>
         </Card>
+          </TabsContent>
 
+          <TabsContent value="staff">
         {/* Staff Management */}
         <Card className="border-0 shadow-lg">
           <CardHeader>
@@ -400,36 +413,15 @@ export default function RestaurantSettings() {
             )}
           </CardContent>
         </Card>
+          </TabsContent>
 
-        {/* Subscription */}
-        <Card className="border-0 shadow-lg">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Crown className="w-5 h-5" />
-              Subscription
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between p-4 bg-emerald-50 rounded-xl border border-emerald-200">
-              <div>
-                <p className="font-semibold text-emerald-900">
-                  {restaurant.subscription_plan === 'pro' ? 'Pro Plan' : 
-                   restaurant.subscription_plan === 'plus' ? 'Plus Plan' : 'Free Plan'}
-                </p>
-                <p className="text-sm text-emerald-700">
-                  {restaurant.subscription_plan === 'free' 
-                    ? 'Upgrade to unlock analytics and premium features'
-                    : 'Full access to all features'}
-                </p>
-              </div>
-              {restaurant.subscription_plan === 'free' && (
-                <Button className="rounded-full bg-emerald-600 hover:bg-emerald-700">
-                  Upgrade
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+          <TabsContent value="subscription">
+            <SubscriptionPlans 
+              restaurantId={restaurantId} 
+              currentPlan={restaurant?.subscription_plan || 'free'} 
+            />
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );
