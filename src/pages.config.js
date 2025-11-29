@@ -8,6 +8,8 @@ import RestaurantSettings from './pages/RestaurantSettings';
 import AdminDashboard from './pages/AdminDashboard';
 import Inbox from './pages/Inbox';
 import Profile from './pages/Profile';
+import MyReservations from './pages/MyReservations';
+import MyLoyalty from './pages/MyLoyalty';
 import __Layout from './Layout.jsx';
 
 
@@ -22,6 +24,8 @@ export const PAGES = {
     "AdminDashboard": AdminDashboard,
     "Inbox": Inbox,
     "Profile": Profile,
+    "MyReservations": MyReservations,
+    "MyLoyalty": MyLoyalty,
 }
 
 export const pagesConfig = {
