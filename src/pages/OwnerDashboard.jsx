@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import SeatingControl from '@/components/owner/SeatingControl';
+import SeatingControlEnhanced from '@/components/owner/SeatingControlEnhanced';
 import WaitlistManager from '@/components/owner/WaitlistManager';
 import AreaManager from '@/components/owner/AreaManager';
 import ReservationManager from '@/components/owner/ReservationManager';
@@ -419,11 +419,12 @@ export default function OwnerDashboard() {
                               </TabsList>
 
               <TabsContent value="seating">
-                <SeatingControl
+                <SeatingControlEnhanced
                   restaurant={currentRestaurant}
                   onSeatingChange={(value) => updateSeatingMutation.mutate(value)}
                   onFullToggle={(isFull) => toggleFullMutation.mutate(isFull)}
                   isUpdating={updateSeatingMutation.isPending || toggleFullMutation.isPending}
+                  waitlist={waitlist}
                 />
               </TabsContent>
 

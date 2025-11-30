@@ -22,6 +22,8 @@ import TableTurnoverTracker from '@/components/analytics/TableTurnoverTracker';
 import CustomerLifetimeValue from '@/components/analytics/CustomerLifetimeValue';
 import CompetitorBenchmark from '@/components/analytics/CompetitorBenchmark';
 import LoyaltyAnalytics from '@/components/analytics/LoyaltyAnalytics';
+import RevenueMetrics from '@/components/analytics/RevenueMetrics';
+import TableHeatmap from '@/components/analytics/TableHeatmap';
 import { TabsContent } from "@/components/ui/tabs";
 
 export default function OwnerAnalytics() {
@@ -207,8 +209,12 @@ export default function OwnerAnalytics() {
             <TabsTrigger value="loyalty" className="rounded-full">Loyalty</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="overview">
-        {/* Stats Cards */}
+          <TabsContent value="overview" className="space-y-6">
+            {/* Revenue & Key Metrics */}
+            <RevenueMetrics restaurantId={restaurantId} dateRange={dateRange} />
+
+        {/* Engagement Stats Cards */}
+        <h3 className="text-lg font-semibold text-slate-900 mt-8 mb-4">Engagement Metrics</h3>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <Card className="border-0 shadow-sm">
             <CardContent className="p-4">
@@ -418,6 +424,7 @@ export default function OwnerAnalytics() {
 
           <TabsContent value="advanced">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <TableHeatmap restaurantId={restaurantId} />
               <PeakDemandAnalysis restaurantId={restaurantId} />
               <TableTurnoverTracker restaurantId={restaurantId} />
               <CustomerLifetimeValue restaurantId={restaurantId} />

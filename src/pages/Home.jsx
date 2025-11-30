@@ -144,6 +144,24 @@ export default function Home() {
     if (filters.hasBarSeating) result = result.filter(r => r.has_bar_seating);
     if (filters.isKidFriendly) result = result.filter(r => r.is_kid_friendly);
 
+    // Sort: restaurants with recent updates appear higher
+    result.sort((a, b) => {
+      const aTime = a.seating_updated_at ? new Date(a.seating_updated_at).getTime() : 0;
+      const bTime = b.seating_updated_at ? new Date(b.seating_updated_at).getTime() : 0;
+      const now = Date.now();
+      const fifteenMinutes = 15 * 60 * 1000;
+      
+      // Prioritize "live" restaurants (updated within 15 min)
+      const aIsLive = aTime > now - fifteenMinutes;
+      const bIsLive = bTime > now - fifteenMinutes;
+      
+      if (aIsLive && !bIsLive) return -1;
+      if (!aIsLive && bIsLive) return 1;
+      
+      // Then sort by most recent update
+      return bTime - aTime;
+    });
+
     return result;
   }, [restaurants, search, filters]);
 
