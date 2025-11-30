@@ -1,17 +1,15 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { MessageSquare, Sparkles, Send, Edit, Plus, Trash2, Loader2, Check } from 'lucide-react';
+import { MessageSquare, Sparkles, Send, Plus, Trash2, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import AISMSTemplateGenerator from './AISMSTemplateGenerator';
 
 const DEFAULT_TEMPLATES = [
   {
@@ -182,62 +180,28 @@ export default function AISMSNotifications({ restaurantId, restaurantName, waitl
           <Dialog open={showNewDialog} onOpenChange={setShowNewDialog}>
             <DialogTrigger asChild>
               <Button variant="outline" className="h-auto py-3 flex-col gap-1">
-                <Plus className="w-4 h-4" />
-                <span className="text-xs">New Template</span>
+                <Sparkles className="w-4 h-4" />
+                <span className="text-xs">AI Template</span>
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-md">
               <DialogHeader>
-                <DialogTitle>Create SMS Template</DialogTitle>
+                <DialogTitle className="flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-violet-500" />
+                  AI Template Generator
+                </DialogTitle>
               </DialogHeader>
-              <div className="space-y-4 pt-4">
-                <div>
-                  <Label>Template Type</Label>
-                  <Select
-                    value={newTemplate.template_type}
-                    onValueChange={(v) => setNewTemplate({ ...newTemplate, template_type: v })}
-                  >
-                    <SelectTrigger className="mt-1">
-                      <SelectValue placeholder="Select type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="waitlist_update">Waitlist Update</SelectItem>
-                      <SelectItem value="table_ready">Table Ready</SelectItem>
-                      <SelectItem value="position_update">Position Update</SelectItem>
-                      <SelectItem value="custom">Custom</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Template Name</Label>
-                  <Input
-                    value={newTemplate.name}
-                    onChange={(e) => setNewTemplate({ ...newTemplate, name: e.target.value })}
-                    className="mt-1"
-                    placeholder="e.g., Friendly Update"
-                  />
-                </div>
-                <div>
-                  <Label>Message</Label>
-                  <Textarea
-                    value={newTemplate.message}
-                    onChange={(e) => setNewTemplate({ ...newTemplate, message: e.target.value })}
-                    className="mt-1"
-                    placeholder="Hi {name}! Your table at {restaurant}..."
-                    rows={3}
-                  />
-                  <p className="text-xs text-slate-500 mt-1">
-                    Available: {'{name}'}, {'{restaurant}'}, {'{position}'}, {'{wait_time}'}
-                  </p>
-                </div>
-                <Button
-                  onClick={() => createTemplateMutation.mutate(newTemplate)}
-                  disabled={!newTemplate.template_type || !newTemplate.message}
-                  className="w-full"
-                >
-                  Create Template
-                </Button>
-              </div>
+              <AISMSTemplateGenerator
+                restaurantName={restaurantName}
+                onTemplateGenerated={(template) => {
+                  createTemplateMutation.mutate({
+                    template_type: template.template_type,
+                    name: `${template.template_type} (${template.tone})`,
+                    message: template.message
+                  });
+                  setShowNewDialog(false);
+                }}
+              />
             </DialogContent>
           </Dialog>
         </div>

@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Search, List, Map, Heart } from 'lucide-react';
-import { Input } from "@/components/ui/input";
+import { List, Map, Heart } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { createPageUrl } from '@/utils';
@@ -13,6 +12,7 @@ import FilterPanel from '@/components/customer/FilterPanel';
 import RestaurantCard from '@/components/customer/RestaurantCard';
 import RestaurantMap from '@/components/customer/RestaurantMap';
 import ProfileDrawer from '@/components/profile/ProfileDrawer';
+import AISmartSearch from '@/components/ai/AISmartSearch';
 
 const DEFAULT_PRESETS = [
   { id: 'date-night', name: 'Date Night', icon: '💕', filters: { priceLevel: 3, seatingLevel: 'chill' } },
@@ -208,16 +208,18 @@ export default function Home() {
               />
             </div>
 
-            <div className="flex-1 max-w-md hidden md:block">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <Input
-                  placeholder="Search by name or cuisine..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="pl-10 rounded-full border-slate-200 bg-slate-50"
-                />
-              </div>
+            <div className="flex-1 max-w-lg hidden md:block">
+              <AISmartSearch
+                onSearchChange={setSearch}
+                onFiltersExtracted={(data) => {
+                  if (data?.filters) {
+                    setFilters(prev => ({ ...prev, ...data.filters }));
+                    setActivePreset(null);
+                  } else if (data === null) {
+                    // Clear AI filters when search is cleared
+                  }
+                }}
+              />
             </div>
 
             <div className="flex items-center gap-2">
@@ -251,15 +253,15 @@ export default function Home() {
 
           {/* Mobile Search */}
           <div className="mt-3 md:hidden">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-              <Input
-                placeholder="Search by name or cuisine..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-10 rounded-full border-slate-200 bg-slate-50"
-              />
-            </div>
+            <AISmartSearch
+              onSearchChange={setSearch}
+              onFiltersExtracted={(data) => {
+                if (data?.filters) {
+                  setFilters(prev => ({ ...prev, ...data.filters }));
+                  setActivePreset(null);
+                }
+              }}
+            />
           </div>
 
           {/* Filters */}

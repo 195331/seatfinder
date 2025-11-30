@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import AIMenuHelper from '@/components/ai/AIMenuHelper';
 
 const DEFAULT_CATEGORIES = ['Appetizers', 'Mains', 'Desserts', 'Drinks'];
 
@@ -223,6 +224,22 @@ export default function MenuBuilder({ restaurantId }) {
                     rows={2}
                   />
                 </div>
+                
+                {/* AI Helper */}
+                <AIMenuHelper
+                  dishName={newItem.name}
+                  onDescriptionGenerated={(desc) => setNewItem({ ...newItem, description: desc })}
+                  onTagsGenerated={(tags) => {
+                    if (tags?.confidence) {
+                      setNewItem(prev => ({
+                        ...prev,
+                        is_vegetarian: tags.confidence.is_vegetarian || prev.is_vegetarian,
+                        is_vegan: tags.confidence.is_vegan || prev.is_vegan,
+                        is_gluten_free: tags.confidence.is_gluten_free || prev.is_gluten_free
+                      }));
+                    }
+                  }}
+                />
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label>Price ($) *</Label>
