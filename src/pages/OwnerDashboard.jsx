@@ -29,6 +29,9 @@ import FeatureGate from '@/components/subscription/FeatureGate';
 import { useFeatureAccess } from '@/components/subscription/SubscriptionPlans';
 import LoyaltyProgramManager from '@/components/owner/LoyaltyProgramManager';
 import MenuBuilder from '@/components/owner/MenuBuilder';
+import OfferManager from '@/components/owner/OfferManager';
+import AIPersonalizedOffers from '@/components/ai/AIPersonalizedOffers';
+import AIDynamicPricing from '@/components/ai/AIDynamicPricing';
 import { cn } from "@/lib/utils";
 
 export default function OwnerDashboard() {
@@ -416,7 +419,13 @@ export default function OwnerDashboard() {
                                 <TabsTrigger value="menu" className="rounded-full">
                                   Menu
                                 </TabsTrigger>
-                              </TabsList>
+                                <TabsTrigger value="offers" className="rounded-full gap-1.5">
+                                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M20 12v10H4V12M2 7h20v5H2z"/>
+                                  </svg>
+                                  Offers & Pricing
+                                </TabsTrigger>
+                                </TabsList>
 
               <TabsContent value="seating">
                 <SeatingControlEnhanced
@@ -554,6 +563,20 @@ export default function OwnerDashboard() {
                     >
                       <MenuBuilder restaurantId={selectedRestaurant?.id} />
                     </FeatureGate>
+                  </TabsContent>
+
+                  <TabsContent value="offers">
+                    <div className="space-y-6">
+                      <div className="grid lg:grid-cols-2 gap-6">
+                        <OfferManager restaurantId={selectedRestaurant?.id} />
+                        <AIPersonalizedOffers 
+                          restaurantId={selectedRestaurant?.id}
+                          restaurantName={currentRestaurant?.name}
+                          cuisine={currentRestaurant?.cuisine}
+                        />
+                      </div>
+                      <AIDynamicPricing restaurantId={selectedRestaurant?.id} />
+                    </div>
                   </TabsContent>
                   </Tabs>
           </>
