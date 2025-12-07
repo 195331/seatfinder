@@ -72,6 +72,7 @@ export default function StepAddTables({ floorPlan, onChange, onNext, onBack }) {
       next.delete(tableId);
       return next;
     });
+    setEditingTable(null);
   };
 
   const duplicateTable = (table) => {
@@ -79,10 +80,18 @@ export default function StepAddTables({ floorPlan, onChange, onNext, onBack }) {
       ...table,
       id: `table-${Date.now()}`,
       label: `T${getNextTableNumber()}`,
-      x: table.x + 50,
-      y: table.y + 50
+      x: snapToGrid(table.x + 50),
+      y: snapToGrid(table.y + 50)
     };
     onChange({ tables: [...floorPlan.tables, newTable] });
+  };
+
+  const deleteSelected = () => {
+    onChange({
+      tables: floorPlan.tables.filter(t => !selectedTables.has(t.id))
+    });
+    setSelectedTables(new Set());
+    setEditingTable(null);
   };
 
   const handleCanvasClick = (e) => {
@@ -148,12 +157,15 @@ export default function StepAddTables({ floorPlan, onChange, onNext, onBack }) {
     };
   }, [handleMouseMove, handleMouseUp]);
 
-  const deleteSelected = () => {
-    onChange({
-      tables: floorPlan.tables.filter(t => !selectedTables.has(t.id))
-    });
-    setSelectedTables(new Set());
-  };
+  useEffect(() => {
+    if (selectedTables.size === 1) {
+      const tableId = Array.from(selectedTables)[0];
+      const table = floorPlan.tables.find(t => t.id === tableId);
+      setEditingTable(table);
+    } else {
+      setEditingTable(null);
+    }
+  }, [selectedTables, floorPlan.tables]);
 
   return (
     <div className="flex gap-4">
