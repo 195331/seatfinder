@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { ZoomIn, ZoomOut, Eye } from 'lucide-react';
+import { ZoomIn, ZoomOut, Eye, Clock } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import moment from 'moment';
