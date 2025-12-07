@@ -12,11 +12,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import SeatingControlEnhanced from '@/components/owner/SeatingControlEnhanced';
+import LiveSeating from '@/components/owner/LiveSeating';
 import WaitlistManager from '@/components/owner/WaitlistManager';
 import AreaManager from '@/components/owner/AreaManager';
 import ReservationManager from '@/components/owner/ReservationManager';
-import FloorPlanEditorOwner from '@/components/owner/FloorPlanEditorOwner.jsx';
+import FloorPlanBuilder from '@/components/owner/FloorPlanBuilder';
 import AITableAssigner from '@/components/ai/AITableAssigner';
 import OccupancyForecaster from '@/components/ai/OccupancyForecaster';
 import AIRecommendations from '@/components/ai/AIRecommendations';
@@ -428,19 +428,13 @@ export default function OwnerDashboard() {
                                 </TabsList>
 
               <TabsContent value="seating">
-                <SeatingControlEnhanced
-                  restaurant={currentRestaurant}
-                  onSeatingChange={(value) => updateSeatingMutation.mutate(value)}
-                  onFullToggle={(isFull) => toggleFullMutation.mutate(isFull)}
-                  isUpdating={updateSeatingMutation.isPending || toggleFullMutation.isPending}
-                  waitlist={waitlist}
-                />
+                <LiveSeating restaurant={currentRestaurant} />
               </TabsContent>
 
               <TabsContent value="floorplan">
-                <FloorPlanEditorOwner
+                <FloorPlanBuilder
                   restaurant={currentRestaurant}
-                  onSave={() => queryClient.invalidateQueries(['ownedRestaurants'])}
+                  onPublish={() => queryClient.invalidateQueries(['ownedRestaurants'])}
                 />
               </TabsContent>
 
