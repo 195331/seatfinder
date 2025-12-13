@@ -214,7 +214,70 @@ export default function RestaurantDetail() {
         base44.auth.redirectToLogin(window.location.href);
         return;
       }
-      await base44.entities.Reservation.create({
+      
+      // Fetch reservation rules
+      const rules = await base44.entities.ReservationRule.filter({ 
+        restaurant_id: restaurantId,
+        is_active: true 
+      }, 'priority');
+      
+      // Apply rules to determine status
+      let status = 'pending';
+      let matchedRule = null;
+      
+      for (const rule of rules) {
+        const conditions = rule.conditions || {};
+        let matches = true;
+        
+        // Check day of week
+        if (conditions.days_of_week) {
+          const resDate = new Date(data.reservation_date);
+          const dayOfWeek = resDate.getDay();
+          if (!conditions.days_of_week.includes(dayOfWeek)) {
+            matches = false;
+          }
+        }
+        
+        // Check time slot
+        if (matches && conditions.time_slots) {
+          const matchesTimeSlot = conditions.time_slots.some(slot => {
+            const [start, end] = slot.split('-');
+            return data.reservation_time >= start && data.reservation_time <= end;
+          });
+          if (!matchesTimeSlot) matches = false;
+        }
+        
+        // Check party size
+        if (matches && conditions.min_party_size && data.party_size < conditions.min_party_size) {
+          matches = false;
+        }
+        if (matches && conditions.max_party_size && data.party_size > conditions.max_party_size) {
+          matches = false;
+        }
+        
+        // Check lead time
+        if (matches && (conditions.min_advance_hours || conditions.max_advance_days)) {
+          const now = new Date();
+          const resDateTime = new Date(`${data.reservation_date}T${data.reservation_time}`);
+          const hoursDiff = (resDateTime - now) / (1000 * 60 * 60);
+          
+          if (conditions.min_advance_hours && hoursDiff < conditions.min_advance_hours) {
+            matches = false;
+          }
+          if (conditions.max_advance_days && hoursDiff > conditions.max_advance_days * 24) {
+            matches = false;
+          }
+        }
+        
+        if (matches) {
+          matchedRule = rule;
+          if (rule.action === 'auto_approve') status = 'approved';
+          else if (rule.action === 'auto_decline') status = 'declined';
+          break;
+        }
+      }
+      
+      const reservation = await base44.entities.Reservation.create({
         restaurant_id: restaurantId,
         table_id: data.table_id,
         user_id: currentUser.id,
@@ -224,12 +287,21 @@ export default function RestaurantDetail() {
         reservation_date: data.reservation_date,
         reservation_time: data.reservation_time,
         notes: data.notes,
-        status: 'pending'
+        status
       });
+      
+      return { reservation, status, matchedRule };
     },
-    onSuccess: () => {
-      toast.success("Reservation request sent! The restaurant will confirm shortly.");
+    onSuccess: (result) => {
+      if (result.status === 'approved') {
+        toast.success("🎉 Reservation confirmed! You're all set.", { duration: 5000 });
+      } else if (result.status === 'declined') {
+        toast.error("This time slot is not available. Please try a different time or contact the restaurant.", { duration: 5000 });
+      } else {
+        toast.success("Reservation request sent! Waiting for confirmation. You'll get a notification within 30 minutes.", { duration: 5000 });
+      }
       queryClient.invalidateQueries(['tables']);
+      queryClient.invalidateQueries(['myReservations']);
     },
     onError: (error) => {
       toast.error("Failed to submit reservation: " + error.message);
