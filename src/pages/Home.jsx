@@ -18,6 +18,7 @@ const DEFAULT_PRESETS = [
   { id: 'date-night', name: 'Date Night', icon: '💕', filters: { priceLevel: 3, seatingLevel: 'chill' } },
   { id: 'quick-lunch', name: 'Quick Lunch', icon: '⚡', filters: { seatingLevel: 'chill', openNow: true } },
   { id: 'friends', name: 'Friends Hangout', icon: '👯', filters: { hasBarSeating: true } },
+  { id: 'family', name: 'Family Dinner', icon: '👨‍👩‍👧‍👦', filters: { isKidFriendly: true, seatingLevel: 'moderate' } },
 ];
 
 export default function Home() {
@@ -185,9 +186,10 @@ export default function Home() {
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-white border-b border-slate-100">
-        <div className="max-w-7xl mx-auto px-4 py-3">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          {/* Promise line */}
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
               {currentUser ? (
                 <ProfileDrawer 
                   currentUser={currentUser} 
@@ -201,11 +203,16 @@ export default function Home() {
                   <span className="text-white font-bold text-lg">S</span>
                 </button>
               )}
-              <CitySelector 
-                cities={cities}
-                selectedCity={selectedCity}
-                onCityChange={setSelectedCity}
-              />
+              <div>
+                <p className="text-slate-900 font-medium">
+                  See who has open tables right now in{' '}
+                  <CitySelector 
+                    cities={cities}
+                    selectedCity={selectedCity}
+                    onCityChange={setSelectedCity}
+                  />
+                </p>
+              </div>
             </div>
 
             <div className="flex-1 max-w-lg hidden md:block">
@@ -264,6 +271,25 @@ export default function Home() {
             />
           </div>
 
+          {/* Mood Presets */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
+            {DEFAULT_PRESETS.map((preset) => (
+              <button
+                key={preset.id}
+                onClick={() => handlePresetSelect(preset)}
+                className={cn(
+                  "px-4 py-2 rounded-full border whitespace-nowrap transition-all flex items-center gap-2",
+                  activePreset?.id === preset.id
+                    ? "bg-slate-900 text-white border-slate-900"
+                    : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
+                )}
+              >
+                <span>{preset.icon}</span>
+                <span className="text-sm font-medium">{preset.name}</span>
+              </button>
+            ))}
+          </div>
+
           {/* Filters */}
           <div className="mt-3">
             <FilterPanel
@@ -282,7 +308,7 @@ export default function Home() {
         {loadingRestaurants ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="bg-white rounded-2xl overflow-hidden">
+              <div key={i} className="bg-white rounded-2xl overflow-hidden shadow-sm">
                 <Skeleton className="aspect-[16/10]" />
                 <div className="p-4 space-y-3">
                   <Skeleton className="h-6 w-3/4" />
@@ -295,8 +321,8 @@ export default function Home() {
         ) : view === 'list' ? (
           <>
             <div className="flex items-center justify-between mb-4">
-              <p className="text-slate-600">
-                {filteredRestaurants.length} restaurant{filteredRestaurants.length !== 1 ? 's' : ''} found
+              <p className="text-slate-600 text-sm">
+                {filteredRestaurants.length} restaurant{filteredRestaurants.length !== 1 ? 's' : ''} • Live updates
               </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -311,11 +337,18 @@ export default function Home() {
               ))}
             </div>
             {filteredRestaurants.length === 0 && (
-              <div className="text-center py-16">
-                <p className="text-slate-500 text-lg">No restaurants match your filters</p>
+              <div className="text-center py-20">
+                <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-3xl">🔍</span>
+                </div>
+                <p className="text-slate-900 font-semibold text-lg mb-2">No restaurants found</p>
+                <p className="text-slate-500 mb-6">Try adjusting your filters or exploring a different vibe</p>
                 <button 
-                  onClick={() => setFilters({})}
-                  className="mt-2 text-emerald-600 hover:underline"
+                  onClick={() => {
+                    setFilters({});
+                    setActivePreset(null);
+                  }}
+                  className="px-6 py-2 bg-slate-900 text-white rounded-full hover:bg-slate-800 transition-colors"
                 >
                   Clear all filters
                 </button>
