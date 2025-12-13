@@ -36,68 +36,45 @@ export default function RestaurantCard({
     <div 
       onClick={() => onClick?.(restaurant)}
       className={cn(
-        "bg-white rounded-2xl border border-slate-100 overflow-hidden cursor-pointer",
-        "hover:shadow-lg hover:shadow-slate-200/50 hover:border-slate-200",
-        "transition-all duration-300 group"
+        "bg-white rounded-2xl border overflow-hidden cursor-pointer group",
+        "hover:shadow-xl transition-all duration-300",
+        isLive ? "border-emerald-200 shadow-md" : "border-slate-100 shadow-sm hover:border-slate-200"
       )}
     >
       {/* Image */}
-      <div className="relative aspect-[16/10] overflow-hidden">
+      <div className="relative aspect-[16/10] overflow-hidden bg-slate-100">
         <img 
           src={restaurant.cover_image || `https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&q=80`}
           alt={restaurant.name}
-          className={cn(
-            "w-full h-full object-cover group-hover:scale-105 transition-transform duration-500",
-            isStale && "opacity-80"
-          )}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
         
         {/* Live Badge */}
         {isLive && (
-          <Badge className="absolute top-3 left-3 bg-emerald-500 text-white gap-1 animate-pulse">
-            <Zap className="w-3 h-3" />
-            Live now
-          </Badge>
-        )}
-
-        {/* Stale Warning */}
-        {isStale && (
-          <Badge className="absolute top-3 left-3 bg-amber-500 text-white gap-1">
-            <AlertTriangle className="w-3 h-3" />
-            Data may be outdated
-          </Badge>
+          <div className="absolute top-3 left-3 px-2.5 py-1 bg-emerald-500 text-white text-xs font-semibold rounded-full flex items-center gap-1.5 shadow-lg">
+            <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
+            LIVE
+          </div>
         )}
         
         {/* Favorite Button */}
-        <Button
-          variant="ghost"
-          size="icon"
+        <button
           onClick={handleFavoriteClick}
           className={cn(
-            "absolute top-3 right-3 rounded-full backdrop-blur-md",
+            "absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all shadow-md hover:scale-110",
             isFavorite 
-              ? "bg-red-500/90 text-white hover:bg-red-600" 
-              : "bg-white/90 text-slate-600 hover:bg-white"
+              ? "bg-red-500 text-white" 
+              : "bg-white/95 backdrop-blur-sm text-slate-600 hover:bg-white"
           )}
         >
-          <Heart className={cn("w-5 h-5", isFavorite && "fill-current")} />
-        </Button>
-
-        {/* Occupancy Badge */}
-        <div className="absolute bottom-3 left-3">
-          <OccupancyBadge 
-            available={restaurant.available_seats} 
-            total={restaurant.total_seats}
-            isFull={restaurant.is_full}
-          />
-        </div>
+          <Heart className={cn("w-4.5 h-4.5", isFavorite && "fill-current")} />
+        </button>
       </div>
 
       {/* Content */}
       <div className="p-4">
         <div className="flex items-start justify-between gap-2 mb-2">
-          <h3 className="font-semibold text-lg text-slate-900 leading-tight">
+          <h3 className="font-semibold text-lg text-slate-900 leading-tight flex-1">
             {restaurant.name}
           </h3>
           <PriceLevel level={restaurant.price_level || 2} />
@@ -108,38 +85,35 @@ export default function RestaurantCard({
           {restaurant.neighborhood && (
             <>
               <span className="w-1 h-1 rounded-full bg-slate-300" />
-              <span className="flex items-center gap-1">
-                <MapPin className="w-3.5 h-3.5" />
-                {restaurant.neighborhood}
-              </span>
+              <span>{restaurant.neighborhood}</span>
             </>
           )}
         </div>
 
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <StarRating rating={restaurant.average_rating} count={restaurant.review_count} />
-          </div>
-          
-          <div className="flex items-center gap-4 text-sm">
-            <span className="font-medium text-slate-800">
-              {restaurant.available_seats} / {restaurant.total_seats}
-            </span>
-          </div>
+        <div className="flex items-center gap-2 mb-3">
+          <StarRating rating={restaurant.average_rating} count={restaurant.review_count} />
         </div>
 
-        {/* Last Updated */}
-        {timeAgo && (
-          <div className={cn(
-            "flex items-center gap-1 text-xs mt-2 pt-2 border-t border-slate-100",
-            isStale ? "text-amber-600" : isLive ? "text-emerald-600" : "text-slate-400"
-          )}>
-            <Clock className="w-3 h-3" />
-            <span>Updated {timeAgo}</span>
-            {isLive && <span className="ml-1">• Data is fresh</span>}
-            {isStale && <span className="ml-1">• May be outdated</span>}
+        {/* Seating Status */}
+        <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+          <OccupancyBadge 
+            available={restaurant.available_seats} 
+            total={restaurant.total_seats}
+            isFull={restaurant.is_full}
+          />
+          
+          <div className="text-right">
+            <p className="text-sm font-semibold text-slate-900">
+              {restaurant.available_seats} / {restaurant.total_seats} free
+            </p>
+            {timeAgo && (
+              <p className="text-xs text-slate-400 flex items-center justify-end gap-1 mt-0.5">
+                <Clock className="w-3 h-3" />
+                {timeAgo}
+              </p>
+            )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
