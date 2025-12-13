@@ -25,6 +25,7 @@ import AIReservationManager from '@/components/ai/AIReservationManager';
 import AIFloorPlanOptimizer from '@/components/ai/AIFloorPlanOptimizer';
 import AISMSNotifications from '@/components/ai/AISMSNotifications';
 import AIReservationRules from '@/components/ai/AIReservationRules';
+import AutoReservationRules from '@/components/owner/AutoReservationRules';
 import FeatureGate from '@/components/subscription/FeatureGate';
 import { useFeatureAccess } from '@/components/subscription/SubscriptionPlans';
 import LoyaltyProgramManager from '@/components/owner/LoyaltyProgramManager';
@@ -482,6 +483,9 @@ export default function OwnerDashboard() {
 
               <TabsContent value="reservations">
                     <div className="space-y-6">
+                      {/* Auto Reservation Rules */}
+                      <AutoReservationRules restaurantId={selectedRestaurant?.id} />
+
                       <div className="grid lg:grid-cols-2 gap-6">
                         <ReservationManager
                           reservations={reservations}
@@ -502,11 +506,6 @@ export default function OwnerDashboard() {
                           />
                         </FeatureGate>
                       </div>
-
-                      {/* AI Reservation Rules */}
-                      {featureAccess.isPlus && (
-                        <AIReservationRules restaurantId={selectedRestaurant?.id} />
-                      )}
                     </div>
                   </TabsContent>
 
