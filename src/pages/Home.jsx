@@ -6,6 +6,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { createPageUrl } from '@/utils';
 import { Link, useNavigate } from 'react-router-dom';
+import { cn } from "@/lib/utils";
 
 import CitySelector from '@/components/customer/CitySelector';
 import FilterPanel from '@/components/customer/FilterPanel';
