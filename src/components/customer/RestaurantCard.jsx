@@ -13,7 +13,8 @@ export default function RestaurantCard({
   isFavorite, 
   onFavoriteToggle, 
   onClick,
-  compact = false 
+  compact = false,
+  showBestMatch = false
 }) {
   const handleFavoriteClick = (e) => {
     e.stopPropagation();
@@ -54,6 +55,13 @@ export default function RestaurantCard({
           <div className="absolute top-3 left-3 px-2.5 py-1 bg-emerald-500 text-white text-xs font-semibold rounded-full flex items-center gap-1.5 shadow-lg">
             <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
             LIVE
+          </div>
+        )}
+
+        {/* Best Match Badge */}
+        {showBestMatch && !isLive && (
+          <div className="absolute top-3 left-3 px-2.5 py-1 bg-purple-500 text-white text-xs font-semibold rounded-full shadow-lg">
+            ✨ Best for you
           </div>
         )}
         

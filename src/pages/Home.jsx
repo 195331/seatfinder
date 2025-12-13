@@ -14,6 +14,7 @@ import RestaurantCard from '@/components/customer/RestaurantCard';
 import RestaurantMap from '@/components/customer/RestaurantMap';
 import ProfileDrawer from '@/components/profile/ProfileDrawer';
 import AISmartSearch from '@/components/ai/AISmartSearch';
+import RecentlyViewed from '@/components/customer/RecentlyViewed';
 
 const DEFAULT_PRESETS = [
   { id: 'date-night', name: 'Date Night', icon: '💕', filters: { priceLevel: 3, seatingLevel: 'chill' } },
@@ -146,26 +147,40 @@ export default function Home() {
     if (filters.hasBarSeating) result = result.filter(r => r.has_bar_seating);
     if (filters.isKidFriendly) result = result.filter(r => r.is_kid_friendly);
 
-    // Sort: restaurants with recent updates appear higher
+    // Sort: prioritize taste profile matches, then live updates
     result.sort((a, b) => {
+      const tasteProfile = currentUser?.taste_profile || {};
+      
+      // Calculate match score
+      let aScore = 0;
+      let bScore = 0;
+      
+      if (tasteProfile.outdoor_seating && a.has_outdoor) aScore += 2;
+      if (tasteProfile.outdoor_seating && b.has_outdoor) bScore += 2;
+      if (tasteProfile.kid_friendly && a.is_kid_friendly) aScore += 2;
+      if (tasteProfile.kid_friendly && b.is_kid_friendly) bScore += 2;
+      if (tasteProfile.bar_seating && a.has_bar_seating) aScore += 2;
+      if (tasteProfile.bar_seating && b.has_bar_seating) bScore += 2;
+      
+      if (aScore !== bScore) return bScore - aScore;
+      
+      // Then prioritize live updates
       const aTime = a.seating_updated_at ? new Date(a.seating_updated_at).getTime() : 0;
       const bTime = b.seating_updated_at ? new Date(b.seating_updated_at).getTime() : 0;
       const now = Date.now();
       const fifteenMinutes = 15 * 60 * 1000;
       
-      // Prioritize "live" restaurants (updated within 15 min)
       const aIsLive = aTime > now - fifteenMinutes;
       const bIsLive = bTime > now - fifteenMinutes;
       
       if (aIsLive && !bIsLive) return -1;
       if (!aIsLive && bIsLive) return 1;
       
-      // Then sort by most recent update
       return bTime - aTime;
     });
 
     return result;
-  }, [restaurants, search, filters]);
+  }, [restaurants, search, filters, currentUser]);
 
   const handlePresetSelect = (preset) => {
     if (activePreset?.id === preset.id) {
@@ -177,7 +192,13 @@ export default function Home() {
     }
   };
 
-  const handleRestaurantClick = (restaurant) => {
+  const handleRestaurantClick = async (restaurant) => {
+    // Track recently viewed
+    if (currentUser) {
+      const recent = currentUser.recently_viewed || [];
+      const updated = [restaurant.id, ...recent.filter(id => id !== restaurant.id)].slice(0, 10);
+      await base44.auth.updateMe({ recently_viewed: updated }).catch(() => {});
+    }
     navigate(createPageUrl('RestaurantDetail') + `?id=${restaurant.id}`);
   };
 
@@ -306,6 +327,14 @@ export default function Home() {
 
       {/* Content */}
       <main className="max-w-7xl mx-auto px-4 py-6">
+        {/* Recently Viewed */}
+        <RecentlyViewed
+          currentUser={currentUser}
+          onFavoriteToggle={(r) => toggleFavoriteMutation.mutate(r)}
+          favoriteIds={favoriteIds}
+          onClick={handleRestaurantClick}
+        />
+
         {loadingRestaurants ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -327,15 +356,25 @@ export default function Home() {
               </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredRestaurants.map((restaurant) => (
-                <RestaurantCard
-                  key={restaurant.id}
-                  restaurant={restaurant}
-                  isFavorite={favoriteIds.has(restaurant.id)}
-                  onFavoriteToggle={(r) => toggleFavoriteMutation.mutate(r)}
-                  onClick={handleRestaurantClick}
-                />
-              ))}
+              {filteredRestaurants.map((restaurant) => {
+                const tasteProfile = currentUser?.taste_profile || {};
+                const isBestMatch = (
+                  (tasteProfile.outdoor_seating && restaurant.has_outdoor) ||
+                  (tasteProfile.kid_friendly && restaurant.is_kid_friendly) ||
+                  (tasteProfile.bar_seating && restaurant.has_bar_seating)
+                );
+
+                return (
+                  <RestaurantCard
+                    key={restaurant.id}
+                    restaurant={restaurant}
+                    isFavorite={favoriteIds.has(restaurant.id)}
+                    onFavoriteToggle={(r) => toggleFavoriteMutation.mutate(r)}
+                    onClick={handleRestaurantClick}
+                    showBestMatch={isBestMatch}
+                  />
+                );
+              })}
             </div>
             {filteredRestaurants.length === 0 && (
               <div className="text-center py-20">

@@ -27,6 +27,7 @@ import MenuView from "@/components/customer/MenuView";
 import PromotionBanner from "@/components/customer/PromotionBanner";
 import LoyaltyCard from "@/components/customer/LoyaltyCard";
 import { OpeningHoursDisplay } from "@/components/owner/OpeningHoursEditor";
+import PhotoGallery from "@/components/customer/PhotoGallery";
 import moment from 'moment';
 import { cn } from "@/lib/utils";
 
@@ -42,9 +43,13 @@ export default function RestaurantDetail() {
   const [guestPhone, setGuestPhone] = useState('');
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState('');
+  const [reviewTags, setReviewTags] = useState([]);
+  const [reviewPhotos, setReviewPhotos] = useState([]);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [showWaitlistDialog, setShowWaitlistDialog] = useState(false);
   const [showReviewDialog, setShowReviewDialog] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
+  const [userWaitlistPosition, setUserWaitlistPosition] = useState(null);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -192,19 +197,23 @@ export default function RestaurantDetail() {
 
   const joinWaitlistMutation = useMutation({
     mutationFn: async () => {
-      await base44.entities.WaitlistEntry.create({
+      const entry = await base44.entities.WaitlistEntry.create({
         restaurant_id: restaurantId,
         user_id: currentUser?.id,
         guest_name: guestName,
         guest_phone: guestPhone,
         party_size: partySize,
-        status: 'waiting'
+        status: 'waiting',
+        estimated_wait_minutes: waitlist.length * 15
       });
+      return entry;
     },
-    onSuccess: () => {
+    onSuccess: (entry) => {
       queryClient.invalidateQueries(['waitlist']);
       setShowWaitlistDialog(false);
-      toast.success("You've been added to the waitlist!");
+      const position = waitlist.length + 1;
+      setUserWaitlistPosition(position);
+      toast.success(`You're #${position} on the waitlist! Est. wait: ${15 * position} min`, { duration: 6000 });
     }
   });
 
@@ -315,7 +324,9 @@ export default function RestaurantDetail() {
         user_id: currentUser?.id,
         user_name: currentUser?.full_name || 'Anonymous',
         rating: reviewRating,
-        comment: reviewComment
+        comment: reviewComment,
+        tags: reviewTags,
+        photos: reviewPhotos
       });
       const allReviews = [...reviews, { rating: reviewRating }];
       const avgRating = allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length;
@@ -330,9 +341,34 @@ export default function RestaurantDetail() {
       setShowReviewDialog(false);
       setReviewComment('');
       setReviewRating(5);
+      setReviewTags([]);
+      setReviewPhotos([]);
       toast.success("Review submitted!");
     }
   });
+
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    setUploadingPhoto(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      setReviewPhotos([...reviewPhotos, file_url]);
+    } catch (error) {
+      toast.error('Failed to upload photo');
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
+  const REVIEW_TAGS = ['Kid-friendly', 'Outdoor seating', 'Great service', 'Quiet', 'Romantic', 'Group-friendly'];
+  
+  const toggleTag = (tag) => {
+    setReviewTags(prev => 
+      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+    );
+  };
 
   const trackClick = async (eventType) => {
     await base44.entities.AnalyticsEvent.create({
@@ -611,13 +647,27 @@ export default function RestaurantDetail() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h3 className="font-semibold text-lg">Join Waitlist</h3>
+                    <h3 className="font-semibold text-lg">
+                      {restaurant.available_seats > 5 ? 'Walk-in Welcome' : 'Join Waitlist'}
+                    </h3>
                     <p className="text-slate-500 text-sm">
-                      {waitlist.length} ahead
+                      {restaurant.available_seats > 5 
+                        ? 'Plenty of seats available now'
+                        : `${waitlist.length} ahead • Expect ${Math.max(15, waitlist.length * 15)}-${waitlist.length * 15 + 10} min wait for ${partySize} people`
+                      }
                     </p>
                   </div>
                   <Clock className="w-6 h-6 text-slate-400" />
                 </div>
+                
+                {userWaitlistPosition && (
+                  <div className="mb-4 p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
+                    <p className="text-emerald-800 font-semibold">You're #{userWaitlistPosition} on the waitlist</p>
+                    <p className="text-sm text-emerald-600 mt-1">
+                      Est. wait: {15 * userWaitlistPosition} minutes
+                    </p>
+                  </div>
+                )}
                 
                 {/* AI Wait Time Prediction */}
                 {restaurantId && (
@@ -630,48 +680,51 @@ export default function RestaurantDetail() {
                   </div>
                 )}
                 
-                <Dialog open={showWaitlistDialog} onOpenChange={setShowWaitlistDialog}>
-                  <DialogTrigger asChild>
-                    <Button className="w-full rounded-full h-12 text-base gap-2 bg-slate-800 hover:bg-slate-900">
-                      <Users className="w-5 h-5" />
-                      Join Waitlist
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                      <DialogTitle>Join Waitlist</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4 pt-4">
-                      <div>
-                        <label className="text-sm font-medium text-slate-700 mb-2 block">Party Size</label>
-                        <div className="flex items-center gap-4">
-                          <Button variant="outline" size="icon" onClick={() => setPartySize(Math.max(1, partySize - 1))}>
-                            <Minus className="w-4 h-4" />
-                          </Button>
-                          <span className="text-2xl font-semibold w-12 text-center">{partySize}</span>
-                          <Button variant="outline" size="icon" onClick={() => setPartySize(partySize + 1)}>
-                            <Plus className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium text-slate-700 mb-2 block">Name</label>
-                        <Input value={guestName} onChange={(e) => setGuestName(e.target.value)} placeholder="Your name" />
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium text-slate-700 mb-2 block">Phone (optional)</label>
-                        <Input value={guestPhone} onChange={(e) => setGuestPhone(e.target.value)} placeholder="For notifications" />
-                      </div>
-                      <Button 
-                        className="w-full rounded-full h-12 bg-emerald-600 hover:bg-emerald-700"
-                        onClick={() => joinWaitlistMutation.mutate()}
-                        disabled={!guestName || joinWaitlistMutation.isPending}
-                      >
-                        {joinWaitlistMutation.isPending ? 'Joining...' : 'Confirm'}
+                {!userWaitlistPosition && (
+                  <Dialog open={showWaitlistDialog} onOpenChange={setShowWaitlistDialog}>
+                    <DialogTrigger asChild>
+                      <Button className="w-full rounded-full h-12 text-base gap-2 bg-slate-800 hover:bg-slate-900">
+                        <Users className="w-5 h-5" />
+                        Join Waitlist
                       </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>Join Waitlist</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4 pt-4">
+                        <div>
+                          <label className="text-sm font-medium text-slate-700 mb-2 block">Party Size</label>
+                          <div className="flex items-center gap-4">
+                            <Button variant="outline" size="icon" onClick={() => setPartySize(Math.max(1, partySize - 1))}>
+                              <Minus className="w-4 h-4" />
+                            </Button>
+                            <span className="text-2xl font-semibold w-12 text-center">{partySize}</span>
+                            <Button variant="outline" size="icon" onClick={() => setPartySize(partySize + 1)}>
+                              <Plus className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-slate-700 mb-2 block">Name</label>
+                          <Input value={guestName} onChange={(e) => setGuestName(e.target.value)} placeholder="Your name" />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-slate-700 mb-2 block">Phone</label>
+                          <Input value={guestPhone} onChange={(e) => setGuestPhone(e.target.value)} placeholder="For SMS updates" />
+                          <p className="text-xs text-slate-500 mt-1">We'll text you when your table is almost ready</p>
+                        </div>
+                        <Button 
+                          className="w-full rounded-full h-12 bg-emerald-600 hover:bg-emerald-700"
+                          onClick={() => joinWaitlistMutation.mutate()}
+                          disabled={!guestName || joinWaitlistMutation.isPending}
+                        >
+                          {joinWaitlistMutation.isPending ? 'Joining...' : 'Confirm'}
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                )}
               </CardContent>
             </Card>
 
@@ -748,7 +801,15 @@ export default function RestaurantDetail() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="reviews" className="mt-6">
+          <TabsContent value="reviews" className="mt-6 space-y-6">
+            {/* Photo Gallery */}
+            <Card className="border-0 shadow-lg">
+              <CardContent className="p-6">
+                <PhotoGallery restaurantId={restaurantId} currentUser={currentUser} />
+              </CardContent>
+            </Card>
+
+            {/* Reviews */}
             <Card className="border-0 shadow-lg">
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Reviews</CardTitle>
@@ -759,7 +820,7 @@ export default function RestaurantDetail() {
                         Write a Review
                       </Button>
                     </DialogTrigger>
-                    <DialogContent>
+                    <DialogContent className="max-h-[90vh] overflow-y-auto">
                       <DialogHeader>
                         <DialogTitle>Write a Review</DialogTitle>
                       </DialogHeader>
@@ -783,8 +844,54 @@ export default function RestaurantDetail() {
                             value={reviewComment}
                             onChange={(e) => setReviewComment(e.target.value)}
                             placeholder="Share your experience..."
-                            rows={4}
+                            rows={3}
                           />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-slate-700 mb-2 block">Tags</label>
+                          <div className="flex flex-wrap gap-2">
+                            {REVIEW_TAGS.map((tag) => (
+                              <button
+                                key={tag}
+                                onClick={() => toggleTag(tag)}
+                                className={cn(
+                                  "px-3 py-1.5 rounded-full border text-sm transition-all",
+                                  reviewTags.includes(tag)
+                                    ? "bg-slate-900 text-white border-slate-900"
+                                    : "bg-white text-slate-600 border-slate-200"
+                                )}
+                              >
+                                {tag}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-slate-700 mb-2 block">Photos</label>
+                          <div className="space-y-2">
+                            {reviewPhotos.length > 0 && (
+                              <div className="flex gap-2 flex-wrap">
+                                {reviewPhotos.map((url, i) => (
+                                  <img key={i} src={url} alt="Review" className="w-20 h-20 object-cover rounded-lg" />
+                                ))}
+                              </div>
+                            )}
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handlePhotoUpload}
+                              className="hidden"
+                              id="review-photo-upload"
+                              disabled={uploadingPhoto}
+                            />
+                            <label htmlFor="review-photo-upload">
+                              <Button asChild variant="outline" size="sm" disabled={uploadingPhoto}>
+                                <span>
+                                  {uploadingPhoto ? 'Uploading...' : '+ Add Photo'}
+                                </span>
+                              </Button>
+                            </label>
+                          </div>
                         </div>
                         <Button 
                           className="w-full rounded-full h-12"
@@ -811,8 +918,22 @@ export default function RestaurantDetail() {
                           <span className="font-medium">{review.rating}</span>
                         </div>
                       </div>
-                      {review.comment && <p className="text-slate-600 text-sm">{review.comment}</p>}
-                      <p className="text-slate-400 text-xs mt-2">{moment(review.created_date).fromNow()}</p>
+                      {review.tags?.length > 0 && (
+                        <div className="flex gap-1 flex-wrap mb-2">
+                          {review.tags.map((tag) => (
+                            <Badge key={tag} variant="secondary" className="text-xs">{tag}</Badge>
+                          ))}
+                        </div>
+                      )}
+                      {review.comment && <p className="text-slate-600 text-sm mb-2">{review.comment}</p>}
+                      {review.photos?.length > 0 && (
+                        <div className="flex gap-2 mb-2">
+                          {review.photos.slice(0, 3).map((photo, i) => (
+                            <img key={i} src={photo} alt="Review" className="w-16 h-16 object-cover rounded-lg" />
+                          ))}
+                        </div>
+                      )}
+                      <p className="text-slate-400 text-xs">{moment(review.created_date).fromNow()}</p>
                     </div>
                   ))
                 )}
