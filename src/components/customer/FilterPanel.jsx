@@ -137,13 +137,13 @@ export default function FilterPanel({ filters, onFiltersChange, presets, activeP
 
             {/* Features */}
             <div>
-              <h3 className="font-medium text-slate-900 mb-3">Features</h3>
+              <h3 className="font-medium text-slate-900 mb-3">Vibe & Features</h3>
               <div className="space-y-3">
                 {[
-                  { key: 'openNow', label: 'Open Now' },
-                  { key: 'hasOutdoor', label: 'Outdoor Seating' },
-                  { key: 'hasBarSeating', label: 'Bar Seating' },
-                  { key: 'isKidFriendly', label: 'Kid Friendly' }
+                  { key: 'isKidFriendly', label: 'Kid-friendly' },
+                  { key: 'hasOutdoor', label: 'Outdoor seating' },
+                  { key: 'hasBarSeating', label: 'Good for groups' },
+                  { key: 'openNow', label: 'Open now' }
                 ].map((feature) => (
                   <label 
                     key={feature.key}
