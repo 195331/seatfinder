@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Users, Clock, Plus, AlertCircle, RefreshCw } from 'lucide-react';
+import { Users, Clock, Plus, AlertCircle, RefreshCw, Calendar } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Link } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
 import { cn } from "@/lib/utils";
 import moment from 'moment';
 
@@ -142,6 +144,12 @@ export default function LiveSeating({ restaurant }) {
                 {waitlist.length} ({avgWaitTime}m avg)
               </Badge>
             </div>
+            <Link to={createPageUrl('OwnerDashboard') + `?tab=calendar`}>
+              <Button variant="outline" size="sm" className="w-full gap-2 mt-2">
+                <Calendar className="w-4 h-4" />
+                View Today's Reservations
+              </Button>
+            </Link>
           </CardContent>
         </Card>
 

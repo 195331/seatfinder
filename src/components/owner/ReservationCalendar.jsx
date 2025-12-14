@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, Check, X, Clock } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, Check, X, Clock, Filter, Edit, List, AlertTriangle } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import moment from 'moment';
@@ -18,11 +19,14 @@ const HOURS = Array.from({ length: 14 }, (_, i) => i + 10); // 10 AM - 11 PM
 
 export default function ReservationCalendar({ restaurantId, restaurantName }) {
   const queryClient = useQueryClient();
-  const [view, setView] = useState('day'); // day, week, month
+  const [view, setView] = useState('day');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedReservation, setSelectedReservation] = useState(null);
   const [showNewDialog, setShowNewDialog] = useState(false);
   const [newReservation, setNewReservation] = useState({ party_size: 2 });
+  const [isEditing, setIsEditing] = useState(false);
+  const [filters, setFilters] = useState({ status: 'all', area: 'all' });
+  const [skipRules, setSkipRules] = useState(true);
 
   const { data: reservations = [] } = useQuery({
     queryKey: ['reservations', restaurantId, moment(currentDate).format('YYYY-MM')],
@@ -33,6 +37,12 @@ export default function ReservationCalendar({ restaurantId, restaurantName }) {
   const { data: tables = [] } = useQuery({
     queryKey: ['tables', restaurantId],
     queryFn: () => base44.entities.Table.filter({ restaurant_id: restaurantId }),
+    enabled: !!restaurantId,
+  });
+
+  const { data: areas = [] } = useQuery({
+    queryKey: ['areas', restaurantId],
+    queryFn: () => base44.entities.RestaurantArea.filter({ restaurant_id: restaurantId }),
     enabled: !!restaurantId,
   });
 
@@ -56,10 +66,33 @@ export default function ReservationCalendar({ restaurantId, restaurantName }) {
   });
 
   const dayReservations = useMemo(() => {
-    return reservations.filter(r => 
+    let filtered = reservations.filter(r => 
       moment(r.reservation_date).format('YYYY-MM-DD') === moment(currentDate).format('YYYY-MM-DD')
     );
-  }, [reservations, currentDate]);
+    
+    if (filters.status !== 'all') {
+      filtered = filtered.filter(r => r.status === filters.status);
+    }
+    if (filters.area !== 'all') {
+      const areaTables = tables.filter(t => t.area_id === filters.area).map(t => t.id);
+      filtered = filtered.filter(r => areaTables.includes(r.table_id));
+    }
+    
+    return filtered;
+  }, [reservations, currentDate, filters, tables]);
+  
+  const checkConflict = (date, time, partySize, excludeId = null) => {
+    const timeSlot = reservations.filter(r => 
+      r.id !== excludeId &&
+      r.reservation_date === date &&
+      r.reservation_time === time &&
+      r.status !== 'cancelled' &&
+      r.status !== 'declined'
+    );
+    const totalPartySize = timeSlot.reduce((sum, r) => sum + r.party_size, 0) + partySize;
+    const capacity = tables.reduce((sum, t) => sum + t.capacity, 0);
+    return totalPartySize > capacity * 0.9; // 90% capacity warning
+  };
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -110,10 +143,36 @@ export default function ReservationCalendar({ restaurantId, restaurantName }) {
                   Month
                 </button>
               </div>
-              <Button onClick={() => setShowNewDialog(true)} className="gap-2">
-                <Plus className="w-4 h-4" />
-                New
-              </Button>
+              <div className="flex items-center gap-2">
+                <Select value={filters.status} onValueChange={(v) => setFilters({ ...filters, status: v })}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="approved">Confirmed</SelectItem>
+                    <SelectItem value="declined">Declined</SelectItem>
+                  </SelectContent>
+                </Select>
+                {areas.length > 0 && (
+                  <Select value={filters.area} onValueChange={(v) => setFilters({ ...filters, area: v })}>
+                    <SelectTrigger className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Areas</SelectItem>
+                      {areas.map(a => (
+                        <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+                <Button onClick={() => setShowNewDialog(true)} className="gap-2">
+                  <Plus className="w-4 h-4" />
+                  New
+                </Button>
+              </div>
             </div>
           </div>
         </CardHeader>
@@ -152,6 +211,14 @@ export default function ReservationCalendar({ restaurantId, restaurantName }) {
               date={currentDate}
               reservations={dayReservations}
               onSelectReservation={setSelectedReservation}
+              onClickTimeSlot={(hour) => {
+                setNewReservation({
+                  party_size: 2,
+                  reservation_date: moment(currentDate).format('YYYY-MM-DD'),
+                  reservation_time: `${hour}:00`
+                });
+                setShowNewDialog(true);
+              }}
               getStatusColor={getStatusColor}
             />
           )}
@@ -179,72 +246,178 @@ export default function ReservationCalendar({ restaurantId, restaurantName }) {
       </Card>
 
       {/* Reservation Detail Dialog */}
-      <Dialog open={!!selectedReservation} onOpenChange={() => setSelectedReservation(null)}>
-        <DialogContent>
+      <Dialog open={!!selectedReservation} onOpenChange={() => { setSelectedReservation(null); setIsEditing(false); }}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Reservation Details</DialogTitle>
+            <div className="flex items-center justify-between">
+              <DialogTitle>{isEditing ? 'Edit Reservation' : 'Reservation Details'}</DialogTitle>
+              {!isEditing && (
+                <Button variant="ghost" size="sm" onClick={() => setIsEditing(true)}>
+                  <Edit className="w-4 h-4 mr-2" />
+                  Edit
+                </Button>
+              )}
+            </div>
           </DialogHeader>
           {selectedReservation && (
             <div className="space-y-4 pt-4">
-              <div>
-                <p className="text-sm text-slate-500">Guest</p>
-                <p className="font-semibold">{selectedReservation.user_name}</p>
-                <p className="text-sm text-slate-600">{selectedReservation.user_email}</p>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-slate-500">Party Size</p>
-                  <p className="font-semibold">{selectedReservation.party_size} people</p>
-                </div>
-                <div>
-                  <p className="text-sm text-slate-500">Status</p>
-                  <Badge className={getStatusColor(selectedReservation.status)}>
-                    {selectedReservation.status}
-                  </Badge>
-                </div>
-              </div>
-              <div>
-                <p className="text-sm text-slate-500">Date & Time</p>
-                <p className="font-semibold">
-                  {moment(selectedReservation.reservation_date).format('MMM D, YYYY')} at {selectedReservation.reservation_time}
-                </p>
-              </div>
-              {selectedReservation.notes && (
-                <div>
-                  <p className="text-sm text-slate-500">Notes</p>
-                  <p className="text-sm">{selectedReservation.notes}</p>
-                </div>
-              )}
-              <div className="flex gap-2 pt-4">
-                {selectedReservation.status === 'pending' && (
-                  <>
-                    <Button
-                      onClick={() => updateMutation.mutate({ id: selectedReservation.id, data: { status: 'approved' } })}
-                      className="flex-1 bg-emerald-600 hover:bg-emerald-700"
-                    >
-                      <Check className="w-4 h-4 mr-2" />
-                      Approve
+              {!isEditing ? (
+                <>
+                  <div>
+                    <p className="text-sm text-slate-500">Guest</p>
+                    <p className="font-semibold">{selectedReservation.user_name}</p>
+                    <p className="text-sm text-slate-600">{selectedReservation.user_email}</p>
+                    <p className="text-sm text-slate-600">{selectedReservation.user_phone}</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-slate-500">Party Size</p>
+                      <p className="font-semibold">{selectedReservation.party_size} people</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-slate-500">Status</p>
+                      <Badge className={getStatusColor(selectedReservation.status)}>
+                        {selectedReservation.status}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-500">Date & Time</p>
+                    <p className="font-semibold">
+                      {moment(selectedReservation.reservation_date).format('MMM D, YYYY')} at {selectedReservation.reservation_time}
+                    </p>
+                  </div>
+                  {selectedReservation.notes && (
+                    <div>
+                      <p className="text-sm text-slate-500">Notes</p>
+                      <p className="text-sm">{selectedReservation.notes}</p>
+                    </div>
+                  )}
+                  <div className="flex gap-2 pt-4">
+                    {selectedReservation.status === 'pending' && (
+                      <>
+                        <Button
+                          onClick={() => updateMutation.mutate({ id: selectedReservation.id, data: { status: 'approved' } })}
+                          className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+                        >
+                          <Check className="w-4 h-4 mr-2" />
+                          Approve
+                        </Button>
+                        <Button
+                          onClick={() => updateMutation.mutate({ id: selectedReservation.id, data: { status: 'declined' } })}
+                          variant="outline"
+                          className="flex-1"
+                        >
+                          <X className="w-4 h-4 mr-2" />
+                          Decline
+                        </Button>
+                      </>
+                    )}
+                    {selectedReservation.status === 'approved' && (
+                      <>
+                        <Button
+                          onClick={() => updateMutation.mutate({ id: selectedReservation.id, data: { status: 'cancelled' } })}
+                          variant="outline"
+                          className="flex-1"
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          onClick={async () => {
+                            await base44.entities.WaitlistEntry.create({
+                              restaurant_id: restaurantId,
+                              guest_name: selectedReservation.user_name,
+                              guest_phone: selectedReservation.user_phone || selectedReservation.user_email,
+                              party_size: selectedReservation.party_size,
+                              notes: selectedReservation.notes,
+                              status: 'waiting'
+                            });
+                            await updateMutation.mutateAsync({ id: selectedReservation.id, data: { status: 'cancelled' } });
+                            toast.success('Moved to waitlist');
+                          }}
+                          className="flex-1"
+                        >
+                          <List className="w-4 h-4 mr-2" />
+                          Move to Waitlist
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <Label>Guest Name</Label>
+                    <Input
+                      value={selectedReservation.user_name}
+                      onChange={(e) => setSelectedReservation({ ...selectedReservation, user_name: e.target.value })}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Date</Label>
+                      <Input
+                        type="date"
+                        value={selectedReservation.reservation_date}
+                        onChange={(e) => setSelectedReservation({ ...selectedReservation, reservation_date: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label>Time</Label>
+                      <Input
+                        type="time"
+                        value={selectedReservation.reservation_time}
+                        onChange={(e) => setSelectedReservation({ ...selectedReservation, reservation_time: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Party Size</Label>
+                    <Input
+                      type="number"
+                      min="1"
+                      value={selectedReservation.party_size}
+                      onChange={(e) => setSelectedReservation({ ...selectedReservation, party_size: parseInt(e.target.value) })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Notes</Label>
+                    <Textarea
+                      value={selectedReservation.notes || ''}
+                      onChange={(e) => setSelectedReservation({ ...selectedReservation, notes: e.target.value })}
+                    />
+                  </div>
+                  {checkConflict(selectedReservation.reservation_date, selectedReservation.reservation_time, selectedReservation.party_size, selectedReservation.id) && (
+                    <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                      <AlertTriangle className="w-4 h-4 text-amber-600" />
+                      <p className="text-sm text-amber-800">Warning: This time slot may exceed capacity</p>
+                    </div>
+                  )}
+                  <div className="flex gap-2">
+                    <Button variant="outline" onClick={() => setIsEditing(false)} className="flex-1">
+                      Cancel
                     </Button>
                     <Button
-                      onClick={() => updateMutation.mutate({ id: selectedReservation.id, data: { status: 'declined' } })}
-                      variant="outline"
+                      onClick={() => {
+                        updateMutation.mutate({
+                          id: selectedReservation.id,
+                          data: {
+                            user_name: selectedReservation.user_name,
+                            reservation_date: selectedReservation.reservation_date,
+                            reservation_time: selectedReservation.reservation_time,
+                            party_size: selectedReservation.party_size,
+                            notes: selectedReservation.notes
+                          }
+                        });
+                        setIsEditing(false);
+                      }}
                       className="flex-1"
                     >
-                      <X className="w-4 h-4 mr-2" />
-                      Decline
+                      Save Changes
                     </Button>
-                  </>
-                )}
-                {selectedReservation.status === 'approved' && (
-                  <Button
-                    onClick={() => updateMutation.mutate({ id: selectedReservation.id, data: { status: 'cancelled' } })}
-                    variant="outline"
-                    className="w-full"
-                  >
-                    Cancel Reservation
-                  </Button>
-                )}
-              </div>
+                  </div>
+                </>
+              )}
             </div>
           )}
         </DialogContent>
@@ -327,19 +500,48 @@ export default function ReservationCalendar({ restaurantId, restaurantName }) {
               />
             </div>
             <div>
+              <Label>Area (optional)</Label>
+              <Select
+                value={newReservation.area_id}
+                onValueChange={(v) => setNewReservation({ ...newReservation, area_id: v })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select area" />
+                </SelectTrigger>
+                <SelectContent>
+                  {areas.map(a => (
+                    <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
               <Label>Notes</Label>
               <Textarea
                 value={newReservation.notes || ''}
                 onChange={(e) => setNewReservation({ ...newReservation, notes: e.target.value })}
-                placeholder="Special requests..."
+                placeholder="Special requests, allergies, highchair..."
               />
             </div>
+            <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+              <div>
+                <p className="font-medium text-sm">Skip auto-reservation rules</p>
+                <p className="text-xs text-slate-500">Confirm immediately without rule checks</p>
+              </div>
+              <Switch checked={skipRules} onCheckedChange={setSkipRules} />
+            </div>
+            {checkConflict(newReservation.reservation_date, newReservation.reservation_time, newReservation.party_size) && (
+              <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <AlertTriangle className="w-4 h-4 text-amber-600" />
+                <p className="text-sm text-amber-800">Warning: This time slot may exceed capacity</p>
+              </div>
+            )}
             <Button
-              onClick={() => createMutation.mutate({ ...newReservation, status: 'approved' })}
+              onClick={() => createMutation.mutate({ ...newReservation, status: skipRules ? 'approved' : 'pending' })}
               disabled={!newReservation.user_name || createMutation.isPending}
               className="w-full"
             >
-              {createMutation.isPending ? 'Creating...' : 'Create Reservation'}
+              {createMutation.isPending ? 'Creating...' : skipRules ? 'Confirm Reservation' : 'Create & Apply Rules'}
             </Button>
           </div>
         </DialogContent>
@@ -348,7 +550,7 @@ export default function ReservationCalendar({ restaurantId, restaurantName }) {
   );
 }
 
-function DayView({ date, reservations, onSelectReservation, getStatusColor }) {
+function DayView({ date, reservations, onSelectReservation, onClickTimeSlot, getStatusColor }) {
   return (
     <div className="space-y-2">
       {HOURS.map(hour => {
@@ -362,7 +564,14 @@ function DayView({ date, reservations, onSelectReservation, getStatusColor }) {
             <div className="w-20 text-sm text-slate-500 pt-1">
               {hour === 0 ? '12 AM' : hour < 12 ? `${hour} AM` : hour === 12 ? '12 PM' : `${hour - 12} PM`}
             </div>
-            <div className="flex-1 flex gap-2 flex-wrap py-1">
+            <div 
+              className="flex-1 flex gap-2 flex-wrap py-1 cursor-pointer hover:bg-slate-50 rounded transition-colors"
+              onClick={(e) => {
+                if (e.target === e.currentTarget) {
+                  onClickTimeSlot(hour);
+                }
+              }}
+            >
               {hourReservations.map(res => (
                 <button
                   key={res.id}
@@ -372,10 +581,13 @@ function DayView({ date, reservations, onSelectReservation, getStatusColor }) {
                     getStatusColor(res.status)
                   )}
                 >
-                  <p className="font-medium">{res.user_name}</p>
+                  <p className="font-medium">{res.user_name || 'Walk-in'}</p>
                   <p className="text-xs opacity-90">{res.party_size} people • {res.reservation_time}</p>
                 </button>
               ))}
+              {hourReservations.length === 0 && (
+                <span className="text-xs text-slate-400 self-center ml-2">Click to add reservation</span>
+              )}
             </div>
           </div>
         );
