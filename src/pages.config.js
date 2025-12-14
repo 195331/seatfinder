@@ -10,6 +10,7 @@ import Inbox from './pages/Inbox';
 import Profile from './pages/Profile';
 import MyReservations from './pages/MyReservations';
 import MyLoyalty from './pages/MyLoyalty';
+import ConfirmWaitlist from './pages/ConfirmWaitlist';
 import __Layout from './Layout.jsx';
 
 
@@ -26,6 +27,7 @@ export const PAGES = {
     "Profile": Profile,
     "MyReservations": MyReservations,
     "MyLoyalty": MyLoyalty,
+    "ConfirmWaitlist": ConfirmWaitlist,
 }
 
 export const pagesConfig = {

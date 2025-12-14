@@ -1,55 +1,23 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { 
-  ArrowLeft, Eye, MousePointerClick, Heart, Users, Phone, 
-  Navigation, Globe, Calendar, TrendingUp, Clock, Award
+  ArrowLeft, TrendingUp, Users, Star, Clock, BarChart3,
+  Calendar, ChevronDown
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Skeleton } from "@/components/ui/skeleton";
-import { 
-  LineChart, Line, AreaChart, Area, BarChart, Bar, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend 
-} from 'recharts';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import moment from 'moment';
-import { cn } from "@/lib/utils";
-import PeakDemandAnalysis from '@/components/analytics/PeakDemandAnalysis';
-import TableTurnoverTracker from '@/components/analytics/TableTurnoverTracker';
-import CustomerLifetimeValue from '@/components/analytics/CustomerLifetimeValue';
-import CompetitorBenchmark from '@/components/analytics/CompetitorBenchmark';
-import LoyaltyAnalytics from '@/components/analytics/LoyaltyAnalytics';
-import RevenueMetrics from '@/components/analytics/RevenueMetrics';
-import TableHeatmap from '@/components/analytics/TableHeatmap';
-import { TabsContent } from "@/components/ui/tabs";
 
 export default function OwnerAnalytics() {
   const navigate = useNavigate();
   const urlParams = new URLSearchParams(window.location.search);
   const restaurantId = urlParams.get('id');
-  const [currentUser, setCurrentUser] = useState(null);
-  const [dateRange, setDateRange] = useState('7d');
-  const [analyticsTab, setAnalyticsTab] = useState('overview');
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const isAuth = await base44.auth.isAuthenticated();
-        if (!isAuth) {
-          navigate(createPageUrl('Home'));
-          return;
-        }
-        const user = await base44.auth.me();
-        setCurrentUser(user);
-      } catch (e) {
-        navigate(createPageUrl('Home'));
-      }
-    };
-    fetchUser();
-  }, [navigate]);
+  const [timeFilter, setTimeFilter] = useState('last_7_days');
 
   const { data: restaurant } = useQuery({
     queryKey: ['restaurant', restaurantId],
@@ -57,119 +25,109 @@ export default function OwnerAnalytics() {
     enabled: !!restaurantId,
   });
 
-  const { data: events = [], isLoading: loadingEvents } = useQuery({
-    queryKey: ['analyticsEvents', restaurantId, dateRange],
-    queryFn: () => base44.entities.AnalyticsEvent.filter({ 
-      restaurant_id: restaurantId 
-    }, '-created_date', 1000),
+  const { data: reservations = [] } = useQuery({
+    queryKey: ['reservations', restaurantId],
+    queryFn: () => base44.entities.Reservation.filter({ restaurant_id: restaurantId }, '-created_date', 1000),
     enabled: !!restaurantId,
   });
 
-  const { data: seatingHistory = [] } = useQuery({
-    queryKey: ['seatingHistory', restaurantId, dateRange],
-    queryFn: () => base44.entities.SeatingHistory.filter({ 
-      restaurant_id: restaurantId 
-    }, '-recorded_at', 200),
+  const { data: waitlistEntries = [] } = useQuery({
+    queryKey: ['waitlist', restaurantId],
+    queryFn: () => base44.entities.WaitlistEntry.filter({ restaurant_id: restaurantId }, '-created_date', 500),
     enabled: !!restaurantId,
   });
 
-  // Filter events by date range
-  const filteredEvents = useMemo(() => {
+  const { data: reviews = [] } = useQuery({
+    queryKey: ['reviews', restaurantId],
+    queryFn: () => base44.entities.Review.filter({ restaurant_id: restaurantId, is_hidden: false }),
+    enabled: !!restaurantId,
+  });
+
+  // Time filtering
+  const getFilteredData = (data, dateField = 'created_date') => {
     const now = moment();
-    const cutoff = dateRange === '7d' 
-      ? now.clone().subtract(7, 'days')
-      : dateRange === '30d'
-        ? now.clone().subtract(30, 'days')
-        : now.clone().subtract(1, 'day');
-    
-    return events.filter(e => moment(e.created_date).isAfter(cutoff));
-  }, [events, dateRange]);
-
-  // Calculate stats
-  const stats = useMemo(() => {
-    const views = filteredEvents.filter(e => e.event_type === 'view').length;
-    const calls = filteredEvents.filter(e => e.event_type === 'call_click').length;
-    const directions = filteredEvents.filter(e => e.event_type === 'directions_click').length;
-    const websites = filteredEvents.filter(e => e.event_type === 'website_click').length;
-    const waitlistJoins = filteredEvents.filter(e => e.event_type === 'waitlist_join').length;
-    const favorites = filteredEvents.filter(e => e.event_type === 'favorite_add').length;
-    
-    return { views, calls, directions, websites, waitlistJoins, favorites };
-  }, [filteredEvents]);
-
-  // Chart data - views over time
-  const viewsChartData = useMemo(() => {
-    const days = dateRange === '7d' ? 7 : dateRange === '30d' ? 30 : 1;
-    const data = [];
-    
-    for (let i = days - 1; i >= 0; i--) {
-      const date = moment().subtract(i, 'days');
-      const dayEvents = filteredEvents.filter(e => 
-        moment(e.created_date).isSame(date, 'day')
-      );
-      
-      data.push({
-        date: date.format('MMM D'),
-        views: dayEvents.filter(e => e.event_type === 'view').length,
-        clicks: dayEvents.filter(e => 
-          ['call_click', 'directions_click', 'website_click'].includes(e.event_type)
-        ).length,
-      });
-    }
-    
-    return data;
-  }, [filteredEvents, dateRange]);
-
-  // Occupancy chart data
-  const occupancyChartData = useMemo(() => {
-    if (seatingHistory.length === 0) return [];
-    
-    // Group by hour
-    const hourlyData = {};
-    seatingHistory.forEach(h => {
-      const hour = moment(h.recorded_at).format('HH:00');
-      if (!hourlyData[hour]) {
-        hourlyData[hour] = { total: 0, count: 0 };
+    return data.filter(item => {
+      const itemDate = moment(item[dateField]);
+      switch (timeFilter) {
+        case 'today': return itemDate.isSame(now, 'day');
+        case 'this_week': return itemDate.isSame(now, 'week');
+        case 'last_7_days': return itemDate.isAfter(now.clone().subtract(7, 'days'));
+        case 'last_30_days': return itemDate.isAfter(now.clone().subtract(30, 'days'));
+        default: return true;
       }
-      hourlyData[hour].total += h.occupancy_percent || 0;
-      hourlyData[hour].count += 1;
     });
+  };
 
-    return Object.entries(hourlyData)
-      .map(([hour, data]) => ({
-        hour,
-        occupancy: Math.round(data.total / data.count)
+  const filteredReservations = getFilteredData(reservations, 'reservation_date');
+  const filteredWaitlist = getFilteredData(waitlistEntries);
+  const filteredReviews = getFilteredData(reviews);
+
+  // Key metrics
+  const totalReservations = filteredReservations.length;
+  const showUpRate = filteredReservations.length > 0
+    ? (filteredReservations.filter(r => r.status === 'approved').length / filteredReservations.length * 100).toFixed(1)
+    : 0;
+  const avgPartySize = filteredReservations.length > 0
+    ? (filteredReservations.reduce((sum, r) => sum + (r.party_size || 0), 0) / filteredReservations.length).toFixed(1)
+    : 0;
+  const waitlistConversion = filteredWaitlist.length > 0
+    ? (filteredWaitlist.filter(w => w.status === 'seated').length / filteredWaitlist.length * 100).toFixed(1)
+    : 0;
+  const avgRating = filteredReviews.length > 0
+    ? (filteredReviews.reduce((sum, r) => sum + r.rating, 0) / filteredReviews.length).toFixed(1)
+    : 0;
+
+  // Reservation volume chart
+  const volumeData = useMemo(() => {
+    const grouped = {};
+    filteredReservations.forEach(r => {
+      const date = moment(r.reservation_date).format('MMM D');
+      grouped[date] = (grouped[date] || 0) + 1;
+    });
+    return Object.entries(grouped).map(([date, count]) => ({ date, count }));
+  }, [filteredReservations]);
+
+  // Party size distribution
+  const partySizeData = useMemo(() => {
+    const sizes = { '2': 0, '3-4': 0, '5-6': 0, '7+': 0 };
+    filteredReservations.forEach(r => {
+      const size = r.party_size || 0;
+      if (size === 2) sizes['2']++;
+      else if (size <= 4) sizes['3-4']++;
+      else if (size <= 6) sizes['5-6']++;
+      else sizes['7+']++;
+    });
+    return Object.entries(sizes).map(([size, count]) => ({ size, count }));
+  }, [filteredReservations]);
+
+  // Peak hours heatmap
+  const peakHoursData = useMemo(() => {
+    const hours = {};
+    filteredReservations.forEach(r => {
+      const hour = parseInt(r.reservation_time?.split(':')[0] || 0);
+      hours[hour] = (hours[hour] || 0) + 1;
+    });
+    return Object.entries(hours)
+      .map(([hour, count]) => ({ 
+        hour: parseInt(hour) === 0 ? '12 AM' : parseInt(hour) < 12 ? `${hour} AM` : parseInt(hour) === 12 ? '12 PM' : `${parseInt(hour) - 12} PM`,
+        count 
       }))
-      .sort((a, b) => a.hour.localeCompare(b.hour));
-  }, [seatingHistory]);
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+  }, [filteredReservations]);
 
-  // Event breakdown for pie/bar
-  const eventBreakdown = useMemo(() => {
-    return [
-      { name: 'Calls', value: stats.calls, color: '#3b82f6' },
-      { name: 'Directions', value: stats.directions, color: '#10b981' },
-      { name: 'Website', value: stats.websites, color: '#8b5cf6' },
-      { name: 'Waitlist', value: stats.waitlistJoins, color: '#f59e0b' },
-    ];
-  }, [stats]);
+  // Waitlist funnel
+  const waitlistFunnel = {
+    added: filteredWaitlist.length,
+    notified: filteredWaitlist.filter(w => w.status !== 'waiting').length,
+    confirmed: filteredWaitlist.filter(w => w.status === 'confirmed').length,
+    seated: filteredWaitlist.filter(w => w.status === 'seated').length,
+  };
 
-  if (!currentUser || loadingEvents) {
-    return (
-      <div className="min-h-screen bg-slate-50 p-6">
-        <div className="max-w-6xl mx-auto space-y-6">
-          <Skeleton className="h-10 w-48" />
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-28 rounded-2xl" />)}
-          </div>
-          <Skeleton className="h-80 rounded-2xl" />
-        </div>
-      </div>
-    );
-  }
+  const COLORS = ['#10b981', '#f59e0b', '#ef4444', '#6366f1'];
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Header */}
+    <div className="min-h-screen bg-slate-50 pb-24">
       <header className="bg-white border-b sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
@@ -177,269 +135,205 @@ export default function OwnerAnalytics() {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => navigate(-1)}
-                className="rounded-full"
+                onClick={() => navigate(createPageUrl('OwnerDashboard') + `?id=${restaurantId}`)}
               >
                 <ArrowLeft className="w-5 h-5" />
               </Button>
               <div>
-                <h1 className="font-bold text-lg text-slate-900">Analytics</h1>
+                <h1 className="font-bold text-lg">Analytics</h1>
                 <p className="text-sm text-slate-500">{restaurant?.name}</p>
               </div>
             </div>
-            
-            <Tabs value={dateRange} onValueChange={setDateRange}>
-              <TabsList className="bg-slate-100">
-                <TabsTrigger value="1d">Today</TabsTrigger>
-                <TabsTrigger value="7d">7 Days</TabsTrigger>
-                <TabsTrigger value="30d">30 Days</TabsTrigger>
-              </TabsList>
-            </Tabs>
+            <Select value={timeFilter} onValueChange={setTimeFilter}>
+              <SelectTrigger className="w-40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="today">Today</SelectItem>
+                <SelectItem value="this_week">This Week</SelectItem>
+                <SelectItem value="last_7_days">Last 7 Days</SelectItem>
+                <SelectItem value="last_30_days">Last 30 Days</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </header>
 
-      {/* Content */}
       <main className="max-w-6xl mx-auto px-4 py-6 space-y-6">
-        {/* Analytics Tabs */}
-        <Tabs value={analyticsTab} onValueChange={setAnalyticsTab}>
-          <TabsList className="bg-white shadow-sm rounded-full p-1 mb-6">
-            <TabsTrigger value="overview" className="rounded-full">Overview</TabsTrigger>
-            <TabsTrigger value="advanced" className="rounded-full">Advanced</TabsTrigger>
-            <TabsTrigger value="loyalty" className="rounded-full">Loyalty</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="overview" className="space-y-6">
-            {/* Revenue & Key Metrics */}
-            <RevenueMetrics restaurantId={restaurantId} dateRange={dateRange} />
-
-        {/* Engagement Stats Cards */}
-        <h3 className="text-lg font-semibold text-slate-900 mt-8 mb-4">Engagement Metrics</h3>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          <Card className="border-0 shadow-sm">
+        {/* Key Metrics */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <Card>
             <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
-                  <Eye className="w-5 h-5 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-slate-900">{stats.views}</p>
-                  <p className="text-sm text-slate-500">Views</p>
-                </div>
-              </div>
+              <p className="text-sm text-slate-500">Total Reservations</p>
+              <p className="text-2xl font-bold text-slate-900">{totalReservations}</p>
             </CardContent>
           </Card>
-          
-          <Card className="border-0 shadow-sm">
+          <Card>
             <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
-                  <Phone className="w-5 h-5 text-emerald-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-slate-900">{stats.calls}</p>
-                  <p className="text-sm text-slate-500">Calls</p>
-                </div>
-              </div>
+              <p className="text-sm text-slate-500">Show-up Rate</p>
+              <p className="text-2xl font-bold text-emerald-600">{showUpRate}%</p>
             </CardContent>
           </Card>
-          
-          <Card className="border-0 shadow-sm">
+          <Card>
             <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
-                  <Navigation className="w-5 h-5 text-purple-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-slate-900">{stats.directions}</p>
-                  <p className="text-sm text-slate-500">Directions</p>
-                </div>
-              </div>
+              <p className="text-sm text-slate-500">Avg Party Size</p>
+              <p className="text-2xl font-bold text-slate-900">{avgPartySize}</p>
             </CardContent>
           </Card>
-          
-          <Card className="border-0 shadow-sm">
+          <Card>
             <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
-                  <Globe className="w-5 h-5 text-amber-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-slate-900">{stats.websites}</p>
-                  <p className="text-sm text-slate-500">Website</p>
-                </div>
-              </div>
+              <p className="text-sm text-slate-500">Waitlist Conversion</p>
+              <p className="text-2xl font-bold text-blue-600">{waitlistConversion}%</p>
             </CardContent>
           </Card>
-          
-          <Card className="border-0 shadow-sm">
+          <Card>
             <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-teal-100 flex items-center justify-center">
-                  <Users className="w-5 h-5 text-teal-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-slate-900">{stats.waitlistJoins}</p>
-                  <p className="text-sm text-slate-500">Waitlist</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="border-0 shadow-sm">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center">
-                  <Heart className="w-5 h-5 text-red-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-slate-900">{stats.favorites}</p>
-                  <p className="text-sm text-slate-500">Favorites</p>
-                </div>
-              </div>
+              <p className="text-sm text-slate-500">Avg Rating</p>
+              <p className="text-2xl font-bold text-amber-500 flex items-center gap-1">
+                <Star className="w-5 h-5 fill-current" />
+                {avgRating}
+              </p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Views & Clicks Over Time */}
-          <Card className="border-0 shadow-lg">
+        {/* Reservation Volume */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Reservation Volume</CardTitle>
+            <p className="text-sm text-slate-500">Track your booking trends over time</p>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={volumeData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip />
+                <Line type="monotone" dataKey="count" stroke="#10b981" strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <div className="grid md:grid-cols-2 gap-6">
+          {/* Peak Hours */}
+          <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="w-5 h-5" />
-                Views & Clicks
-              </CardTitle>
+              <CardTitle>Peak Hours</CardTitle>
+              <p className="text-sm text-slate-500">Your busiest time slots</p>
             </CardHeader>
             <CardContent>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={viewsChartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                    <XAxis dataKey="date" stroke="#64748b" fontSize={12} />
-                    <YAxis stroke="#64748b" fontSize={12} />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'white', 
-                        border: 'none', 
-                        borderRadius: '12px',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                      }} 
-                    />
-                    <Legend />
-                    <Area 
-                      type="monotone" 
-                      dataKey="views" 
-                      stroke="#3b82f6" 
-                      fill="#3b82f6" 
-                      fillOpacity={0.2}
-                      strokeWidth={2}
-                    />
-                    <Area 
-                      type="monotone" 
-                      dataKey="clicks" 
-                      stroke="#10b981" 
-                      fill="#10b981" 
-                      fillOpacity={0.2}
-                      strokeWidth={2}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={peakHoursData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="hour" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="count" fill="#6366f1" />
+                </BarChart>
+              </ResponsiveContainer>
+              <p className="text-sm text-slate-600 mt-4">
+                💡 <strong>Insight:</strong> Your busiest hour is {peakHoursData[0]?.hour} with {peakHoursData[0]?.count} reservations
+              </p>
             </CardContent>
           </Card>
 
-          {/* Engagement Breakdown */}
-          <Card className="border-0 shadow-lg">
+          {/* Party Size Distribution */}
+          <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MousePointerClick className="w-5 h-5" />
-                Engagement Breakdown
-              </CardTitle>
+              <CardTitle>Party Size Distribution</CardTitle>
+              <p className="text-sm text-slate-500">How your guests group</p>
             </CardHeader>
             <CardContent>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={eventBreakdown} layout="vertical">
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                    <XAxis type="number" stroke="#64748b" fontSize={12} />
-                    <YAxis dataKey="name" type="category" stroke="#64748b" fontSize={12} width={80} />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'white', 
-                        border: 'none', 
-                        borderRadius: '12px',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                      }} 
-                    />
-                    <Bar dataKey="value" radius={[0, 8, 8, 0]}>
-                      {eventBreakdown.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={partySizeData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="size" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="count">
+                    {partySizeData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+              <p className="text-sm text-slate-600 mt-4">
+                💡 <strong>Insight:</strong> Parties of 2 make up the majority. Consider optimizing your 2-top tables.
+              </p>
             </CardContent>
           </Card>
-
-          {/* Occupancy Heatmap */}
-          {occupancyChartData.length > 0 && (
-            <Card className="border-0 shadow-lg lg:col-span-2">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Clock className="w-5 h-5" />
-                  Average Occupancy by Hour
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={occupancyChartData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                      <XAxis dataKey="hour" stroke="#64748b" fontSize={12} />
-                      <YAxis stroke="#64748b" fontSize={12} domain={[0, 100]} />
-                      <Tooltip 
-                        contentStyle={{ 
-                          backgroundColor: 'white', 
-                          border: 'none', 
-                          borderRadius: '12px',
-                          boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                        }}
-                        formatter={(value) => [`${value}%`, 'Occupancy']}
-                      />
-                      <Bar 
-                        dataKey="occupancy" 
-                        fill="#10b981" 
-                        radius={[4, 4, 0, 0]}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
-          )}
         </div>
-          </TabsContent>
 
-          <TabsContent value="advanced">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <TableHeatmap restaurantId={restaurantId} />
-              <PeakDemandAnalysis restaurantId={restaurantId} />
-              <TableTurnoverTracker restaurantId={restaurantId} />
-              <CustomerLifetimeValue restaurantId={restaurantId} />
-              <CompetitorBenchmark 
-                restaurantId={restaurantId} 
-                cityId={restaurant?.city_id}
-                cuisine={restaurant?.cuisine}
-              />
+        {/* Waitlist Performance */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Waitlist Performance</CardTitle>
+            <p className="text-sm text-slate-500">Track how efficiently you move guests through your waitlist</p>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-4 gap-4">
+              <div className="text-center p-4 bg-slate-50 rounded-lg">
+                <p className="text-3xl font-bold text-slate-900">{waitlistFunnel.added}</p>
+                <p className="text-sm text-slate-500 mt-1">Added</p>
+              </div>
+              <div className="text-center p-4 bg-blue-50 rounded-lg">
+                <p className="text-3xl font-bold text-blue-600">{waitlistFunnel.notified}</p>
+                <p className="text-sm text-slate-500 mt-1">Notified</p>
+              </div>
+              <div className="text-center p-4 bg-emerald-50 rounded-lg">
+                <p className="text-3xl font-bold text-emerald-600">{waitlistFunnel.confirmed}</p>
+                <p className="text-sm text-slate-500 mt-1">Confirmed</p>
+              </div>
+              <div className="text-center p-4 bg-amber-50 rounded-lg">
+                <p className="text-3xl font-bold text-amber-600">{waitlistFunnel.seated}</p>
+                <p className="text-sm text-slate-500 mt-1">Seated</p>
+              </div>
             </div>
-          </TabsContent>
+            <p className="text-sm text-slate-600 mt-4">
+              💡 <strong>Insight:</strong> {waitlistConversion}% of your waitlist entries result in successful seating
+            </p>
+          </CardContent>
+        </Card>
 
-          <TabsContent value="loyalty">
-            <LoyaltyAnalytics restaurantId={restaurantId} />
-          </TabsContent>
-        </Tabs>
+        {/* Reviews Trend */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Reviews & Ratings</CardTitle>
+            <p className="text-sm text-slate-500">What diners are saying</p>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="text-center">
+                  <p className="text-4xl font-bold text-slate-900">{avgRating}</p>
+                  <div className="flex text-amber-400 mt-1">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className={cn("w-4 h-4", i < Math.round(avgRating) && "fill-current")} />
+                    ))}
+                  </div>
+                  <p className="text-sm text-slate-500 mt-1">{filteredReviews.length} reviews</p>
+                </div>
+                <div className="flex-1 space-y-2">
+                  {[5, 4, 3, 2, 1].map(rating => {
+                    const count = filteredReviews.filter(r => r.rating === rating).length;
+                    const percent = filteredReviews.length > 0 ? (count / filteredReviews.length * 100) : 0;
+                    return (
+                      <div key={rating} className="flex items-center gap-2">
+                        <span className="text-sm w-8">{rating}★</span>
+                        <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                          <div className="h-full bg-amber-400" style={{ width: `${percent}%` }} />
+                        </div>
+                        <span className="text-sm text-slate-500 w-12 text-right">{count}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </main>
     </div>
   );

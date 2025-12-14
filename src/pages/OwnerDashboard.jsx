@@ -26,6 +26,8 @@ import AIFloorPlanOptimizer from '@/components/ai/AIFloorPlanOptimizer';
 import AISMSNotifications from '@/components/ai/AISMSNotifications';
 import AIReservationRules from '@/components/ai/AIReservationRules';
 import AutoReservationRules from '@/components/owner/AutoReservationRules';
+import ReservationCalendar from '@/components/owner/ReservationCalendar';
+import WaitlistSMSManager from '@/components/owner/WaitlistSMSManager';
 import FeatureGate from '@/components/subscription/FeatureGate';
 import { useFeatureAccess } from '@/components/subscription/SubscriptionPlans';
 import LoyaltyProgramManager from '@/components/owner/LoyaltyProgramManager';
@@ -409,6 +411,15 @@ export default function OwnerDashboard() {
                           </Badge>
                         )}
                       </TabsTrigger>
+                      <TabsTrigger value="calendar" className="rounded-full gap-1.5">
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                          <line x1="16" y1="2" x2="16" y2="6"/>
+                          <line x1="8" y1="2" x2="8" y2="6"/>
+                          <line x1="3" y1="10" x2="21" y2="10"/>
+                        </svg>
+                        Calendar
+                      </TabsTrigger>
                       <TabsTrigger value="ai" className="rounded-full gap-1.5">
                               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
@@ -469,14 +480,11 @@ export default function OwnerDashboard() {
                           )}
                         </div>
 
-                        {/* AI SMS Notifications */}
-                        {featureAccess.hasSMS && (
-                          <AISMSNotifications
-                            restaurantId={selectedRestaurant?.id}
-                            restaurantName={currentRestaurant?.name}
-                            waitlistEntries={waitlist}
-                          />
-                        )}
+                        {/* Waitlist SMS Manager */}
+                        <WaitlistSMSManager
+                          restaurantId={selectedRestaurant?.id}
+                          restaurantName={currentRestaurant?.name}
+                        />
                       </div>
                     </FeatureGate>
                   </TabsContent>
@@ -571,6 +579,13 @@ export default function OwnerDashboard() {
                       </div>
                       <AIDynamicPricing restaurantId={selectedRestaurant?.id} />
                     </div>
+                  </TabsContent>
+
+                  <TabsContent value="calendar">
+                    <ReservationCalendar
+                      restaurantId={selectedRestaurant?.id}
+                      restaurantName={currentRestaurant?.name}
+                    />
                   </TabsContent>
                   </Tabs>
           </>
