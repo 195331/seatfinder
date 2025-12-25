@@ -26,29 +26,20 @@ export default function MacBookDemo({ activeTab, shouldReduceMotion }) {
               <div className="absolute inset-0 bg-gradient-to-r from-slate-100 via-slate-200 to-slate-100 animate-shimmer" />
             ) : (
               <AnimatePresence mode="wait">
-                {activeTab === 'diner' ? (
-                  <motion.div
-                    key="diner"
-                    initial={{ opacity: 0, x: shouldReduceMotion ? 0 : 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: shouldReduceMotion ? 0 : -20 }}
-                    transition={{ duration: 0.3 }}
-                    className="absolute inset-0"
-                  >
+                <motion.div
+                  key={activeTab}
+                  initial={{ opacity: 0, x: shouldReduceMotion ? 0 : 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: shouldReduceMotion ? 0 : -20 }}
+                  transition={{ duration: 0.3 }}
+                  className="absolute inset-0"
+                >
+                  {activeTab === 'diner' ? (
                     <DinerDemo shouldReduceMotion={shouldReduceMotion} />
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="owner"
-                    initial={{ opacity: 0, x: shouldReduceMotion ? 0 : 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: shouldReduceMotion ? 0 : -20 }}
-                    transition={{ duration: 0.3 }}
-                    className="absolute inset-0"
-                  >
+                  ) : (
                     <OwnerDemo shouldReduceMotion={shouldReduceMotion} />
-                  </motion.div>
-                )}
+                  )}
+                </motion.div>
               </AnimatePresence>
             )}
           </div>

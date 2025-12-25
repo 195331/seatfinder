@@ -48,13 +48,23 @@ export default function Home() {
         if (isAuth) {
           const user = await base44.auth.me();
           setCurrentUser(user);
+        } else {
+          // Redirect to landing if not authenticated and not explicitly choosing to browse
+          const hasSeenLanding = sessionStorage.getItem('browsing_as_guest');
+          if (!hasSeenLanding) {
+            navigate(createPageUrl('Landing'));
+          }
         }
       } catch (e) {
-        // Guest mode
+        // Guest mode - check if they've explicitly chosen to browse
+        const hasSeenLanding = sessionStorage.getItem('browsing_as_guest');
+        if (!hasSeenLanding) {
+          navigate(createPageUrl('Landing'));
+        }
       }
     };
     fetchUser();
-  }, []);
+  }, [navigate]);
 
   // Fetch cities
   const { data: cities = [] } = useQuery({

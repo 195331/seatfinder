@@ -91,7 +91,13 @@ export default function Landing() {
                 </button>
               ))}
             </div>
-            <Button onClick={() => navigate(createPageUrl('Home'))} className="bg-emerald-600 hover:bg-emerald-700">
+            <Button 
+              onClick={() => {
+                sessionStorage.setItem('browsing_as_guest', 'true');
+                navigate(createPageUrl('Home'));
+              }} 
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
               Launch App
             </Button>
           </div>
@@ -133,7 +139,10 @@ export default function Landing() {
                 {/* CTAs */}
                 <div className="flex flex-wrap gap-4 pt-4">
                   <Button
-                    onClick={() => navigate(createPageUrl('Home'))}
+                    onClick={() => {
+                      sessionStorage.setItem('browsing_as_guest', 'true');
+                      navigate(createPageUrl('Home'));
+                    }}
                     size="lg"
                     className={cn(
                       "gap-2 h-14 px-8 text-lg",
@@ -249,7 +258,10 @@ export default function Landing() {
             </p>
             <div className="flex flex-wrap gap-4 justify-center">
               <Button
-                onClick={() => navigate(createPageUrl('Home'))}
+                onClick={() => {
+                  sessionStorage.setItem('browsing_as_guest', 'true');
+                  navigate(createPageUrl('Home'));
+                }}
                 size="lg"
                 className="gap-2 h-16 px-10 text-lg bg-emerald-600 hover:bg-emerald-700"
               >
