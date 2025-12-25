@@ -1,33 +1,33 @@
-import Home from './pages/Home';
-import RestaurantDetail from './pages/RestaurantDetail';
-import Favorites from './pages/Favorites';
-import OwnerDashboard from './pages/OwnerDashboard';
-import OwnerAnalytics from './pages/OwnerAnalytics';
-import CreateRestaurant from './pages/CreateRestaurant';
-import RestaurantSettings from './pages/RestaurantSettings';
 import AdminDashboard from './pages/AdminDashboard';
-import Inbox from './pages/Inbox';
-import Profile from './pages/Profile';
-import MyReservations from './pages/MyReservations';
-import MyLoyalty from './pages/MyLoyalty';
 import ConfirmWaitlist from './pages/ConfirmWaitlist';
+import CreateRestaurant from './pages/CreateRestaurant';
+import Favorites from './pages/Favorites';
+import Home from './pages/Home';
+import Inbox from './pages/Inbox';
+import MyLoyalty from './pages/MyLoyalty';
+import MyReservations from './pages/MyReservations';
+import OwnerAnalytics from './pages/OwnerAnalytics';
+import OwnerDashboard from './pages/OwnerDashboard';
+import Profile from './pages/Profile';
+import RestaurantDetail from './pages/RestaurantDetail';
+import RestaurantSettings from './pages/RestaurantSettings';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
-    "Home": Home,
-    "RestaurantDetail": RestaurantDetail,
-    "Favorites": Favorites,
-    "OwnerDashboard": OwnerDashboard,
-    "OwnerAnalytics": OwnerAnalytics,
-    "CreateRestaurant": CreateRestaurant,
-    "RestaurantSettings": RestaurantSettings,
     "AdminDashboard": AdminDashboard,
-    "Inbox": Inbox,
-    "Profile": Profile,
-    "MyReservations": MyReservations,
-    "MyLoyalty": MyLoyalty,
     "ConfirmWaitlist": ConfirmWaitlist,
+    "CreateRestaurant": CreateRestaurant,
+    "Favorites": Favorites,
+    "Home": Home,
+    "Inbox": Inbox,
+    "MyLoyalty": MyLoyalty,
+    "MyReservations": MyReservations,
+    "OwnerAnalytics": OwnerAnalytics,
+    "OwnerDashboard": OwnerDashboard,
+    "Profile": Profile,
+    "RestaurantDetail": RestaurantDetail,
+    "RestaurantSettings": RestaurantSettings,
 }
 
 export const pagesConfig = {

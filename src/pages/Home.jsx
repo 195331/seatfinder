@@ -15,6 +15,9 @@ import RestaurantMap from '@/components/customer/RestaurantMap';
 import ProfileDrawer from '@/components/profile/ProfileDrawer';
 import AISmartSearch from '@/components/ai/AISmartSearch';
 import RecentlyViewed from '@/components/customer/RecentlyViewed';
+import ExpressProfileSetup from '@/components/customer/ExpressProfileSetup';
+import { getIsVerifiedLive, getIsStale } from '@/components/ui/FreshnessIndicator';
+import { Switch } from "@/components/ui/switch";
 
 const DEFAULT_PRESETS = [
   { id: 'date-night', name: 'Date Night', icon: '💕', filters: { priceLevel: 3, seatingLevel: 'chill' } },
@@ -33,6 +36,8 @@ export default function Home() {
   const [selectedCity, setSelectedCity] = useState(null);
   const [selectedMapRestaurant, setSelectedMapRestaurant] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
+  const [showExpressSetup, setShowExpressSetup] = useState(false);
+  const [onlyVerifiedLive, setOnlyVerifiedLive] = useState(false);
 
   // Fetch current user
   useEffect(() => {
@@ -146,12 +151,28 @@ export default function Home() {
     if (filters.hasOutdoor) result = result.filter(r => r.has_outdoor);
     if (filters.hasBarSeating) result = result.filter(r => r.has_bar_seating);
     if (filters.isKidFriendly) result = result.filter(r => r.is_kid_friendly);
+    
+    // Only Verified Live filter
+    if (onlyVerifiedLive) {
+      result = result.filter(r => getIsVerifiedLive(r.seating_updated_at));
+    }
 
-    // Sort: prioritize taste profile matches, then live updates
+    // Sort: verified live first, then reliable, then taste profile matches
     result.sort((a, b) => {
-      const tasteProfile = currentUser?.taste_profile || {};
+      // Priority 1: Verified Live
+      const aVerified = getIsVerifiedLive(a.seating_updated_at);
+      const bVerified = getIsVerifiedLive(b.seating_updated_at);
+      if (aVerified && !bVerified) return -1;
+      if (!aVerified && bVerified) return 1;
       
-      // Calculate match score
+      // Priority 2: Reliable restaurants
+      const aReliable = a.reliability_score >= 80;
+      const bReliable = b.reliability_score >= 80;
+      if (aReliable && !bReliable) return -1;
+      if (!aReliable && bReliable) return 1;
+      
+      // Priority 3: Taste profile match
+      const tasteProfile = currentUser?.taste_profile || {};
       let aScore = 0;
       let bScore = 0;
       
@@ -164,18 +185,9 @@ export default function Home() {
       
       if (aScore !== bScore) return bScore - aScore;
       
-      // Then prioritize live updates
+      // Priority 4: Recent updates
       const aTime = a.seating_updated_at ? new Date(a.seating_updated_at).getTime() : 0;
       const bTime = b.seating_updated_at ? new Date(b.seating_updated_at).getTime() : 0;
-      const now = Date.now();
-      const fifteenMinutes = 15 * 60 * 1000;
-      
-      const aIsLive = aTime > now - fifteenMinutes;
-      const bIsLive = bTime > now - fifteenMinutes;
-      
-      if (aIsLive && !bIsLive) return -1;
-      if (!aIsLive && bIsLive) return 1;
-      
       return bTime - aTime;
     });
 
@@ -293,7 +305,7 @@ export default function Home() {
             />
           </div>
 
-          {/* Mood Presets */}
+          {/* Mood Presets + Verified Live Toggle */}
           <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
             {DEFAULT_PRESETS.map((preset) => (
               <button
@@ -310,6 +322,10 @@ export default function Home() {
                 <span className="text-sm font-medium">{preset.name}</span>
               </button>
             ))}
+            <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 border border-emerald-200 rounded-full ml-2">
+              <Switch checked={onlyVerifiedLive} onCheckedChange={setOnlyVerifiedLive} />
+              <span className="text-sm font-medium text-emerald-800 whitespace-nowrap">Verified Live Only</span>
+            </div>
           </div>
 
           {/* Filters */}
@@ -352,8 +368,20 @@ export default function Home() {
           <>
             <div className="flex items-center justify-between mb-4">
               <p className="text-slate-600 text-sm">
-                {filteredRestaurants.length} restaurant{filteredRestaurants.length !== 1 ? 's' : ''} • Live updates
+                {filteredRestaurants.length} restaurant{filteredRestaurants.length !== 1 ? 's' : ''} 
+                {onlyVerifiedLive && ' • Verified Live'}
               </p>
+              {currentUser && !currentUser.express_profile?.phone && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowExpressSetup(true)}
+                  className="gap-2"
+                >
+                  <Zap className="w-4 h-4" />
+                  Set up Express Profile
+                </Button>
+              )}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredRestaurants.map((restaurant) => {
@@ -406,7 +434,14 @@ export default function Home() {
             />
           </div>
         )}
-      </main>
-    </div>
-  );
-}
+        </main>
+
+        {/* Express Profile Setup Dialog */}
+        <ExpressProfileSetup
+        open={showExpressSetup}
+        onOpenChange={setShowExpressSetup}
+        currentUser={currentUser}
+        />
+        </div>
+        );
+        }

@@ -1,10 +1,12 @@
 import React from 'react';
-import { Heart, MapPin, Clock, Zap, AlertTriangle } from 'lucide-react';
+import { Heart, MapPin, Clock, Zap, AlertTriangle, Award } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import OccupancyBadge from "@/components/ui/OccupancyBadge";
 import PriceLevel from "@/components/ui/PriceLevel";
 import StarRating from "@/components/ui/StarRating";
+import FreshnessIndicator, { getIsVerifiedLive, getIsStale } from "@/components/ui/FreshnessIndicator";
+import InstantConfirmBadge from "@/components/customer/InstantConfirmBadge";
 import { cn } from "@/lib/utils";
 import moment from 'moment';
 
@@ -21,17 +23,9 @@ export default function RestaurantCard({
     onFavoriteToggle?.(restaurant);
   };
 
-  const lastUpdate = restaurant.seating_updated_at 
-    ? moment(restaurant.seating_updated_at)
-    : null;
-  
-  const minutesSinceUpdate = lastUpdate 
-    ? moment().diff(lastUpdate, 'minutes')
-    : null;
-
-  const isLive = minutesSinceUpdate !== null && minutesSinceUpdate < 15;
-  const isStale = minutesSinceUpdate !== null && minutesSinceUpdate >= 30;
-  const timeAgo = lastUpdate ? lastUpdate.fromNow() : null;
+  const isVerifiedLive = getIsVerifiedLive(restaurant.seating_updated_at);
+  const isStale = getIsStale(restaurant.seating_updated_at);
+  const isReliable = restaurant.reliability_score >= 80;
 
   return (
     <div 
@@ -49,21 +43,25 @@ export default function RestaurantCard({
           alt={restaurant.name}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />
-        
-        {/* Live Badge */}
-        {isLive && (
-          <div className="absolute top-3 left-3 px-2.5 py-1 bg-emerald-500 text-white text-xs font-semibold rounded-full flex items-center gap-1.5 shadow-lg">
-            <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
-            LIVE
-          </div>
-        )}
 
-        {/* Best Match Badge */}
-        {showBestMatch && !isLive && (
-          <div className="absolute top-3 left-3 px-2.5 py-1 bg-purple-500 text-white text-xs font-semibold rounded-full shadow-lg">
-            ✨ Best for you
-          </div>
-        )}
+        {/* Top Left Badges */}
+        <div className="absolute top-3 left-3 flex flex-col gap-2">
+          <FreshnessIndicator lastUpdate={restaurant.seating_updated_at} showText={false} />
+          {showBestMatch && !isVerifiedLive && (
+            <Badge className="bg-purple-500 text-white border-0">
+              ✨ Best for you
+            </Badge>
+          )}
+          {restaurant.instant_confirm_enabled && (
+            <InstantConfirmBadge />
+          )}
+          {isReliable && (
+            <Badge className="bg-blue-600 text-white border-0 gap-1">
+              <Award className="w-3 h-3" />
+              Reliable
+            </Badge>
+          )}
+        </div>
         
         {/* Favorite Button */}
         <button
@@ -104,23 +102,26 @@ export default function RestaurantCard({
 
         {/* Seating Status */}
         <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-          <OccupancyBadge 
-            available={restaurant.available_seats} 
-            total={restaurant.total_seats}
-            isFull={restaurant.is_full}
-          />
-          
-          <div className="text-right">
-            <p className="text-sm font-semibold text-slate-900">
-              {restaurant.available_seats} / {restaurant.total_seats} free
-            </p>
-            {timeAgo && (
-              <p className="text-xs text-slate-400 flex items-center justify-end gap-1 mt-0.5">
-                <Clock className="w-3 h-3" />
-                {timeAgo}
-              </p>
-            )}
-          </div>
+          {!isStale ? (
+            <>
+              <OccupancyBadge 
+                available={restaurant.available_seats} 
+                total={restaurant.total_seats}
+                isFull={restaurant.is_full}
+              />
+              <div className="text-right">
+                <p className="text-sm font-semibold text-slate-900">
+                  {restaurant.available_seats} / {restaurant.total_seats} free
+                </p>
+                <FreshnessIndicator lastUpdate={restaurant.seating_updated_at} showBadge={false} />
+              </div>
+            </>
+          ) : (
+            <div className="w-full text-center py-1">
+              <p className="text-sm text-slate-500">Availability Unknown</p>
+              <p className="text-xs text-slate-400">Choose Verified Live places for accurate info</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

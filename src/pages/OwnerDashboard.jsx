@@ -35,6 +35,7 @@ import MenuBuilder from '@/components/owner/MenuBuilder';
 import OfferManager from '@/components/owner/OfferManager';
 import AIPersonalizedOffers from '@/components/ai/AIPersonalizedOffers';
 import AIDynamicPricing from '@/components/ai/AIDynamicPricing';
+import ShiftModePanel from '@/components/owner/ShiftModePanel';
 import { cn } from "@/lib/utils";
 
 export default function OwnerDashboard() {
@@ -324,6 +325,9 @@ export default function OwnerDashboard() {
           </Card>
         ) : currentRestaurant ? (
           <>
+            {/* Shift Mode Panel */}
+            <ShiftModePanel restaurant={currentRestaurant} />
+
             {/* Quick Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
               <Card className="border-0 shadow-sm">
