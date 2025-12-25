@@ -33,7 +33,7 @@ export default function RestaurantCard({
       className={cn(
         "bg-white rounded-2xl border overflow-hidden cursor-pointer group",
         "hover:shadow-xl transition-all duration-300",
-        isLive ? "border-emerald-200 shadow-md" : "border-slate-100 shadow-sm hover:border-slate-200"
+        isVerifiedLive ? "border-emerald-200 shadow-md" : "border-slate-100 shadow-sm hover:border-slate-200"
       )}
     >
       {/* Image */}
