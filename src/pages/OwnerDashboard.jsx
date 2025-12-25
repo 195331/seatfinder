@@ -36,6 +36,8 @@ import OfferManager from '@/components/owner/OfferManager';
 import AIPersonalizedOffers from '@/components/ai/AIPersonalizedOffers';
 import AIDynamicPricing from '@/components/ai/AIDynamicPricing';
 import ShiftModePanel from '@/components/owner/ShiftModePanel';
+import OwnerAI from '@/components/ai/OwnerAI';
+import NotificationBell from '@/components/notifications/NotificationBell';
 import { cn } from "@/lib/utils";
 
 export default function OwnerDashboard() {
@@ -265,6 +267,7 @@ export default function OwnerDashboard() {
               </div>
             </div>
             <div className="flex items-center gap-3">
+              {currentUser && <NotificationBell currentUser={currentUser} />}
               <Link to={createPageUrl('RestaurantSettings') + `?id=${selectedRestaurant?.id}`}>
                 <Button variant="outline" className="rounded-full gap-2">
                   <Settings className="w-4 h-4" />
@@ -529,17 +532,20 @@ export default function OwnerDashboard() {
                       title="AI Insights & Analytics"
                       description="Get powerful AI-driven insights, occupancy forecasting, and review analysis."
                     >
-                      <div className="grid lg:grid-cols-2 gap-6">
-                        <OccupancyForecaster restaurantId={selectedRestaurant?.id} />
-                        <AIRecommendations 
-                          restaurantId={selectedRestaurant?.id} 
-                          restaurant={currentRestaurant}
-                        />
-                        <AIFloorPlanOptimizer
-                          restaurantId={selectedRestaurant?.id}
-                          currentLayout={currentRestaurant?.floor_plan_data}
-                        />
-                        <AIReviewAnalyzer restaurantId={selectedRestaurant?.id} />
+                      <div className="space-y-6">
+                        <OwnerAI restaurant={currentRestaurant} />
+                        <div className="grid lg:grid-cols-2 gap-6">
+                          <OccupancyForecaster restaurantId={selectedRestaurant?.id} />
+                          <AIRecommendations 
+                            restaurantId={selectedRestaurant?.id} 
+                            restaurant={currentRestaurant}
+                          />
+                          <AIFloorPlanOptimizer
+                            restaurantId={selectedRestaurant?.id}
+                            currentLayout={currentRestaurant?.floor_plan_data}
+                          />
+                          <AIReviewAnalyzer restaurantId={selectedRestaurant?.id} />
+                        </div>
                       </div>
                     </FeatureGate>
                   </TabsContent>

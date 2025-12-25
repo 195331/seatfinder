@@ -15,10 +15,14 @@ import RestaurantCard from '@/components/customer/RestaurantCard';
 import RestaurantMap from '@/components/customer/RestaurantMap';
 import ProfileDrawer from '@/components/profile/ProfileDrawer';
 import AISmartSearch from '@/components/ai/AISmartSearch';
+import DinerAI from '@/components/ai/DinerAI';
 import RecentlyViewed from '@/components/customer/RecentlyViewed';
 import ExpressProfileSetup from '@/components/customer/ExpressProfileSetup';
+import MoodBoardManager from '@/components/customer/MoodBoardManager';
+import NotificationBell from '@/components/notifications/NotificationBell';
 import { getIsVerifiedLive, getIsStale } from '@/components/ui/FreshnessIndicator';
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const DEFAULT_PRESETS = [
   { id: 'date-night', name: 'Date Night', icon: '💕', filters: { priceLevel: 3, seatingLevel: 'chill' } },
@@ -39,6 +43,8 @@ export default function Home() {
   const [currentUser, setCurrentUser] = useState(null);
   const [showExpressSetup, setShowExpressSetup] = useState(false);
   const [onlyVerifiedLive, setOnlyVerifiedLive] = useState(false);
+  const [showAISearch, setShowAISearch] = useState(false);
+  const [activeSection, setActiveSection] = useState('explore');
 
   // Fetch current user
   useEffect(() => {
@@ -222,7 +228,27 @@ export default function Home() {
       const updated = [restaurant.id, ...recent.filter(id => id !== restaurant.id)].slice(0, 10);
       await base44.auth.updateMe({ recently_viewed: updated }).catch(() => {});
     }
+    
+    // Track click event
+    await base44.entities.AnalyticsEvent.create({
+      restaurant_id: restaurant.id,
+      event_type: 'restaurant_card_click',
+      user_id: currentUser?.id,
+      metadata: { source: 'home_page', view_type: view }
+    }).catch(() => {});
+    
     navigate(createPageUrl('RestaurantDetail') + `?id=${restaurant.id}`);
+  };
+
+  const handleFavoriteClick = async (restaurant) => {
+    await toggleFavoriteMutation.mutateAsync(restaurant);
+    
+    // Track favorite event
+    await base44.entities.AnalyticsEvent.create({
+      restaurant_id: restaurant.id,
+      event_type: favoriteIds.has(restaurant.id) ? 'unfavorite' : 'favorite',
+      user_id: currentUser?.id
+    }).catch(() => {});
   };
 
   const mapCenter = selectedCity ? [selectedCity.latitude, selectedCity.longitude] : null;
@@ -241,65 +267,78 @@ export default function Home() {
                   onLogout={() => base44.auth.logout(createPageUrl('Home'))}
                 />
               ) : (
-                <button 
-                  onClick={() => base44.auth.redirectToLogin(window.location.href)}
-                  className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center hover:opacity-90 transition-opacity"
-                >
-                  <span className="text-white font-bold text-lg">S</span>
-                </button>
-              )}
-              <div>
-                <p className="text-slate-900 font-medium">
-                  See who has open tables right now in{' '}
-                  <CitySelector 
-                    cities={cities}
-                    selectedCity={selectedCity}
-                    onCityChange={setSelectedCity}
-                  />
-                </p>
-              </div>
-            </div>
-
-            <div className="flex-1 max-w-lg hidden md:block">
-              <AISmartSearch
-                onSearchChange={setSearch}
-                onFiltersExtracted={(data) => {
-                  if (data?.filters) {
-                    setFilters(prev => ({ ...prev, ...data.filters }));
-                    setActivePreset(null);
-                  } else if (data === null) {
-                    // Clear AI filters when search is cleared
-                  }
-                }}
-              />
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Tabs value={view} onValueChange={setView}>
-                <TabsList className="bg-slate-100">
-                  <TabsTrigger value="list" className="gap-1.5">
-                    <List className="w-4 h-4" />
-                    <span className="hidden sm:inline">List</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="map" className="gap-1.5">
-                    <Map className="w-4 h-4" />
-                    <span className="hidden sm:inline">Map</span>
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
-
-              {currentUser && (
-                <Link to={createPageUrl('Favorites')}>
-                  <button className="p-2 rounded-full hover:bg-slate-100 relative">
-                    <Heart className="w-5 h-5 text-slate-600" />
-                    {favorites.length > 0 && (
-                      <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                        {favorites.length}
-                      </span>
-                    )}
+                  <button 
+                    onClick={() => base44.auth.redirectToLogin(window.location.href)}
+                    className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center hover:opacity-90 transition-opacity"
+                  >
+                    <span className="text-white font-bold text-lg">S</span>
                   </button>
-                </Link>
-              )}
+                )}
+                <div>
+                  <p className="text-slate-900 font-medium">
+                    See who has open tables right now in{' '}
+                    <CitySelector 
+                      cities={cities}
+                      selectedCity={selectedCity}
+                      onCityChange={setSelectedCity}
+                    />
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex-1 max-w-lg hidden md:block">
+                <AISmartSearch
+                  onSearchChange={setSearch}
+                  onFiltersExtracted={(data) => {
+                    if (data?.filters) {
+                      setFilters(prev => ({ ...prev, ...data.filters }));
+                      setActivePreset(null);
+                    } else if (data === null) {
+                      // Clear AI filters when search is cleared
+                    }
+                  }}
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  variant={showAISearch ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setShowAISearch(!showAISearch)}
+                  className="gap-2"
+                >
+                  <Zap className="w-4 h-4" />
+                  <span className="hidden sm:inline">Ask AI</span>
+                </Button>
+
+                <Tabs value={view} onValueChange={setView}>
+                  <TabsList className="bg-slate-100">
+                    <TabsTrigger value="list" className="gap-1.5">
+                      <List className="w-4 h-4" />
+                      <span className="hidden sm:inline">List</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="map" className="gap-1.5">
+                      <Map className="w-4 h-4" />
+                      <span className="hidden sm:inline">Map</span>
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+
+                {currentUser && (
+                  <>
+                    <NotificationBell currentUser={currentUser} />
+                    <Link to={createPageUrl('Favorites')}>
+                      <button className="p-2 rounded-full hover:bg-slate-100 relative">
+                        <Heart className="w-5 h-5 text-slate-600" />
+                        {favorites.length > 0 && (
+                          <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                            {favorites.length}
+                          </span>
+                        )}
+                      </button>
+                    </Link>
+                  </>
+                )}
             </div>
           </div>
 
@@ -354,13 +393,41 @@ export default function Home() {
 
       {/* Content */}
       <main className="max-w-7xl mx-auto px-4 py-6">
-        {/* Recently Viewed */}
-        <RecentlyViewed
-          currentUser={currentUser}
-          onFavoriteToggle={(r) => toggleFavoriteMutation.mutate(r)}
-          favoriteIds={favoriteIds}
-          onClick={handleRestaurantClick}
-        />
+        {/* Tabs for Explore / Mood Boards / AI */}
+        {currentUser && (
+          <Tabs value={activeSection} onValueChange={setActiveSection} className="mb-6">
+            <TabsList className="bg-white shadow-sm">
+              <TabsTrigger value="explore">Explore</TabsTrigger>
+              <TabsTrigger value="moodboards">Mood Boards</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="moodboards" className="mt-6">
+              <MoodBoardManager currentUser={currentUser} />
+            </TabsContent>
+          </Tabs>
+        )}
+
+        {activeSection === 'explore' && (
+          <>
+            {/* AI Search Results */}
+            {showAISearch && (
+              <div className="mb-6">
+                <DinerAI
+                  restaurants={filteredRestaurants}
+                  currentUser={currentUser}
+                  onResultsClick={handleRestaurantClick}
+                  onFiltersApply={(filters) => setFilters(prev => ({ ...prev, ...filters }))}
+                />
+              </div>
+            )}
+
+            {/* Recently Viewed */}
+            <RecentlyViewed
+              currentUser={currentUser}
+              onFavoriteToggle={handleFavoriteClick}
+              favoriteIds={favoriteIds}
+              onClick={handleRestaurantClick}
+            />
 
         {loadingRestaurants ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -405,13 +472,13 @@ export default function Home() {
 
                 return (
                   <RestaurantCard
-                    key={restaurant.id}
-                    restaurant={restaurant}
-                    isFavorite={favoriteIds.has(restaurant.id)}
-                    onFavoriteToggle={(r) => toggleFavoriteMutation.mutate(r)}
-                    onClick={handleRestaurantClick}
-                    showBestMatch={isBestMatch}
-                  />
+                      key={restaurant.id}
+                      restaurant={restaurant}
+                      isFavorite={favoriteIds.has(restaurant.id)}
+                      onFavoriteToggle={handleFavoriteClick}
+                      onClick={handleRestaurantClick}
+                      showBestMatch={isBestMatch}
+                    />
                 );
               })}
             </div>
@@ -433,8 +500,12 @@ export default function Home() {
                 </button>
               </div>
             )}
-          </>
-        ) : (
+            </>
+            )}
+            </>
+            )}
+
+            {activeSection === 'explore' && view === 'map' && (
           <div className="h-[calc(100vh-280px)] min-h-[500px]">
             <RestaurantMap
               restaurants={filteredRestaurants}
@@ -444,8 +515,8 @@ export default function Home() {
               onRestaurantClick={handleRestaurantClick}
             />
           </div>
-        )}
-        </main>
+          )}
+          </main>
 
         {/* Express Profile Setup Dialog */}
         <ExpressProfileSetup

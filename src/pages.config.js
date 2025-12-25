@@ -4,6 +4,7 @@ import CreateRestaurant from './pages/CreateRestaurant';
 import Favorites from './pages/Favorites';
 import Home from './pages/Home';
 import Inbox from './pages/Inbox';
+import Landing from './pages/Landing';
 import MyLoyalty from './pages/MyLoyalty';
 import MyReservations from './pages/MyReservations';
 import OwnerAnalytics from './pages/OwnerAnalytics';
@@ -11,7 +12,6 @@ import OwnerDashboard from './pages/OwnerDashboard';
 import Profile from './pages/Profile';
 import RestaurantDetail from './pages/RestaurantDetail';
 import RestaurantSettings from './pages/RestaurantSettings';
-import Landing from './pages/Landing';
 import __Layout from './Layout.jsx';
 
 
@@ -22,6 +22,7 @@ export const PAGES = {
     "Favorites": Favorites,
     "Home": Home,
     "Inbox": Inbox,
+    "Landing": Landing,
     "MyLoyalty": MyLoyalty,
     "MyReservations": MyReservations,
     "OwnerAnalytics": OwnerAnalytics,
@@ -29,7 +30,6 @@ export const PAGES = {
     "Profile": Profile,
     "RestaurantDetail": RestaurantDetail,
     "RestaurantSettings": RestaurantSettings,
-    "Landing": Landing,
 }
 
 export const pagesConfig = {
