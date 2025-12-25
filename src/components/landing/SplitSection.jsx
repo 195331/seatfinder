@@ -9,7 +9,7 @@ export default function SplitSection() {
     diners: {
       title: 'For Diners',
       bullets: [
-        'See who's chill right now',
+        "See who's chill right now",
         'Join waitlist in seconds',
         'Find the vibe you want'
       ],
