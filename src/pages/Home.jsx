@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { List, Map, Heart, Zap } from 'lucide-react';
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { createPageUrl } from '@/utils';
@@ -22,7 +22,6 @@ import MoodBoardManager from '@/components/customer/MoodBoardManager';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { getIsVerifiedLive, getIsStale } from '@/components/ui/FreshnessIndicator';
 import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const DEFAULT_PRESETS = [
   { id: 'date-night', name: 'Date Night', icon: '💕', filters: { priceLevel: 3, seatingLevel: 'chill' } },
@@ -429,101 +428,99 @@ export default function Home() {
               onClick={handleRestaurantClick}
             />
 
-        {loadingRestaurants ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="bg-white rounded-2xl overflow-hidden shadow-sm">
-                <Skeleton className="aspect-[16/10]" />
-                <div className="p-4 space-y-3">
-                  <Skeleton className="h-6 w-3/4" />
-                  <Skeleton className="h-4 w-1/2" />
-                  <Skeleton className="h-4 w-full" />
-                </div>
+            {loadingRestaurants ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <div key={i} className="bg-white rounded-2xl overflow-hidden shadow-sm">
+                    <Skeleton className="aspect-[16/10]" />
+                    <div className="p-4 space-y-3">
+                      <Skeleton className="h-6 w-3/4" />
+                      <Skeleton className="h-4 w-1/2" />
+                      <Skeleton className="h-4 w-full" />
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        ) : view === 'list' ? (
-          <>
-            <div className="flex items-center justify-between mb-4">
-              <p className="text-slate-600 text-sm">
-                {filteredRestaurants.length} restaurant{filteredRestaurants.length !== 1 ? 's' : ''} 
-                {onlyVerifiedLive && ' • Verified Live'}
-              </p>
-              {currentUser && !currentUser.express_profile?.phone && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowExpressSetup(true)}
-                  className="gap-2"
-                >
-                  <Zap className="w-4 h-4" />
-                  Set up Express Profile
-                </Button>
-              )}
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredRestaurants.map((restaurant) => {
-                const tasteProfile = currentUser?.taste_profile || {};
-                const isBestMatch = (
-                  (tasteProfile.outdoor_seating && restaurant.has_outdoor) ||
-                  (tasteProfile.kid_friendly && restaurant.is_kid_friendly) ||
-                  (tasteProfile.bar_seating && restaurant.has_bar_seating)
-                );
-
-                return (
-                  <RestaurantCard
-                      key={restaurant.id}
-                      restaurant={restaurant}
-                      isFavorite={favoriteIds.has(restaurant.id)}
-                      onFavoriteToggle={handleFavoriteClick}
-                      onClick={handleRestaurantClick}
-                      showBestMatch={isBestMatch}
-                    />
-                );
-              })}
-            </div>
-            {filteredRestaurants.length === 0 && (
-              <div className="text-center py-20">
-                <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-3xl">🔍</span>
+            ) : view === 'list' ? (
+              <>
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-slate-600 text-sm">
+                    {filteredRestaurants.length} restaurant{filteredRestaurants.length !== 1 ? 's' : ''} 
+                    {onlyVerifiedLive && ' • Verified Live'}
+                  </p>
+                  {currentUser && !currentUser.express_profile?.phone && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowExpressSetup(true)}
+                      className="gap-2"
+                    >
+                      <Zap className="w-4 h-4" />
+                      Set up Express Profile
+                    </Button>
+                  )}
                 </div>
-                <p className="text-slate-900 font-semibold text-lg mb-2">No restaurants found</p>
-                <p className="text-slate-500 mb-6">Try adjusting your filters or exploring a different vibe</p>
-                <button 
-                  onClick={() => {
-                    setFilters({});
-                    setActivePreset(null);
-                  }}
-                  className="px-6 py-2 bg-slate-900 text-white rounded-full hover:bg-slate-800 transition-colors"
-                >
-                  Clear all filters
-                </button>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredRestaurants.map((restaurant) => {
+                    const tasteProfile = currentUser?.taste_profile || {};
+                    const isBestMatch = (
+                      (tasteProfile.outdoor_seating && restaurant.has_outdoor) ||
+                      (tasteProfile.kid_friendly && restaurant.is_kid_friendly) ||
+                      (tasteProfile.bar_seating && restaurant.has_bar_seating)
+                    );
+
+                    return (
+                      <RestaurantCard
+                        key={restaurant.id}
+                        restaurant={restaurant}
+                        isFavorite={favoriteIds.has(restaurant.id)}
+                        onFavoriteToggle={handleFavoriteClick}
+                        onClick={handleRestaurantClick}
+                        showBestMatch={isBestMatch}
+                      />
+                    );
+                  })}
+                </div>
+                {filteredRestaurants.length === 0 && (
+                  <div className="text-center py-20">
+                    <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <span className="text-3xl">🔍</span>
+                    </div>
+                    <p className="text-slate-900 font-semibold text-lg mb-2">No restaurants found</p>
+                    <p className="text-slate-500 mb-6">Try adjusting your filters or exploring a different vibe</p>
+                    <button 
+                      onClick={() => {
+                        setFilters({});
+                        setActivePreset(null);
+                      }}
+                      className="px-6 py-2 bg-slate-900 text-white rounded-full hover:bg-slate-800 transition-colors"
+                    >
+                      Clear all filters
+                    </button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="h-[calc(100vh-280px)] min-h-[500px]">
+                <RestaurantMap
+                  restaurants={filteredRestaurants}
+                  center={mapCenter}
+                  selectedRestaurant={selectedMapRestaurant}
+                  onRestaurantSelect={setSelectedMapRestaurant}
+                  onRestaurantClick={handleRestaurantClick}
+                />
               </div>
             )}
-            </>
-            )}
-            </>
-            )}
+          </>
+        )}
+      </main>
 
-            {activeSection === 'explore' && view === 'map' && (
-          <div className="h-[calc(100vh-280px)] min-h-[500px]">
-            <RestaurantMap
-              restaurants={filteredRestaurants}
-              center={mapCenter}
-              selectedRestaurant={selectedMapRestaurant}
-              onRestaurantSelect={setSelectedMapRestaurant}
-              onRestaurantClick={handleRestaurantClick}
-            />
-          </div>
-          )}
-          </main>
-
-        {/* Express Profile Setup Dialog */}
-        <ExpressProfileSetup
+      {/* Express Profile Setup Dialog */}
+      <ExpressProfileSetup
         open={showExpressSetup}
         onOpenChange={setShowExpressSetup}
         currentUser={currentUser}
-        />
-        </div>
-        );
-        }
+      />
+    </div>
+  );
+}
