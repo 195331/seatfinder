@@ -317,24 +317,39 @@ Return JSON:
               <p className="text-slate-600 mb-6 max-w-md mx-auto">
                 Get personalized recommendations to optimize your operations, improve customer satisfaction, and boost revenue
               </p>
-              <Button
-                onClick={generateInsights}
-                disabled={isGenerating}
-                size="lg"
-                className="bg-gradient-to-r from-purple-600 to-indigo-600"
-              >
-                {isGenerating ? (
-                  <>
-                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                    Analyzing Your Data...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-5 h-5 mr-2" />
-                    Generate Insights
-                  </>
-                )}
-              </Button>
+              <div className="flex gap-3 justify-center">
+                <Button
+                  onClick={generateInsights}
+                  disabled={isGenerating}
+                  size="lg"
+                  className="bg-gradient-to-r from-purple-600 to-indigo-600"
+                >
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                      Analyzing Your Data...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-5 h-5 mr-2" />
+                      Generate Insights
+                    </>
+                  )}
+                </Button>
+                <a 
+                  href={base44.agents.getWhatsAppConnectURL('seatfinder_ai')} 
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="border-green-500 text-green-700 hover:bg-green-50"
+                  >
+                    💬 WhatsApp AI
+                  </Button>
+                </a>
+              </div>
             </div>
           ) : insights.insufficient_data ? (
             <div className="text-center py-12">
