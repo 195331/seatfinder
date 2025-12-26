@@ -252,11 +252,11 @@ export default function ProfileDrawer({ currentUser, onLogout }) {
                   </span>
                 </div>
 
-                <Link to={createPageUrl('Profile')} onClick={() => setOpen(false)}>
+                <Link to={createPageUrl('Settings')} onClick={() => setOpen(false)}>
                   <div className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-xl">
                     <div className="flex items-center gap-3">
                       <Pencil className="w-5 h-5 text-slate-600" />
-                      <span>Edit Profile</span>
+                      <span>Settings & Preferences</span>
                     </div>
                     <ChevronRight className="w-5 h-5 text-slate-400" />
                   </div>
