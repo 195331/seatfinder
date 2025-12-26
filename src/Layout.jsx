@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { createPageUrl } from '@/utils';
 import { 
-  Home, Heart, Store, Shield, User, Bell
+  Home, Heart, Store, Shield, User, Bell, Settings as SettingsIcon
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 

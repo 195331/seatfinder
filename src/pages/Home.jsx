@@ -44,6 +44,8 @@ export default function Home() {
   const [onlyVerifiedLive, setOnlyVerifiedLive] = useState(false);
   const [showAISearch, setShowAISearch] = useState(false);
   const [activeSection, setActiveSection] = useState('explore');
+  const [userLocation, setUserLocation] = useState(null);
+  const [sortBy, setSortBy] = useState('verified'); // 'verified', 'distance', 'rating'
 
   // Fetch current user
   useEffect(() => {
@@ -70,6 +72,23 @@ export default function Home() {
     };
     fetchUser();
   }, [navigate]);
+
+  // Get user location
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          });
+        },
+        (error) => {
+          console.log('Location access denied');
+        }
+      );
+    }
+  }, []);
 
   // Fetch cities
   const { data: cities = [] } = useQuery({
@@ -133,9 +152,31 @@ export default function Home() {
     }
   });
 
-  // Filter restaurants
+  // Calculate distance helper
+  const getDistance = (lat1, lng1, lat2, lng2) => {
+    const R = 3959; // Earth's radius in miles
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
+
+  // Filter and sort restaurants
   const filteredRestaurants = useMemo(() => {
     let result = [...restaurants];
+
+    // Add distance to each restaurant
+    if (userLocation) {
+      result = result.map(r => ({
+        ...r,
+        distance: r.latitude && r.longitude 
+          ? getDistance(userLocation.lat, userLocation.lng, r.latitude, r.longitude)
+          : null
+      }));
+    }
 
     // Search
     if (search) {
@@ -145,6 +186,13 @@ export default function Home() {
         r.cuisine?.toLowerCase().includes(searchLower) ||
         r.neighborhood?.toLowerCase().includes(searchLower)
       );
+    }
+
+    // Apply user preferences from settings
+    const userPreferences = currentUser?.preferences || {};
+    if (userPreferences.dietary_restrictions?.length > 0) {
+      // Filter based on dietary restrictions (would need menu/dietary info on restaurants)
+      // For now, just track for AI recommendations
     }
 
     // Filters
@@ -168,30 +216,45 @@ export default function Home() {
     if (filters.hasBarSeating) result = result.filter(r => r.has_bar_seating);
     if (filters.isKidFriendly) result = result.filter(r => r.is_kid_friendly);
     
+    // Advanced amenity filters
+    if (filters.liveMusic) result = result.filter(r => r.has_live_music);
+    if (filters.parking) result = result.filter(r => r.has_parking);
+    if (filters.wifi) result = result.filter(r => r.has_wifi);
+    
     // Only Verified Live filter
     if (onlyVerifiedLive) {
       result = result.filter(r => getIsVerifiedLive(r.seating_updated_at));
     }
 
-    // Sort: verified live first, then reliable, then taste profile matches
+    // Sorting
     result.sort((a, b) => {
-      // Priority 1: Verified Live
+      if (sortBy === 'distance' && userLocation) {
+        if (!a.distance) return 1;
+        if (!b.distance) return -1;
+        return a.distance - b.distance;
+      }
+      
+      if (sortBy === 'rating') {
+        return (b.average_rating || 0) - (a.average_rating || 0);
+      }
+      
+      // Default: verified live first, then reliable, then taste profile
       const aVerified = getIsVerifiedLive(a.seating_updated_at);
       const bVerified = getIsVerifiedLive(b.seating_updated_at);
       if (aVerified && !bVerified) return -1;
       if (!aVerified && bVerified) return 1;
       
-      // Priority 2: Reliable restaurants
       const aReliable = a.reliability_score >= 80;
       const bReliable = b.reliability_score >= 80;
       if (aReliable && !bReliable) return -1;
       if (!aReliable && bReliable) return 1;
       
-      // Priority 3: Taste profile match
       const tasteProfile = currentUser?.taste_profile || {};
+      const preferences = currentUser?.preferences || {};
       let aScore = 0;
       let bScore = 0;
       
+      // Taste profile matching
       if (tasteProfile.outdoor_seating && a.has_outdoor) aScore += 2;
       if (tasteProfile.outdoor_seating && b.has_outdoor) bScore += 2;
       if (tasteProfile.kid_friendly && a.is_kid_friendly) aScore += 2;
@@ -199,16 +262,25 @@ export default function Home() {
       if (tasteProfile.bar_seating && a.has_bar_seating) aScore += 2;
       if (tasteProfile.bar_seating && b.has_bar_seating) bScore += 2;
       
+      // Cuisine preferences
+      if (preferences.favorite_cuisines?.includes(a.cuisine)) aScore += 3;
+      if (preferences.favorite_cuisines?.includes(b.cuisine)) bScore += 3;
+      
+      // Amenity preferences
+      if (preferences.preferred_amenities?.includes('outdoor') && a.has_outdoor) aScore += 1;
+      if (preferences.preferred_amenities?.includes('outdoor') && b.has_outdoor) bScore += 1;
+      if (preferences.preferred_amenities?.includes('bar') && a.has_bar_seating) aScore += 1;
+      if (preferences.preferred_amenities?.includes('bar') && b.has_bar_seating) bScore += 1;
+      
       if (aScore !== bScore) return bScore - aScore;
       
-      // Priority 4: Recent updates
       const aTime = a.seating_updated_at ? new Date(a.seating_updated_at).getTime() : 0;
       const bTime = b.seating_updated_at ? new Date(b.seating_updated_at).getTime() : 0;
       return bTime - aTime;
     });
 
     return result;
-  }, [restaurants, search, filters, onlyVerifiedLive, currentUser]);
+  }, [restaurants, search, filters, onlyVerifiedLive, currentUser, userLocation, sortBy]);
 
   const handlePresetSelect = (preset) => {
     if (activePreset?.id === preset.id) {
@@ -372,10 +444,23 @@ export default function Home() {
               </button>
             ))}
             <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 border border-emerald-200 rounded-full ml-2">
-              <Switch checked={onlyVerifiedLive} onCheckedChange={setOnlyVerifiedLive} />
-              <span className="text-sm font-medium text-emerald-800 whitespace-nowrap">Verified Live Only</span>
+            <Switch checked={onlyVerifiedLive} onCheckedChange={setOnlyVerifiedLive} />
+            <span className="text-sm font-medium text-emerald-800 whitespace-nowrap">Verified Live Only</span>
             </div>
-          </div>
+            {userLocation && (
+            <button
+            onClick={() => setSortBy('distance')}
+            className={cn(
+              "px-4 py-2 rounded-full border whitespace-nowrap transition-all flex items-center gap-2",
+              sortBy === 'distance'
+                ? "bg-blue-600 text-white border-blue-600"
+                : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
+            )}
+            >
+            📍 Near Me
+            </button>
+            )}
+            </div>
 
           {/* Filters */}
           <div className="mt-3">
@@ -443,11 +528,23 @@ export default function Home() {
               </div>
             ) : view === 'list' ? (
               <>
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
                   <p className="text-slate-600 text-sm">
                     {filteredRestaurants.length} restaurant{filteredRestaurants.length !== 1 ? 's' : ''} 
                     {onlyVerifiedLive && ' • Verified Live'}
+                    {sortBy === 'distance' && userLocation && ' • Sorted by distance'}
                   </p>
+                  <div className="flex gap-2">
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value)}
+                      className="px-3 py-1.5 text-sm border border-slate-200 rounded-full bg-white"
+                    >
+                      <option value="verified">Best Match</option>
+                      <option value="rating">Top Rated</option>
+                      {userLocation && <option value="distance">Nearest</option>}
+                    </select>
+                  </div>
                   {currentUser && !currentUser.express_profile?.phone && (
                     <Button
                       variant="outline"
@@ -477,6 +574,7 @@ export default function Home() {
                         onFavoriteToggle={handleFavoriteClick}
                         onClick={handleRestaurantClick}
                         showBestMatch={isBestMatch}
+                        distance={restaurant.distance}
                       />
                     );
                   })}

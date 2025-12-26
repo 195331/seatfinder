@@ -16,7 +16,8 @@ export default function RestaurantCard({
   onFavoriteToggle, 
   onClick,
   compact = false,
-  showBestMatch = false
+  showBestMatch = false,
+  distance = null
 }) {
   const handleFavoriteClick = (e) => {
     e.stopPropagation();
@@ -92,6 +93,12 @@ export default function RestaurantCard({
             <>
               <span className="w-1 h-1 rounded-full bg-slate-300" />
               <span>{restaurant.neighborhood}</span>
+            </>
+          )}
+          {distance && (
+            <>
+              <span className="w-1 h-1 rounded-full bg-slate-300" />
+              <span className="text-blue-600">📍 {distance.toFixed(1)} mi</span>
             </>
           )}
         </div>

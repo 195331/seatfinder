@@ -12,6 +12,7 @@ import OwnerDashboard from './pages/OwnerDashboard';
 import Profile from './pages/Profile';
 import RestaurantDetail from './pages/RestaurantDetail';
 import RestaurantSettings from './pages/RestaurantSettings';
+import Settings from './pages/Settings';
 import __Layout from './Layout.jsx';
 
 
@@ -30,6 +31,7 @@ export const PAGES = {
     "Profile": Profile,
     "RestaurantDetail": RestaurantDetail,
     "RestaurantSettings": RestaurantSettings,
+    "Settings": Settings,
 }
 
 export const pagesConfig = {
