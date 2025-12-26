@@ -140,7 +140,7 @@ Only include fields that are clearly indicated by the query.`,
           onChange={handleInputChange}
           onFocus={() => !query && setShowExamples(true)}
           onBlur={() => setTimeout(() => setShowExamples(false), 200)}
-          placeholder="Search by name, vibe, or craving..." className="bg-slate-50 text-lime-500 pr-10 pl-10 px-3 py-1 text-base rounded-full flex w-full border shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm border-slate-200 h-12 focus:ring-2 focus:ring-violet-200 focus:border-violet-300" />
+          placeholder="Search by name, vibe, or craving..." className="bg-slate-50 text-slate-800 px-3 py-1 text-base rounded-full flex w-full border shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm border-slate-200 h-12 focus:ring-2 focus:ring-violet-200 focus:border-violet-300" />
 
 
 
