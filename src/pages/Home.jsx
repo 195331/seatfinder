@@ -534,17 +534,15 @@ export default function Home() {
                     {onlyVerifiedLive && ' • Verified Live'}
                     {sortBy === 'distance' && userLocation && ' • Sorted by distance'}
                   </p>
-                  <div className="flex gap-2">
-                    <select
-                      value={sortBy}
-                      onChange={(e) => setSortBy(e.target.value)}
-                      className="px-3 py-1.5 text-sm border border-slate-200 rounded-full bg-white"
-                    >
-                      <option value="verified">Best Match</option>
-                      <option value="rating">Top Rated</option>
-                      {userLocation && <option value="distance">Nearest</option>}
-                    </select>
-                  </div>
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="px-3 py-1.5 text-sm border border-slate-200 rounded-full bg-white"
+                  >
+                    <option value="verified">Best Match</option>
+                    <option value="rating">Top Rated</option>
+                    {userLocation && <option value="distance">Nearest</option>}
+                  </select>
                   {currentUser && !currentUser.express_profile?.phone && (
                     <Button
                       variant="outline"

@@ -540,6 +540,16 @@ export default function OwnerDashboard() {
                             restaurantId={selectedRestaurant?.id} 
                             restaurant={currentRestaurant}
                           />
+                        </div>
+                        <PredictiveAnalytics restaurantId={selectedRestaurant?.id} />
+                        <div className="grid lg:grid-cols-2 gap-6">
+                          <SeatingHeatmap 
+                            restaurantId={selectedRestaurant?.id}
+                            floorPlanData={currentRestaurant?.floor_plan_data}
+                          />
+                          <ABTestingSuggestions restaurantId={selectedRestaurant?.id} />
+                        </div>
+                        <div className="grid lg:grid-cols-2 gap-6">
                           <AIFloorPlanOptimizer
                             restaurantId={selectedRestaurant?.id}
                             currentLayout={currentRestaurant?.floor_plan_data}
