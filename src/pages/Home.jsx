@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { List, Map, Heart, Zap } from 'lucide-react';
+import { List, Map, Heart, Zap, ChefHat } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -372,6 +372,17 @@ export default function Home() {
               </div>
 
               <div className="flex items-center gap-2">
+                <Link to={createPageUrl('MealPlanner')}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                  >
+                    <ChefHat className="w-4 h-4" />
+                    <span className="hidden sm:inline">Meal Planner</span>
+                  </Button>
+                </Link>
+
                 <Button
                   variant={showAISearch ? "default" : "outline"}
                   size="sm"
