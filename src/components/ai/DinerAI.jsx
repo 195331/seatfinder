@@ -27,6 +27,7 @@ export default function DinerAI({
       // Get user's taste profile and history
       const tasteProfile = currentUser?.taste_profile || {};
       const recentlyViewed = currentUser?.recently_viewed || [];
+      const preferences = currentUser?.preferences || {};
       
       // Get user's review history for preferences
       const userReviews = currentUser 
@@ -37,6 +38,32 @@ export default function DinerAI({
         const restaurant = restaurants.find(rest => rest.id === r.restaurant_id);
         return restaurant?.cuisine;
       }).filter(Boolean))];
+
+      // Get dining history if enabled
+      let diningHistory = [];
+      if (preferences.ai_settings?.use_dining_history) {
+        try {
+          const recentReservations = await base44.entities.Reservation.filter({
+            user_id: currentUser.id,
+            status: 'approved'
+          }, '-created_date', 20);
+          
+          const visitedRestaurantIds = [...new Set(recentReservations.map(r => r.restaurant_id))];
+          const visitedRestaurants = await Promise.all(
+            visitedRestaurantIds.slice(0, 10).map(id => 
+              base44.entities.Restaurant.filter({ id }).then(r => r[0])
+            )
+          );
+          
+          diningHistory = visitedRestaurants.filter(Boolean).map(r => ({
+            name: r.name,
+            cuisine: r.cuisine,
+            price_level: r.price_level
+          }));
+        } catch (e) {
+          console.log('Could not fetch dining history');
+        }
+      }
 
       // Build context for AI
       const context = {
@@ -62,7 +89,11 @@ export default function DinerAI({
         user_preferences: {
           taste_profile: tasteProfile,
           reviewed_cuisines: reviewedCuisines,
-          recently_viewed: recentlyViewed.slice(0, 5)
+          recently_viewed: recentlyViewed.slice(0, 5),
+          favorite_cuisines: preferences.favorite_cuisines || [],
+          dietary_restrictions: preferences.dietary_restrictions || [],
+          preferred_amenities: preferences.preferred_amenities || [],
+          dining_history: diningHistory
         },
         current_time: new Date().toISOString()
       };
