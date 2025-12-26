@@ -208,7 +208,7 @@ export default function Home() {
     });
 
     return result;
-  }, [restaurants, search, filters, currentUser]);
+  }, [restaurants, search, filters, onlyVerifiedLive, currentUser]);
 
   const handlePresetSelect = (preset) => {
     if (activePreset?.id === preset.id) {
