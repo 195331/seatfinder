@@ -103,14 +103,21 @@ export default function MoodBoardManager({ currentUser }) {
     }
   });
 
-  const shareBoard = (board) => {
+  const shareBoard = async (board) => {
     const boardRestaurants = restaurants.filter(r => 
       (board.filters.restaurant_ids || []).includes(r.id)
     );
     const text = `Check out my "${board.name}" mood board on SeatFinder!\n\n${boardRestaurants.map(r => `🍽️ ${r.name}`).join('\n')}`;
     
     if (navigator.share) {
-      navigator.share({ title: board.name, text });
+      try {
+        await navigator.share({ title: board.name, text });
+        toast.success('Board shared!');
+      } catch (error) {
+        // Fallback to clipboard if share fails
+        navigator.clipboard.writeText(text);
+        toast.success('Board copied to clipboard!');
+      }
     } else {
       navigator.clipboard.writeText(text);
       toast.success('Board copied to clipboard!');
