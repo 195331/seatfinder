@@ -198,7 +198,7 @@ Return JSON format:
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-2">
+      <div className="flex gap-2 items-start">
         <div className="relative flex-1">
           <Sparkles className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-purple-500" />
           <Input
@@ -227,6 +227,18 @@ Return JSON format:
             </>
           )}
         </Button>
+        <a 
+          href={base44.agents.getWhatsAppConnectURL('seatfinder_ai')} 
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <Button
+            variant="outline"
+            className="h-12 px-4 border-green-500 text-green-700 hover:bg-green-50"
+          >
+            💬 WhatsApp
+          </Button>
+        </a>
       </div>
 
       {results && (
