@@ -10,6 +10,11 @@ import MacBookDemo from '@/components/landing/MacBookDemo';
 import FloatingFood from '@/components/landing/FloatingFood';
 import FeatureCards from '@/components/landing/FeatureCards';
 import SplitSection from '@/components/landing/SplitSection';
+import LivingBackground from '@/components/landing/LivingBackground';
+import StoryScroll from '@/components/landing/StoryScroll';
+import WowMoment from '@/components/landing/WowMoment';
+import SocialProof from '@/components/landing/SocialProof';
+import ConversionPanel from '@/components/landing/ConversionPanel';
 
 export default function Landing() {
   const navigate = useNavigate();
@@ -61,9 +66,9 @@ export default function Landing() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 overflow-x-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 overflow-x-hidden relative">
       {/* Sticky Mini Nav */}
-      <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200/50">
+      <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 transition-all duration-300 hover:bg-white/90">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -96,7 +101,7 @@ export default function Landing() {
                 sessionStorage.setItem('browsing_as_guest', 'true');
                 navigate(createPageUrl('Home'));
               }} 
-              className="bg-emerald-600 hover:bg-emerald-700"
+              className="bg-emerald-600 hover:bg-emerald-700 hover:shadow-lg hover:shadow-emerald-500/30 transition-all"
             >
               Launch App
             </Button>
@@ -106,8 +111,8 @@ export default function Landing() {
 
       {/* Hero Section */}
       <section id="hero" ref={heroRef} className="relative min-h-screen flex items-center py-20 overflow-hidden">
-        {/* Floating Food Background */}
-        {!shouldReduceMotion && <FloatingFood />}
+        {/* Living Background */}
+        {!shouldReduceMotion && <LivingBackground />}
 
         <div className="max-w-7xl mx-auto px-4 w-full relative z-10">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
@@ -138,33 +143,37 @@ export default function Landing() {
 
                 {/* CTAs */}
                 <div className="flex flex-wrap gap-4 pt-4">
-                  <Button
-                    onClick={() => {
-                      sessionStorage.setItem('browsing_as_guest', 'true');
-                      navigate(createPageUrl('Home'));
-                    }}
-                    size="lg"
-                    className={cn(
-                      "gap-2 h-14 px-8 text-lg",
-                      activeTab === 'diner' ? "bg-emerald-600 hover:bg-emerald-700 scale-105" : "bg-slate-900 hover:bg-slate-800"
-                    )}
-                  >
-                    <MapPin className="w-5 h-5" />
-                    Find a Table
-                    <ArrowRight className="w-5 h-5" />
-                  </Button>
-                  <Button
-                    onClick={() => navigate(createPageUrl('CreateRestaurant'))}
-                    variant="outline"
-                    size="lg"
-                    className={cn(
-                      "gap-2 h-14 px-8 text-lg",
-                      activeTab === 'owner' && "border-emerald-600 text-emerald-600 hover:bg-emerald-50 scale-105"
-                    )}
-                  >
-                    <Sparkles className="w-5 h-5" />
-                    Start Free Trial
-                  </Button>
+                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <Button
+                      onClick={() => {
+                        sessionStorage.setItem('browsing_as_guest', 'true');
+                        navigate(createPageUrl('Home'));
+                      }}
+                      size="lg"
+                      className={cn(
+                        "gap-2 h-14 px-8 text-lg shadow-lg hover:shadow-xl transition-all",
+                        activeTab === 'diner' ? "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-500/30" : "bg-slate-900 hover:bg-slate-800"
+                      )}
+                    >
+                      <MapPin className="w-5 h-5" />
+                      Find a Table
+                      <ArrowRight className="w-5 h-5" />
+                    </Button>
+                  </motion.div>
+                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <Button
+                      onClick={() => navigate(createPageUrl('CreateRestaurant'))}
+                      variant="outline"
+                      size="lg"
+                      className={cn(
+                        "gap-2 h-14 px-8 text-lg hover:shadow-lg transition-all",
+                        activeTab === 'owner' && "border-emerald-600 text-emerald-600 hover:bg-emerald-50 shadow-emerald-500/20"
+                      )}
+                    >
+                      <Sparkles className="w-5 h-5" />
+                      Start Free Trial
+                    </Button>
+                  </motion.div>
                 </div>
 
                 {/* Trust Line */}
@@ -186,24 +195,38 @@ export default function Landing() {
                   <button
                     onClick={() => setActiveTab('diner')}
                     className={cn(
-                      "px-6 py-3 rounded-full text-sm font-medium transition-all",
+                      "px-6 py-3 rounded-full text-sm font-medium transition-all duration-300 relative overflow-hidden",
                       activeTab === 'diner' 
-                        ? "bg-white shadow-md text-slate-900" 
+                        ? "bg-white shadow-lg text-slate-900" 
                         : "text-slate-600 hover:text-slate-900"
                     )}
                   >
-                    Diner View
+                    {activeTab === 'diner' && (
+                      <motion.div
+                        layoutId="activeTab"
+                        className="absolute inset-0 bg-white rounded-full"
+                        transition={{ type: "spring", duration: 0.5 }}
+                      />
+                    )}
+                    <span className="relative z-10">Diner View</span>
                   </button>
                   <button
                     onClick={() => setActiveTab('owner')}
                     className={cn(
-                      "px-6 py-3 rounded-full text-sm font-medium transition-all",
+                      "px-6 py-3 rounded-full text-sm font-medium transition-all duration-300 relative overflow-hidden",
                       activeTab === 'owner' 
-                        ? "bg-white shadow-md text-slate-900" 
+                        ? "bg-white shadow-lg text-slate-900" 
                         : "text-slate-600 hover:text-slate-900"
                     )}
                   >
-                    Owner View
+                    {activeTab === 'owner' && (
+                      <motion.div
+                        layoutId="activeTab"
+                        className="absolute inset-0 bg-white rounded-full"
+                        transition={{ type: "spring", duration: 0.5 }}
+                      />
+                    )}
+                    <span className="relative z-10">Owner View</span>
                   </button>
                 </div>
               </div>
@@ -234,12 +257,16 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Split Section */}
-      <section id="split" className="py-20 bg-slate-50">
-        <div className="max-w-7xl mx-auto px-4">
-          <SplitSection />
-        </div>
+      {/* Story Scroll */}
+      <section className="bg-white">
+        <StoryScroll />
       </section>
+
+      {/* Wow Moment */}
+      <WowMoment />
+
+      {/* Social Proof */}
+      <SocialProof />
 
       {/* Final CTA */}
       <section id="cta" className="py-32 relative overflow-hidden">
@@ -283,11 +310,14 @@ export default function Landing() {
       </section>
 
       {/* Footer */}
-      <footer className="py-12 border-t border-slate-200">
+      <footer className="py-12 border-t border-slate-200 bg-slate-50">
         <div className="max-w-7xl mx-auto px-4 text-center text-slate-600">
           <p>© 2025 SeatFinder. Skip the wait, find your table.</p>
         </div>
       </footer>
+
+      {/* Conversion Panel */}
+      <ConversionPanel />
     </div>
   );
 }
