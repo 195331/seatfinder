@@ -28,6 +28,7 @@ import PromotionBanner from "@/components/customer/PromotionBanner";
 import LoyaltyCard from "@/components/customer/LoyaltyCard";
 import { OpeningHoursDisplay } from "@/components/owner/OpeningHoursEditor";
 import PhotoGallery from "@/components/customer/PhotoGallery";
+import PreOrderCart from "@/components/customer/PreOrderCart";
 import moment from 'moment';
 import { cn } from "@/lib/utils";
 
@@ -50,6 +51,9 @@ export default function RestaurantDetail() {
   const [showReviewDialog, setShowReviewDialog] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const [userWaitlistPosition, setUserWaitlistPosition] = useState(null);
+  const [reservationStep, setReservationStep] = useState('select'); // 'select' or 'preorder'
+  const [pendingReservation, setPendingReservation] = useState(null);
+  const [preorderCart, setPreorderCart] = useState([]);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -224,6 +228,14 @@ export default function RestaurantDetail() {
         return;
       }
       
+      // Check if restaurant has pre-order enabled and handle accordingly
+      if (restaurant.enable_preorder && !data.skipPreorder) {
+        // Store pending reservation and move to pre-order step
+        setPendingReservation(data);
+        setReservationStep('preorder');
+        return { shouldShowPreorder: true };
+      }
+      
       // Fetch reservation rules
       const rules = await base44.entities.ReservationRule.filter({ 
         restaurant_id: restaurantId,
@@ -298,10 +310,28 @@ export default function RestaurantDetail() {
         notes: data.notes,
         status
       });
+
+      // Create pre-order if items exist
+      if (data.preorder && data.preorder.items.length > 0) {
+        await base44.entities.PreOrder.create({
+          reservation_id: reservation.id,
+          restaurant_id: restaurantId,
+          user_id: currentUser.id,
+          items: data.preorder.items,
+          special_instructions: data.preorder.specialInstructions,
+          total_amount: data.preorder.total,
+          payment_status: 'pay_at_restaurant'
+        });
+      }
       
       return { reservation, status, matchedRule };
     },
     onSuccess: (result) => {
+      if (result?.shouldShowPreorder) {
+        // Don't show toast, just transition to pre-order step
+        return;
+      }
+      
       if (result.status === 'approved') {
         toast.success("🎉 Reservation confirmed! You're all set.", { duration: 5000 });
       } else if (result.status === 'declined') {
@@ -309,6 +339,12 @@ export default function RestaurantDetail() {
       } else {
         toast.success("Reservation request sent! Waiting for confirmation. You'll get a notification within 30 minutes.", { duration: 5000 });
       }
+      
+      // Reset states
+      setReservationStep('select');
+      setPendingReservation(null);
+      setPreorderCart([]);
+      
       queryClient.invalidateQueries(['tables']);
       queryClient.invalidateQueries(['myReservations']);
     },
@@ -316,6 +352,38 @@ export default function RestaurantDetail() {
       toast.error("Failed to submit reservation: " + error.message);
     }
   });
+
+  const handlePreorderComplete = (preorderData) => {
+    // Submit reservation with pre-order data
+    reserveTableMutation.mutate({
+      ...pendingReservation,
+      preorder: preorderData,
+      skipPreorder: true
+    });
+  };
+
+  const handleAddToCart = (menuItem) => {
+    setPreorderCart([...preorderCart, {
+      menu_item_id: menuItem.id,
+      name: menuItem.name,
+      price: menuItem.price,
+      quantity: 1
+    }]);
+  };
+
+  const handleUpdateQuantity = (menuItemId, quantity) => {
+    if (quantity <= 0) {
+      setPreorderCart(preorderCart.filter(item => item.menu_item_id !== menuItemId));
+    } else {
+      setPreorderCart(preorderCart.map(item =>
+        item.menu_item_id === menuItemId ? { ...item, quantity } : item
+      ));
+    }
+  };
+
+  const handleRemoveFromCart = (menuItemId) => {
+    setPreorderCart(preorderCart.filter(item => item.menu_item_id !== menuItemId));
+  };
 
   const submitReviewMutation = useMutation({
     mutationFn: async () => {
@@ -774,31 +842,55 @@ export default function RestaurantDetail() {
           </TabsContent>
 
           <TabsContent value="floorplan" className="mt-6">
-            <Card className="border-0 shadow-lg">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <LayoutGrid className="w-5 h-5" />
-                  Select a Table to Reserve
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {displayTables.length > 0 ? (
-                  <FloorPlanView
-                    tables={displayTables}
-                    areas={floorPlanAreas}
-                    onReserveTable={(data) => reserveTableMutation.mutate(data)}
-                    isSubmitting={reserveTableMutation.isPending}
-                    currentUser={currentUser}
-                  />
-                ) : (
-                  <div className="text-center py-12">
-                    <LayoutGrid className="w-12 h-12 mx-auto text-slate-300 mb-3" />
-                    <p className="text-slate-500">No floor plan available for this restaurant</p>
-                    <p className="text-sm text-slate-400 mt-1">Try joining the waitlist instead</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            {reservationStep === 'select' ? (
+              <Card className="border-0 shadow-lg">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <LayoutGrid className="w-5 h-5" />
+                    Select a Table to Reserve
+                  </CardTitle>
+                  {!restaurant.enable_preorder && menuItems.length > 0 && (
+                    <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <p className="text-sm text-blue-800">
+                        💡 <strong>Coming soon:</strong> This restaurant doesn't accept menu pre-orders in advance (yet).
+                      </p>
+                    </div>
+                  )}
+                </CardHeader>
+                <CardContent>
+                  {displayTables.length > 0 ? (
+                    <FloorPlanView
+                      tables={displayTables}
+                      areas={floorPlanAreas}
+                      onReserveTable={(data) => reserveTableMutation.mutate(data)}
+                      isSubmitting={reserveTableMutation.isPending}
+                      currentUser={currentUser}
+                    />
+                  ) : (
+                    <div className="text-center py-12">
+                      <LayoutGrid className="w-12 h-12 mx-auto text-slate-300 mb-3" />
+                      <p className="text-slate-500">No floor plan available for this restaurant</p>
+                      <p className="text-sm text-slate-400 mt-1">Try joining the waitlist instead</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ) : (
+              <PreOrderCart
+                menuItems={menuItems}
+                cart={preorderCart}
+                onAddToCart={handleAddToCart}
+                onUpdateQuantity={handleUpdateQuantity}
+                onRemoveFromCart={handleRemoveFromCart}
+                onComplete={handlePreorderComplete}
+                onBack={() => {
+                  setReservationStep('select');
+                  setPendingReservation(null);
+                  setPreorderCart([]);
+                }}
+                isSubmitting={reserveTableMutation.isPending}
+              />
+            )}
           </TabsContent>
 
           <TabsContent value="reviews" className="mt-6 space-y-6">
