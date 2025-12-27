@@ -1,15 +1,45 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, X, Clock, Users, Calendar, MessageSquare } from 'lucide-react';
+import { Check, X, Clock, Users, Calendar, MessageSquare, UtensilsCrossed, ChevronDown, ChevronUp } from 'lucide-react';
 import { toast } from "sonner";
 import moment from 'moment';
 
 export default function ReservationManager({ reservations, restaurantName }) {
   const queryClient = useQueryClient();
+  const [expandedOrders, setExpandedOrders] = useState(new Set());
+
+  // Fetch pre-orders for all reservations
+  const { data: preOrders = [] } = useQuery({
+    queryKey: ['preOrders', reservations.map(r => r.id)],
+    queryFn: async () => {
+      if (reservations.length === 0) return [];
+      const orders = await Promise.all(
+        reservations.map(r => 
+          base44.entities.PreOrder.filter({ reservation_id: r.id }).then(o => o[0])
+        )
+      );
+      return orders.filter(Boolean);
+    },
+    enabled: reservations.length > 0
+  });
+
+  const toggleOrderExpanded = (reservationId) => {
+    const newExpanded = new Set(expandedOrders);
+    if (newExpanded.has(reservationId)) {
+      newExpanded.delete(reservationId);
+    } else {
+      newExpanded.add(reservationId);
+    }
+    setExpandedOrders(newExpanded);
+  };
+
+  const getPreOrderForReservation = (reservationId) => {
+    return preOrders.find(po => po.reservation_id === reservationId);
+  };
 
   const updateReservationMutation = useMutation({
     mutationFn: async ({ reservationId, status, userEmail, userName, userId, partySize, date, time }) => {
@@ -141,6 +171,58 @@ export default function ReservationManager({ reservations, restaurantName }) {
                     </div>
                   )}
 
+                  {(() => {
+                    const preOrder = getPreOrderForReservation(reservation.id);
+                    const isExpanded = expandedOrders.has(reservation.id);
+                    
+                    if (preOrder) {
+                      return (
+                        <div className="mb-4 bg-white border border-emerald-200 rounded-lg overflow-hidden">
+                          <button
+                            onClick={() => toggleOrderExpanded(reservation.id)}
+                            className="w-full flex items-center justify-between p-3 hover:bg-emerald-50 transition-colors"
+                          >
+                            <div className="flex items-center gap-2">
+                              <UtensilsCrossed className="w-4 h-4 text-emerald-600" />
+                              <span className="font-medium text-emerald-900">Pre-Order</span>
+                              <Badge className="bg-emerald-600">{preOrder.items.length} items</Badge>
+                              <span className="text-sm text-emerald-700">${preOrder.total_amount.toFixed(2)}</span>
+                            </div>
+                            {isExpanded ? (
+                              <ChevronUp className="w-4 h-4 text-slate-400" />
+                            ) : (
+                              <ChevronDown className="w-4 h-4 text-slate-400" />
+                            )}
+                          </button>
+                          
+                          {isExpanded && (
+                            <div className="p-3 pt-0 space-y-2">
+                              {preOrder.items.map((item, i) => (
+                                <div key={i} className="flex items-center justify-between text-sm">
+                                  <span className="text-slate-700">
+                                    {item.quantity}x {item.name}
+                                  </span>
+                                  <span className="text-slate-900 font-medium">
+                                    ${(item.price * item.quantity).toFixed(2)}
+                                  </span>
+                                </div>
+                              ))}
+                              {preOrder.special_instructions && (
+                                <div className="pt-2 mt-2 border-t text-xs text-slate-600">
+                                  <span className="font-medium">Instructions:</span> {preOrder.special_instructions}
+                                </div>
+                              )}
+                              <div className="pt-2 mt-2 border-t">
+                                <Badge variant="outline" className="text-xs">Pay at Restaurant</Badge>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
+
                   <div className="flex gap-2">
                     <Button
                       onClick={() => handleApprove(reservation)}
@@ -185,11 +267,25 @@ export default function ReservationManager({ reservations, restaurantName }) {
                   key={reservation.id}
                   className="flex items-center justify-between p-3 bg-emerald-50 border border-emerald-200 rounded-xl"
                 >
-                  <div>
+                  <div className="flex-1">
                     <p className="font-medium text-slate-900">{reservation.user_name}</p>
                     <p className="text-sm text-slate-600">
                       {reservation.reservation_time} • {reservation.party_size} guests
                     </p>
+                    {(() => {
+                      const preOrder = getPreOrderForReservation(reservation.id);
+                      if (preOrder) {
+                        return (
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge variant="outline" className="text-xs border-emerald-500 text-emerald-700">
+                              <UtensilsCrossed className="w-3 h-3 mr-1" />
+                              Pre-Order: ${preOrder.total_amount.toFixed(2)}
+                            </Badge>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
                   </div>
                   <Badge className="bg-emerald-600">Confirmed</Badge>
                 </div>

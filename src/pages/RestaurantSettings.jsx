@@ -123,6 +123,7 @@ export default function RestaurantSettings() {
       has_outdoor: formData.has_outdoor,
       has_bar_seating: formData.has_bar_seating,
       is_kid_friendly: formData.is_kid_friendly,
+      enable_preorder: formData.enable_preorder,
       latitude: formData.latitude,
       longitude: formData.longitude,
       cover_image: formData.cover_image,
@@ -326,6 +327,16 @@ export default function RestaurantSettings() {
                 <Switch
                   checked={formData.is_kid_friendly}
                   onCheckedChange={(checked) => updateField('is_kid_friendly', checked)}
+                />
+              </div>
+              <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
+                <div>
+                  <span className="font-medium">Enable Pre-Order with Reservation</span>
+                  <p className="text-xs text-slate-500 mt-0.5">Allow diners to order menu items when reserving</p>
+                </div>
+                <Switch
+                  checked={formData.enable_preorder}
+                  onCheckedChange={(checked) => updateField('enable_preorder', checked)}
                 />
               </div>
             </div>
