@@ -1,774 +1,1301 @@
-import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import {
-  Sparkles,
-  Plus,
   MousePointer2,
-  PencilRuler,
+  Hand,
   ZoomIn,
   ZoomOut,
-  Maximize2,
-  Undo,
-  Redo,
   RotateCw,
+  Square,
+  Circle,
+  Type,
+  Pencil,
+  Layers,
+  Lock,
+  Unlock,
   Copy,
   Trash2,
+  Sparkles,
+  Grid3x3,
   CheckCircle,
-  AlertCircle,
   Loader2,
-  PanelRightOpen,
-  PanelRightClose,
+  AlertCircle,
+  Undo,
+  Redo,
+  BringToFront,
+  SendToBack,
 } from "lucide-react";
-
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
-const CANVAS_W = 1600;
-const CANVAS_H = 1000;
+/**
+ * FLOOR PLAN STUDIO (Premium)
+ * - Free placement (grid optional)
+ * - Walls + text labels (non-reservable)
+ * - Resize + rotate handles
+ * - Multi-select, group, lock items
+ * - Right click context menu with Ask AI
+ * - Optional overlap prevention + auto-fix
+ * - Area labels always visible
+ */
 
-const PAD = 18;              // boundary padding inside outline
-const MIN_GAP = 10;          // min gap between tables
-const SNAP_T = 10;           // snap threshold px
+const CANVAS_W = 2400;
+const CANVAS_H = 1600;
 
-const TABLE_STYLES = {
-  free: { fill: "#ffffff", stroke: "#dbeafe", ring: "#60a5fa" },
-  occupied: { fill: "#fff7ed", stroke: "#fed7aa", ring: "#fb923c" },
-  reserved: { fill: "#eff6ff", stroke: "#bfdbfe", ring: "#3b82f6" },
+const GRID_SIZE = 40;
+const SNAP_STEP = 10; // finer than grid
+const MIN_SIZE = 28;
+
+const DEFAULT_TABLES = [
+  { seats: 2, w: 64, h: 64, shape: "round" },
+  { seats: 4, w: 78, h: 78, shape: "square" },
+  { seats: 6, w: 96, h: 78, shape: "rect" },
+  { seats: 8, w: 118, h: 82, shape: "rect" },
+  { seats: 10, w: 140, h: 86, shape: "rect" },
+];
+
+const COLORS = [
+  "#0ea5e9",
+  "#10b981",
+  "#f59e0b",
+  "#ef4444",
+  "#8b5cf6",
+  "#64748b",
+  "#111827",
+  "#ffffff",
+];
+
+const TABLE_STYLE_PRESET = {
+  fill: "#ffffff",
+  stroke: "#cbd5e1",
+  shadow: true,
 };
 
-const SHAPES = {
-  round: { label: "Round" },
-  square: { label: "Square" },
-  rectangle: { label: "Rectangle" },
-  booth: { label: "Booth" },
+const AREA_STYLE_PRESET = {
+  fill: "#e0f2fe",
+  stroke: "#60a5fa",
+  dash: "6,6",
+  opacity: 0.35,
 };
+
+const WALL_STYLE_PRESET = {
+  stroke: "#111827",
+  width: 6,
+};
+
+const TEXT_STYLE_PRESET = {
+  color: "#111827",
+  size: 16,
+};
+
+function deepClone(obj) {
+  // structuredClone is best, fallback to JSON
+  try {
+    return structuredClone(obj);
+  } catch {
+    return JSON.parse(JSON.stringify(obj));
+  }
+}
 
 function clamp(n, a, b) {
   return Math.max(a, Math.min(b, n));
 }
 
-function deepCopy(x) {
-  return JSON.parse(JSON.stringify(x));
+function snapValue(v, step) {
+  return Math.round(v / step) * step;
 }
 
-// AABB for overlap checks (rotation-safe approximation)
-function getAABB(t) {
-  const cx = t.x + t.width / 2;
-  const cy = t.y + t.height / 2;
-
-  if (t.shape === "round") {
-    return { x: t.x, y: t.y, w: t.width, h: t.height };
-  }
-
-  const rot = ((t.rotation || 0) * Math.PI) / 180;
-  const cos = Math.cos(rot);
-  const sin = Math.sin(rot);
-
-  const aabbW = Math.abs(t.width * cos) + Math.abs(t.height * sin);
-  const aabbH = Math.abs(t.width * sin) + Math.abs(t.height * cos);
-
-  return { x: cx - aabbW / 2, y: cy - aabbH / 2, w: aabbW, h: aabbH };
-}
-
-function overlaps(a, b, pad = 0) {
+function rectsIntersect(a, b, pad = 0) {
   return !(
-    a.x + a.w + pad < b.x ||
-    a.x > b.x + b.w + pad ||
-    a.y + a.h + pad < b.y ||
-    a.y > b.y + b.h + pad
+    a.x + a.w + pad <= b.x ||
+    a.x >= b.x + b.w + pad ||
+    a.y + a.h + pad <= b.y ||
+    a.y >= b.y + b.h + pad
   );
 }
 
-function insideOutlineBox(table, outline) {
-  if (!outline) return true;
-  return (
-    table.x >= outline.x + PAD &&
-    table.y >= outline.y + PAD &&
-    table.x + table.width <= outline.x + outline.width - PAD &&
-    table.y + table.height <= outline.y + outline.height - PAD
-  );
-}
-
-function tableDimsForType(type) {
-  // Premium-looking default sizes by “type”
-  // (You can tweak these later)
-  switch (type) {
-    case "t2":
-      return { shape: "round", width: 72, height: 72, seats: 2 };
-    case "t4":
-      return { shape: "round", width: 92, height: 92, seats: 4 };
-    case "t6":
-      return { shape: "rectangle", width: 122, height: 86, seats: 6 };
-    case "t8":
-      return { shape: "rectangle", width: 144, height: 96, seats: 8 };
-    case "booth":
-      return { shape: "booth", width: 160, height: 78, seats: 4 };
-    default:
-      return { shape: "round", width: 92, height: 92, seats: 4 };
+// Axis-aligned bounds for rotated rect (approx)
+function rotatedBBox(item) {
+  if (item.type !== "table" && item.type !== "area" && item.type !== "textBox") {
+    return null;
   }
-}
+  const x = item.x;
+  const y = item.y;
+  const w = item.w;
+  const h = item.h;
+  const r = ((item.rotation || 0) * Math.PI) / 180;
+  const cx = x + w / 2;
+  const cy = y + h / 2;
 
-function nextLabel(existing) {
-  const used = new Set(existing.map((t) => t.label));
-  let i = 1;
-  while (used.has(`T${i}`)) i++;
-  return `T${i}`;
-}
-
-/**
- * Smart / "AI" layout generation:
- * - Uses your preferences to pack tables into clean rows with aisles
- * - Creates a layout that looks intentional (not random clutter)
- */
-function generateSmartLayout({ outline, vibe, targetSeats, aisle, includeBooths, tableMix }) {
-  if (!outline) return { tables: [], warnings: ["Draw the outline first."] };
-
-  // Decide table counts
-  // If tableMix provided, use it; else derive from targetSeats + vibe.
-  const mix = tableMix || (() => {
-    const seats = Math.max(10, Number(targetSeats || 40));
-    // Ratios by vibe:
-    const ratios =
-      vibe === "max"
-        ? { t2: 0.10, t4: 0.55, t6: 0.25, t8: 0.10 }
-        : vibe === "cozy"
-        ? { t2: 0.25, t4: 0.55, t6: 0.15, t8: 0.05 }
-        : { t2: 0.18, t4: 0.58, t6: 0.18, t8: 0.06 }; // balanced
-
-    const counts = { t2: 0, t4: 0, t6: 0, t8: 0 };
-    let remaining = seats;
-
-    const order = ["t8", "t6", "t4", "t2"];
-    for (const k of order) {
-      const want = Math.max(0, Math.floor((seats * ratios[k]) / (k === "t2" ? 2 : k === "t4" ? 4 : k === "t6" ? 6 : 8)));
-      counts[k] = want;
-      remaining -= want * (k === "t2" ? 2 : k === "t4" ? 4 : k === "t6" ? 6 : 8);
-    }
-
-    // Fill remaining mostly with 4-tops
-    counts.t4 += Math.max(0, Math.ceil(remaining / 4));
-    return counts;
-  })();
-
-  // Build table spec list
-  const specs = [];
-  if (includeBooths) {
-    // Add a few booths first
-    specs.push(...Array(3).fill("booth"));
-  }
-  Object.entries(mix).forEach(([k, n]) => {
-    for (let i = 0; i < Number(n || 0); i++) specs.push(k);
+  const corners = [
+    { x: x, y: y },
+    { x: x + w, y: y },
+    { x: x + w, y: y + h },
+    { x: x, y: y + h },
+  ].map((p) => {
+    const dx = p.x - cx;
+    const dy = p.y - cy;
+    return {
+      x: cx + dx * Math.cos(r) - dy * Math.sin(r),
+      y: cy + dx * Math.sin(r) + dy * Math.cos(r),
+    };
   });
 
-  // Packing regions
-  const usable = {
-    x: outline.x + PAD,
-    y: outline.y + PAD,
-    w: outline.width - PAD * 2,
-    h: outline.height - PAD * 2,
-  };
-
-  // Big center aisle that makes it look realistic
-  const aisleW = clamp(Number(aisle || 70), 40, 160);
-  const colW = (usable.w - aisleW) / 2;
-
-  const left = { x: usable.x, y: usable.y, w: colW, h: usable.h };
-  const right = { x: usable.x + colW + aisleW, y: usable.y, w: colW, h: usable.h };
-
-  const placed = [];
-  const warnings = [];
-
-  function tryPlaceInRegion(region, specList) {
-    let x = region.x;
-    let y = region.y;
-    let rowH = 0;
-
-    const remainingSpecs = [];
-
-    for (const type of specList) {
-      const d = tableDimsForType(type);
-
-      // slight variation so it doesn’t look copy/paste
-      const jitter = vibe === "cozy" ? 6 : 3;
-
-      // Booths hug the top wall
-      if (type === "booth") {
-        const booth = {
-          id: Date.now() + Math.random(),
-          x: clamp(region.x + 8, region.x, region.x + region.w - d.width),
-          y: region.y + 6,
-          width: d.width,
-          height: d.height,
-          seats: d.seats,
-          shape: d.shape,
-          rotation: 0,
-          state: "free",
-          label: "Booth",
-        };
-        // place only if it fits and doesn’t overlap
-        const a = getAABB(booth);
-        const okInside = booth.x + booth.width <= region.x + region.w && booth.y + booth.height <= region.y + region.h;
-        const okOverlap = placed.every((t) => !overlaps(a, getAABB(t), MIN_GAP));
-        if (okInside && okOverlap) placed.push(booth);
-        continue;
-      }
-
-      const w = d.width;
-      const h = d.height;
-
-      // new row if needed
-      if (x + w > region.x + region.w) {
-        x = region.x;
-        y = y + rowH + MIN_GAP + 6;
-        rowH = 0;
-      }
-
-      // out of vertical space
-      if (y + h > region.y + region.h) {
-        remainingSpecs.push(type);
-        continue;
-      }
-
-      const candidate = {
-        id: Date.now() + Math.random(),
-        x: x + Math.floor(Math.random() * jitter),
-        y: y + Math.floor(Math.random() * jitter),
-        width: w,
-        height: h,
-        seats: d.seats,
-        shape: d.shape,
-        rotation: d.shape === "rectangle" ? 0 : 0,
-        state: "free",
-        label: "", // fill later
-      };
-
-      // overlap check
-      const a = getAABB(candidate);
-      const okOverlap = placed.every((t) => !overlaps(a, getAABB(t), MIN_GAP));
-      if (!okOverlap) {
-        // try shifting a bit
-        candidate.x += MIN_GAP + 8;
-      }
-
-      const a2 = getAABB(candidate);
-      const okOverlap2 = placed.every((t) => !overlaps(a2, getAABB(t), MIN_GAP));
-      const okInside =
-        candidate.x + candidate.width <= region.x + region.w &&
-        candidate.y + candidate.height <= region.y + region.h;
-
-      if (okOverlap2 && okInside) {
-        placed.push(candidate);
-        x = candidate.x + w + MIN_GAP;
-        rowH = Math.max(rowH, h);
-      } else {
-        remainingSpecs.push(type);
-      }
-    }
-
-    return remainingSpecs;
-  }
-
-  // place left then right
-  let rest = tryPlaceInRegion(left, specs);
-  rest = tryPlaceInRegion(right, rest);
-
-  // label unique
-  placed.forEach((t) => {
-    if (t.label === "Booth") return;
-    t.label = nextLabel(placed.filter((x) => x.id !== t.id));
-  });
-
-  const seats = placed.reduce((s, t) => s + (t.seats || 0), 0);
-
-  if (rest.length > 0) warnings.push(`Could not place ${rest.length} tables (outline too small for your settings).`);
-  if (seats < Number(targetSeats || 0) * 0.75) warnings.push("Seat target may be too high for this outline. Try ‘Max Seats’ or reduce aisle width.");
-
-  return { tables: placed, warnings };
+  const xs = corners.map((c) => c.x);
+  const ys = corners.map((c) => c.y);
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+  return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
 }
 
-// One-click “Tidy”: aligns into clean rows (keeps inside outline)
-function tidyLayout(tables, outline) {
-  if (!outline || tables.length === 0) return tables;
+function selectionBBox(items) {
+  const boxes = items
+    .map((it) => (it.type === "wall" ? null : rotatedBBox(it)))
+    .filter(Boolean);
+  if (!boxes.length) return null;
+  const minX = Math.min(...boxes.map((b) => b.x));
+  const minY = Math.min(...boxes.map((b) => b.y));
+  const maxX = Math.max(...boxes.map((b) => b.x + b.w));
+  const maxY = Math.max(...boxes.map((b) => b.y + b.h));
+  return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
+}
 
-  const usable = {
-    x: outline.x + PAD,
-    y: outline.y + PAD,
-    w: outline.width - PAD * 2,
-    h: outline.height - PAD * 2,
-  };
+function makeId(prefix = "it") {
+  return `${prefix}_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+}
 
-  const sorted = [...tables].sort((a, b) => (a.y - b.y) || (a.x - b.x));
+function normalizeLine(x1, y1, x2, y2) {
+  return { x1, y1, x2, y2 };
+}
 
-  let x = usable.x;
-  let y = usable.y;
-  let rowH = 0;
-
-  const out = [];
-  for (const t of sorted) {
-    const w = t.width;
-    const h = t.height;
-
-    if (x + w > usable.x + usable.w) {
-      x = usable.x;
-      y = y + rowH + MIN_GAP + 6;
-      rowH = 0;
-    }
-    if (y + h > usable.y + usable.h) break;
-
-    const nt = { ...t, x, y };
-    out.push(nt);
-
-    x = x + w + MIN_GAP;
-    rowH = Math.max(rowH, h);
-  }
-
-  // keep any leftovers at original positions
-  if (out.length < tables.length) {
-    out.push(...tables.slice(out.length));
-  }
-
-  return out.map((t) => ({
-    ...t,
-    x: clamp(t.x, usable.x, usable.x + usable.w - t.width),
-    y: clamp(t.y, usable.y, usable.y + usable.h - t.height),
-  }));
+function midpointLine(w) {
+  return { x: (w.x1 + w.x2) / 2, y: (w.y1 + w.y2) / 2 };
 }
 
 export default function FloorPlanBuilderPremium({ restaurant, onPublish }) {
-  const canvasRef = useRef(null);
+  const viewportRef = useRef(null);
 
-  const [outline, setOutline] = useState(null);
-  const [areas, setAreas] = useState([]); // optional later
-  const [tables, setTables] = useState([]);
+  // Studio view state
+  const [tool, setTool] = useState("select"); // select | pan | table | wall | area | text
+  const [zoom, setZoom] = useState(0.9);
+  const [pan, setPan] = useState({ x: 60, y: 40 });
 
-  const [mode, setMode] = useState("select"); // select | add-table | draw-outline
-  const [selectedId, setSelectedId] = useState(null);
+  const [showGrid, setShowGrid] = useState(true);
+  const [snapToGrid, setSnapToGrid] = useState(false);
+  const [preventOverlap, setPreventOverlap] = useState(true);
 
-  // View
-  const [zoom, setZoom] = useState(1);
-  const [pan, setPan] = useState({ x: 0, y: 0 });
-  const [panning, setPanning] = useState(null); // {startX,startY,panX,panY}
+  // Data model
+  const [outline, setOutline] = useState(null); // optional rect outline (fast)
+  const [items, setItems] = useState([]); // tables + walls + text + areas
 
-  // Draft outline
-  const [outlineDraft, setOutlineDraft] = useState(null);
+  // Selection
+  const [selection, setSelection] = useState([]); // ids
+  const selectedItems = useMemo(
+    () => items.filter((it) => selection.includes(it.id)),
+    [items, selection]
+  );
 
-  // Drag
-  const [drag, setDrag] = useState(null); // {id,offsetX,offsetY,lastValid:{x,y}}
-  const [ghost, setGhost] = useState(null); // {table, valid, reason}
+  // Drag session (imperative to reduce jitter)
+  const dragRef = useRef({
+    active: false,
+    kind: null, // move|resize|rotate|drawWall|drawArea|placeTable|placeText|pan|drawOutline
+    startClient: null,
+    startWorld: null,
+    startPan: null,
+    startItems: null,
+    targetId: null,
+    handle: null,
+    tempId: null,
+  });
 
-  // Clean UI toggles
-  const [showGrid, setShowGrid] = useState(false);
-  const [showSeatDots, setShowSeatDots] = useState(false);
-  const [snapOn, setSnapOn] = useState(true);
+  // Context menu
+  const [ctxMenu, setCtxMenu] = useState({
+    open: false,
+    x: 0,
+    y: 0,
+    targetId: null,
+  });
 
-  // Right panel
-  const [panelOpen, setPanelOpen] = useState(true);
-  const [panelTab, setPanelTab] = useState("ai"); // ai | props
+  // Color popover
+  const [colorPop, setColorPop] = useState({
+    open: false,
+    x: 0,
+    y: 0,
+    targetId: null,
+    field: "fill", // fill|stroke|text
+  });
 
-  // AI layout config
-  const [aiVibe, setAiVibe] = useState("balanced"); // cozy | balanced | max
-  const [aiTargetSeats, setAiTargetSeats] = useState(48);
-  const [aiAisle, setAiAisle] = useState(80);
-  const [aiBooths, setAiBooths] = useState(true);
-  const [aiUseMix, setAiUseMix] = useState(false);
-  const [aiMix, setAiMix] = useState({ t2: 4, t4: 8, t6: 2, t8: 1 });
-
-  // Errors & saving
-  const [errors, setErrors] = useState([]);
-  const [isSaving, setIsSaving] = useState(false);
+  // AI modal
+  const [aiModal, setAiModal] = useState({
+    open: false,
+    targetId: null,
+    prompt: "",
+    mode: "selection", // selection|layout
+    isRunning: false,
+  });
 
   // History
   const [history, setHistory] = useState([]);
-  const [historyIndex, setHistoryIndex] = useState(-1);
+  const [hIndex, setHIndex] = useState(-1);
 
-  const selectedTable = useMemo(() => tables.find((t) => t.id === selectedId) || null, [tables, selectedId]);
-  const totalSeats = useMemo(() => tables.reduce((s, t) => s + (t.seats || 0), 0), [tables]);
+  const [errors, setErrors] = useState([]);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const pushHistory = useCallback((state) => {
-    setHistory((prev) => {
-      const trimmed = prev.slice(0, historyIndex + 1);
-      return [...trimmed, deepCopy(state)];
-    });
-    setHistoryIndex((i) => i + 1);
-  }, [historyIndex]);
-
-  const undo = useCallback(() => {
-    setHistoryIndex((idx) => {
-      if (idx <= 0) return idx;
-      const s = history[idx - 1];
-      if (s) {
-        setOutline(s.outline);
-        setAreas(s.areas);
-        setTables(s.tables);
-        setSelectedId(null);
-      }
-      return idx - 1;
-    });
-  }, [history]);
-
-  const redo = useCallback(() => {
-    setHistoryIndex((idx) => {
-      if (idx >= history.length - 1) return idx;
-      const s = history[idx + 1];
-      if (s) {
-        setOutline(s.outline);
-        setAreas(s.areas);
-        setTables(s.tables);
-        setSelectedId(null);
-      }
-      return idx + 1;
-    });
-  }, [history]);
-
-  // Load
+  // ---------- Load existing floor plan ----------
   useEffect(() => {
     if (!restaurant) return;
+
     const fp = restaurant.floor_plan_data;
-    const o = fp?.outline || null;
-    const a = fp?.areas || [];
-    const t = fp?.tables || [];
-
-    setOutline(o);
-    setAreas(a);
-    setTables(t);
-
-    setHistory([{ outline: o, areas: a, tables: t }]);
-    setHistoryIndex(0);
-    setSelectedId(null);
-  }, [restaurant]);
-
-  // Coordinate transform (screen -> world)
-  const screenToWorld = useCallback((clientX, clientY) => {
-    const rect = canvasRef.current?.getBoundingClientRect();
-    if (!rect) return { x: 0, y: 0 };
-    const sx = clientX - rect.left;
-    const sy = clientY - rect.top;
-    return { x: (sx - pan.x) / zoom, y: (sy - pan.y) / zoom };
-  }, [pan.x, pan.y, zoom]);
-
-  const applySnapping = useCallback((candidate) => {
-    if (!snapOn) return candidate;
-
-    let x = candidate.x;
-    let y = candidate.y;
-
-    if (outline) {
-      const L = outline.x + PAD;
-      const T = outline.y + PAD;
-      const R = outline.x + outline.width - PAD;
-      const B = outline.y + outline.height - PAD;
-
-      // edges
-      if (Math.abs(x - L) < SNAP_T) x = L;
-      if (Math.abs(x + candidate.width - R) < SNAP_T) x = R - candidate.width;
-      if (Math.abs(y - T) < SNAP_T) y = T;
-      if (Math.abs(y + candidate.height - B) < SNAP_T) y = B - candidate.height;
-
-      // center
-      const cx = outline.x + outline.width / 2;
-      const cy = outline.y + outline.height / 2;
-      const tcx = x + candidate.width / 2;
-      const tcy = y + candidate.height / 2;
-
-      if (Math.abs(tcx - cx) < SNAP_T) x = cx - candidate.width / 2;
-      if (Math.abs(tcy - cy) < SNAP_T) y = cy - candidate.height / 2;
+    if (fp && (fp.items || fp.outline)) {
+      const loadedOutline = fp.outline || null;
+      const loadedItems = Array.isArray(fp.items) ? fp.items : [];
+      setOutline(loadedOutline);
+      setItems(loadedItems);
+      setSelection([]);
+      // push history snapshot after state set
+      setTimeout(() => {
+        pushHistory({ outline: loadedOutline, items: loadedItems });
+      }, 0);
+    } else {
+      // fresh
+      setOutline(null);
+      setItems([]);
+      setSelection([]);
+      setTimeout(() => {
+        pushHistory({ outline: null, items: [] });
+      }, 0);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [restaurant?.id]);
 
-    // other tables snapping (edges)
-    tables.forEach((t) => {
-      if (t.id === candidate.id) return;
-      if (Math.abs(x - t.x) < SNAP_T) x = t.x;
-      if (Math.abs(x - (t.x + t.width)) < SNAP_T) x = t.x + t.width;
-      if (Math.abs((x + candidate.width) - t.x) < SNAP_T) x = t.x - candidate.width;
+  function snapshot(nextOutline = outline, nextItems = items) {
+    return deepClone({ outline: nextOutline, items: nextItems });
+  }
 
-      if (Math.abs(y - t.y) < SNAP_T) y = t.y;
-      if (Math.abs(y - (t.y + t.height)) < SNAP_T) y = t.y + t.height;
-      if (Math.abs((y + candidate.height) - t.y) < SNAP_T) y = t.y - candidate.height;
+  function pushHistory(stateObj) {
+    setHistory((prev) => {
+      const trimmed = prev.slice(0, hIndex + 1);
+      trimmed.push(deepClone(stateObj));
+      return trimmed;
     });
+    setHIndex((prev) => prev + 1);
+  }
 
-    return { ...candidate, x, y };
-  }, [snapOn, outline, tables]);
+  function undo() {
+    if (hIndex <= 0) return;
+    const prev = history[hIndex - 1];
+    setOutline(prev.outline || null);
+    setItems(prev.items || []);
+    setSelection([]);
+    setHIndex((i) => i - 1);
+  }
 
-  const getInvalidReason = useCallback((candidate) => {
-    if (outline && !insideOutlineBox(candidate, outline)) return "Outside boundary";
-    const a = getAABB(candidate);
-    for (const t of tables) {
-      if (t.id === candidate.id) continue;
-      const b = getAABB(t);
-      if (overlaps(a, b, MIN_GAP)) return `Overlaps ${t.label}`;
+  function redo() {
+    if (hIndex >= history.length - 1) return;
+    const next = history[hIndex + 1];
+    setOutline(next.outline || null);
+    setItems(next.items || []);
+    setSelection([]);
+    setHIndex((i) => i + 1);
+  }
+
+  // ---------- Coordinate helpers ----------
+  function clientToWorld(e) {
+    const rect = viewportRef.current.getBoundingClientRect();
+    const cx = e.clientX - rect.left;
+    const cy = e.clientY - rect.top;
+    const wx = (cx - pan.x) / zoom;
+    const wy = (cy - pan.y) / zoom;
+    return { x: wx, y: wy };
+  }
+
+  function worldToClient(pt) {
+    const rect = viewportRef.current.getBoundingClientRect();
+    return {
+      x: rect.left + pan.x + pt.x * zoom,
+      y: rect.top + pan.y + pt.y * zoom,
+    };
+  }
+
+  // ---------- Validation ----------
+  function computeWarnings(nextItems) {
+    const warn = [];
+
+    const tables = nextItems.filter((i) => i.type === "table");
+    if (!tables.length) {
+      warn.push({ type: "critical", message: "Add at least one table." });
     }
-    return null;
-  }, [outline, tables]);
 
-  const validate = useCallback(() => {
-    const errs = [];
-    if (!outline) errs.push({ type: "critical", message: "Outline is required (Draw Outline)." });
-    if (tables.length === 0) errs.push({ type: "critical", message: "Add at least 1 table." });
-
+    // overlaps (approx)
     for (let i = 0; i < tables.length; i++) {
-      const t = tables[i];
-      if (outline && !insideOutlineBox(t, outline)) {
-        errs.push({ type: "error", message: `Table ${t.label} is outside the boundary.` });
-      }
-      const a = getAABB(t);
+      const a = rotatedBBox(tables[i]);
       for (let j = i + 1; j < tables.length; j++) {
-        const b = getAABB(tables[j]);
-        if (overlaps(a, b, MIN_GAP)) errs.push({ type: "error", message: `${t.label} overlaps ${tables[j].label}.` });
+        const b = rotatedBBox(tables[j]);
+        if (a && b && rectsIntersect(a, b, 6)) {
+          warn.push({
+            type: "warn",
+            message: `Tables overlap: ${tables[i].label || "Table"} & ${
+              tables[j].label || "Table"
+            }`,
+          });
+        }
       }
     }
-    setErrors(errs);
-    return errs.length === 0;
-  }, [outline, tables]);
+
+    // outside outline (soft warning only)
+    if (outline) {
+      tables.forEach((t) => {
+        const bb = rotatedBBox(t);
+        if (!bb) return;
+        const out =
+          bb.x < outline.x ||
+          bb.y < outline.y ||
+          bb.x + bb.w > outline.x + outline.w ||
+          bb.y + bb.h > outline.y + outline.h;
+        if (out) {
+          warn.push({
+            type: "info",
+            message: `${t.label || "A table"} is outside the outline (allowed, but diners may not see it).`,
+          });
+        }
+      });
+    }
+
+    return warn;
+  }
 
   useEffect(() => {
-    validate();
-  }, [outline, tables, validate]);
+    setErrors(computeWarnings(items));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items, outline]);
 
-  // Canvas events
-  const onPointerDown = (e) => {
-    // Pan: Alt + drag or middle mouse
-    if (e.button === 1 || (e.button === 0 && e.altKey)) {
-      setPanning({ startX: e.clientX, startY: e.clientY, panX: pan.x, panY: pan.y });
+  // ---------- Item creation ----------
+  function addTablePreset(seats) {
+    const preset =
+      DEFAULT_TABLES.find((p) => p.seats === seats) || DEFAULT_TABLES[1];
+    setTool("table");
+    dragRef.current.pendingTable = { seats, ...preset };
+    toast.message("Click on canvas to place table");
+  }
+
+  function createTableAt(x, y, preset) {
+    const seats = preset?.seats ?? 4;
+    const w = preset?.w ?? 78;
+    const h = preset?.h ?? 78;
+    const shape = preset?.shape ?? "square";
+
+    const id = makeId("tbl");
+    const label = `T${items.filter((i) => i.type === "table").length + 1}`;
+    const newTable = {
+      id,
+      type: "table",
+      x: x - w / 2,
+      y: y - h / 2,
+      w,
+      h,
+      rotation: 0,
+      shape,
+      seats,
+      label,
+      locked: false,
+      z: 50,
+      style: deepClone(TABLE_STYLE_PRESET),
+    };
+    return newTable;
+  }
+
+  function addAreaAt(x, y) {
+    const id = makeId("area");
+    const newArea = {
+      id,
+      type: "area",
+      x: x - 220,
+      y: y - 140,
+      w: 440,
+      h: 280,
+      rotation: 0,
+      name: "Area",
+      locked: false,
+      z: 10,
+      style: deepClone(AREA_STYLE_PRESET),
+    };
+    setItems((prev) => {
+      const next = [...prev, newArea];
+      pushHistory({ outline, items: next });
+      return next;
+    });
+    setSelection([id]);
+  }
+
+  function addTextAt(x, y, text = "Note") {
+    const id = makeId("txt");
+    const newText = {
+      id,
+      type: "textBox",
+      x,
+      y,
+      w: 160,
+      h: 36,
+      rotation: 0,
+      text,
+      locked: false,
+      z: 5, // background-ish
+      style: deepClone(TEXT_STYLE_PRESET),
+    };
+    setItems((prev) => {
+      const next = [...prev, newText];
+      pushHistory({ outline, items: next });
+      return next;
+    });
+    setSelection([id]);
+  }
+
+  function addWallSegment(x1, y1, x2, y2) {
+    const id = makeId("wall");
+    const wall = {
+      id,
+      type: "wall",
+      ...normalizeLine(x1, y1, x2, y2),
+      locked: false,
+      z: 20,
+      style: deepClone(WALL_STYLE_PRESET),
+    };
+    setItems((prev) => {
+      const next = [...prev, wall];
+      pushHistory({ outline, items: next });
+      return next;
+    });
+    setSelection([id]);
+  }
+
+  // ---------- Layering ----------
+  function sortByZ(a, b) {
+    return (a.z || 0) - (b.z || 0);
+  }
+
+  function bringToFront(ids) {
+    setItems((prev) => {
+      const maxZ = Math.max(0, ...prev.map((i) => i.z || 0));
+      const next = prev.map((it) =>
+        ids.includes(it.id) ? { ...it, z: maxZ + 5 } : it
+      );
+      pushHistory({ outline, items: next });
+      return next;
+    });
+  }
+
+  function sendToBack(ids) {
+    setItems((prev) => {
+      const minZ = Math.min(0, ...prev.map((i) => i.z || 0));
+      const next = prev.map((it) =>
+        ids.includes(it.id) ? { ...it, z: minZ - 5 } : it
+      );
+      pushHistory({ outline, items: next });
+      return next;
+    });
+  }
+
+  // ---------- Lock / Group ----------
+  function toggleLock(ids) {
+    setItems((prev) => {
+      const next = prev.map((it) =>
+        ids.includes(it.id) ? { ...it, locked: !it.locked } : it
+      );
+      pushHistory({ outline, items: next });
+      return next;
+    });
+  }
+
+  function groupSelection() {
+    if (selection.length < 2) return;
+    const gid = makeId("grp");
+    setItems((prev) => {
+      const next = prev.map((it) =>
+        selection.includes(it.id) ? { ...it, groupId: gid } : it
+      );
+      pushHistory({ outline, items: next });
+      return next;
+    });
+    toast.success("Grouped");
+  }
+
+  function ungroupSelection() {
+    setItems((prev) => {
+      const next = prev.map((it) =>
+        selection.includes(it.id) ? { ...it, groupId: null } : it
+      );
+      pushHistory({ outline, items: next });
+      return next;
+    });
+    toast.success("Ungrouped");
+  }
+
+  // ---------- Duplicate / Delete ----------
+  function duplicateIds(ids) {
+    setItems((prev) => {
+      const clones = [];
+      prev.forEach((it) => {
+        if (!ids.includes(it.id)) return;
+        const copy = deepClone(it);
+        copy.id = makeId(it.type);
+        copy.locked = false;
+        copy.z = (it.z || 0) + 1;
+        // offset copy
+        if (it.type === "wall") {
+          copy.x1 += 20;
+          copy.y1 += 20;
+          copy.x2 += 20;
+          copy.y2 += 20;
+        } else {
+          copy.x += 20;
+          copy.y += 20;
+        }
+        if (it.type === "table") copy.label = `${it.label || "T"}-copy`;
+        clones.push(copy);
+      });
+      const next = [...prev, ...clones];
+      pushHistory({ outline, items: next });
+      return next;
+    });
+    toast.success("Duplicated");
+  }
+
+  function deleteIds(ids) {
+    setItems((prev) => {
+      const next = prev.filter((it) => !ids.includes(it.id));
+      pushHistory({ outline, items: next });
+      return next;
+    });
+    setSelection((sel) => sel.filter((id) => !ids.includes(id)));
+  }
+
+  // ---------- Snapping / Overlap control ----------
+  function applySnap(it, dx, dy, isShiftHeld) {
+    if (!snapToGrid || isShiftHeld) return { dx, dy };
+    // subtle snap (not big grid lock)
+    const nextX = it.type === "wall" ? it.x1 + dx : it.x + dx;
+    const nextY = it.type === "wall" ? it.y1 + dy : it.y + dy;
+    const snappedX = snapValue(nextX, SNAP_STEP);
+    const snappedY = snapValue(nextY, SNAP_STEP);
+    const sdx = snappedX - (it.type === "wall" ? it.x1 : it.x);
+    const sdy = snappedY - (it.type === "wall" ? it.y1 : it.y);
+    return { dx: sdx, dy: sdy };
+  }
+
+  function wouldOverlap(nextItems, movingIds) {
+    const tables = nextItems.filter((i) => i.type === "table");
+    const moved = tables.filter((t) => movingIds.includes(t.id));
+    const stationary = tables.filter((t) => !movingIds.includes(t.id));
+    for (const m of moved) {
+      const bbM = rotatedBBox(m);
+      for (const s of stationary) {
+        const bbS = rotatedBBox(s);
+        if (bbM && bbS && rectsIntersect(bbM, bbS, 6)) return true;
+      }
+    }
+    return false;
+  }
+
+  // ---------- Pointer events ----------
+  function onCanvasPointerDown(e) {
+    // Close menus
+    setCtxMenu((m) => ({ ...m, open: false }));
+    setColorPop((p) => ({ ...p, open: false }));
+
+    // Right click handled by context menu
+    if (e.button === 2) return;
+
+    const world = clientToWorld(e);
+
+    // PAN tool
+    if (tool === "pan" || e.spaceKey) {
+      dragRef.current = {
+        active: true,
+        kind: "pan",
+        startClient: { x: e.clientX, y: e.clientY },
+        startPan: { ...pan },
+      };
       return;
     }
 
-    const world = screenToWorld(e.clientX, e.clientY);
+    // TABLE placement tool
+    if (tool === "table" && dragRef.current.pendingTable) {
+      const newTable = createTableAt(world.x, world.y, dragRef.current.pendingTable);
+      setItems((prev) => {
+        const next = [...prev, newTable];
+        pushHistory({ outline, items: next });
+        return next;
+      });
+      setSelection([newTable.id]);
+      return;
+    }
 
-    if (mode === "add-table") {
-      const d = tableDimsForType("t4");
-      const t = {
-        id: Date.now() + Math.random(),
-        x: world.x - d.width / 2,
-        y: world.y - d.height / 2,
-        width: d.width,
-        height: d.height,
-        seats: 4,
-        shape: "round",
-        rotation: 0,
-        state: "free",
-        label: nextLabel(tables),
+    // WALL drawing tool
+    if (tool === "wall") {
+      const id = makeId("wallPreview");
+      dragRef.current = {
+        active: true,
+        kind: "drawWall",
+        startWorld: world,
+        tempId: id,
+      };
+      const preview = {
+        id,
+        type: "wall",
+        x1: world.x,
+        y1: world.y,
+        x2: world.x,
+        y2: world.y,
+        locked: true,
+        z: 19,
+        style: deepClone(WALL_STYLE_PRESET),
+        _preview: true,
+      };
+      setItems((prev) => [...prev, preview]);
+      return;
+    }
+
+    // AREA add
+    if (tool === "area") {
+      addAreaAt(world.x, world.y);
+      return;
+    }
+
+    // TEXT add
+    if (tool === "text") {
+      addTextAt(world.x, world.y, "Label");
+      return;
+    }
+
+    // OUTLINE draw (quick)
+    if (tool === "outline") {
+      dragRef.current = {
+        active: true,
+        kind: "drawOutline",
+        startWorld: world,
+      };
+      setOutline({ x: world.x, y: world.y, w: 10, h: 10 });
+      return;
+    }
+
+    // otherwise: click empty canvas -> clear selection
+    if (!e.shiftKey) setSelection([]);
+  }
+
+  function hitTest(world) {
+    // Top-most item first
+    const sorted = [...items].sort((a, b) => (b.z || 0) - (a.z || 0));
+    for (const it of sorted) {
+      if (it.type === "wall") {
+        // distance to segment threshold
+        const { x1, y1, x2, y2 } = it;
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        const len2 = dx * dx + dy * dy;
+        const t = len2 === 0 ? 0 : ((world.x - x1) * dx + (world.y - y1) * dy) / len2;
+        const tt = clamp(t, 0, 1);
+        const px = x1 + tt * dx;
+        const py = y1 + tt * dy;
+        const dist = Math.hypot(world.x - px, world.y - py);
+        if (dist <= (it.style?.width || 6) + 6) return it;
+      } else {
+        const bb = rotatedBBox(it);
+        if (!bb) continue;
+        if (world.x >= bb.x && world.x <= bb.x + bb.w && world.y >= bb.y && world.y <= bb.y + bb.h) {
+          return it;
+        }
+      }
+    }
+    return null;
+  }
+
+  function onViewportPointerDown(e) {
+    // stop right click default context
+    // handled in onContextMenu
+    if (e.button === 2) return;
+
+    const world = clientToWorld(e);
+    const hit = hitTest(world);
+
+    // If click on item in select tool, select it and begin move
+    if (tool === "select" && hit && !hit.locked) {
+      const nextSel = (() => {
+        if (e.shiftKey) {
+          return selection.includes(hit.id)
+            ? selection.filter((id) => id !== hit.id)
+            : [...selection, hit.id];
+        }
+        return selection.includes(hit.id) ? selection : [hit.id];
+      })();
+      setSelection(nextSel);
+
+      dragRef.current = {
+        active: true,
+        kind: "move",
+        startWorld: world,
+        startItems: deepClone(items),
+        targetId: hit.id,
+      };
+      return;
+    }
+
+    // if click on locked item, just select (no move)
+    if (tool === "select" && hit && hit.locked) {
+      if (!e.shiftKey) setSelection([hit.id]);
+      return;
+    }
+
+    // otherwise canvas pointer down
+    onCanvasPointerDown(e);
+  }
+
+  function onViewportPointerMove(e) {
+    const dr = dragRef.current;
+    if (!dr.active) return;
+
+    // PAN
+    if (dr.kind === "pan") {
+      const dx = e.clientX - dr.startClient.x;
+      const dy = e.clientY - dr.startClient.y;
+      setPan({ x: dr.startPan.x + dx, y: dr.startPan.y + dy });
+      return;
+    }
+
+    const world = clientToWorld(e);
+
+    // DRAW WALL PREVIEW
+    if (dr.kind === "drawWall") {
+      setItems((prev) =>
+        prev.map((it) => {
+          if (it.id !== dr.tempId) return it;
+          // optional angle snap with shift
+          let x2 = world.x;
+          let y2 = world.y;
+          if (e.shiftKey) {
+            const dx = x2 - dr.startWorld.x;
+            const dy = y2 - dr.startWorld.y;
+            const ang = Math.atan2(dy, dx);
+            const snapAng = (Math.PI / 4) * Math.round(ang / (Math.PI / 4));
+            const len = Math.hypot(dx, dy);
+            x2 = dr.startWorld.x + Math.cos(snapAng) * len;
+            y2 = dr.startWorld.y + Math.sin(snapAng) * len;
+          }
+          return { ...it, x2, y2 };
+        })
+      );
+      return;
+    }
+
+    // DRAW OUTLINE
+    if (dr.kind === "drawOutline") {
+      const x = Math.min(dr.startWorld.x, world.x);
+      const y = Math.min(dr.startWorld.y, world.y);
+      const w = Math.abs(world.x - dr.startWorld.x);
+      const h = Math.abs(world.y - dr.startWorld.y);
+      setOutline({ x, y, w, h });
+      return;
+    }
+
+    // MOVE selection
+    if (dr.kind === "move" && dr.startItems) {
+      const dxRaw = world.x - dr.startWorld.x;
+      const dyRaw = world.y - dr.startWorld.y;
+
+      // move only selected, not locked
+      const startItems = dr.startItems;
+      const movingIds = selection.length ? selection : [dr.targetId];
+
+      const isShiftHeld = e.shiftKey;
+
+      let next = startItems.map((it) => {
+        if (!movingIds.includes(it.id)) return it;
+        if (it.locked) return it;
+
+        if (it.type === "wall") {
+          const { dx, dy } = applySnap(it, dxRaw, dyRaw, isShiftHeld);
+          return { ...it, x1: it.x1 + dx, y1: it.y1 + dy, x2: it.x2 + dx, y2: it.y2 + dy };
+        } else {
+          const { dx, dy } = applySnap(it, dxRaw, dyRaw, isShiftHeld);
+          return { ...it, x: it.x + dx, y: it.y + dy };
+        }
+      });
+
+      if (preventOverlap && wouldOverlap(next, movingIds)) {
+        // don't apply overlap move (keeps it smooth but safe)
+        return;
+      }
+      setItems(next);
+      return;
+    }
+
+    // RESIZE / ROTATE handled via handles (see below)
+  }
+
+  function onViewportPointerUp() {
+    const dr = dragRef.current;
+    if (!dr.active) return;
+
+    if (dr.kind === "drawWall") {
+      // commit wall
+      setItems((prev) => {
+        const preview = prev.find((i) => i.id === dr.tempId);
+        const rest = prev.filter((i) => i.id !== dr.tempId);
+        if (!preview) return prev;
+
+        const len = Math.hypot(preview.x2 - preview.x1, preview.y2 - preview.y1);
+        if (len < 10) return rest; // ignore tiny line
+
+        const committed = {
+          ...preview,
+          id: makeId("wall"),
+          locked: false,
+          _preview: undefined,
+        };
+        const next = [...rest, committed];
+        pushHistory({ outline, items: next });
+        setSelection([committed.id]);
+        return next;
+      });
+    }
+
+    if (dr.kind === "move" || dr.kind === "drawOutline") {
+      pushHistory(snapshot());
+    }
+
+    dragRef.current = { active: false, kind: null };
+  }
+
+  // ---------- Context menu ----------
+  function onContextMenu(e) {
+    e.preventDefault();
+    setColorPop((p) => ({ ...p, open: false }));
+
+    const world = clientToWorld(e);
+    const hit = hitTest(world);
+
+    if (hit) {
+      // select it if not selected
+      if (!selection.includes(hit.id)) setSelection([hit.id]);
+      setCtxMenu({ open: true, x: e.clientX, y: e.clientY, targetId: hit.id });
+    } else {
+      setCtxMenu({ open: true, x: e.clientX, y: e.clientY, targetId: null });
+    }
+  }
+
+  function openColorPicker(field) {
+    setCtxMenu((m) => ({ ...m, open: false }));
+    setColorPop({
+      open: true,
+      x: ctxMenu.x,
+      y: ctxMenu.y,
+      targetId: ctxMenu.targetId,
+      field,
+    });
+  }
+
+  function applyColor(color) {
+    const ids = ctxMenu.targetId ? [ctxMenu.targetId] : selection;
+
+    setItems((prev) => {
+      const next = prev.map((it) => {
+        if (!ids.includes(it.id)) return it;
+        if (it.locked) return it;
+
+        if (it.type === "textBox") {
+          if (colorPop.field === "text") {
+            return { ...it, style: { ...it.style, color } };
+          }
+          return it;
+        }
+
+        if (it.type === "wall") {
+          if (colorPop.field === "stroke") {
+            return { ...it, style: { ...it.style, stroke: color } };
+          }
+          return it;
+        }
+
+        // table / area
+        if (colorPop.field === "fill") {
+          return { ...it, style: { ...it.style, fill: color } };
+        }
+        if (colorPop.field === "stroke") {
+          return { ...it, style: { ...it.style, stroke: color } };
+        }
+        return it;
+      });
+      pushHistory({ outline, items: next });
+      return next;
+    });
+
+    setColorPop((p) => ({ ...p, open: false }));
+  }
+
+  // ---------- Resize + Rotate handles ----------
+  const selBBox = useMemo(() => selectionBBox(selectedItems), [selectedItems]);
+
+  function startRotate(e) {
+    e.stopPropagation();
+    if (!selBBox) return;
+    dragRef.current = {
+      active: true,
+      kind: "rotate",
+      startWorld: clientToWorld(e),
+      startItems: deepClone(items),
+      startBBox: selBBox,
+    };
+  }
+
+  function startResize(e, handle) {
+    e.stopPropagation();
+    dragRef.current = {
+      active: true,
+      kind: "resize",
+      handle,
+      startWorld: clientToWorld(e),
+      startItems: deepClone(items),
+      startBBox: selBBox,
+    };
+  }
+
+  // Attach rotate/resize behaviors to pointermove
+  useEffect(() => {
+    function onMove(e) {
+      const dr = dragRef.current;
+      if (!dr.active) return;
+      if (dr.kind !== "resize" && dr.kind !== "rotate") return;
+      if (!dr.startItems || !dr.startBBox) return;
+
+      const world = clientToWorld(e);
+      const movingIds = selection;
+
+      if (dr.kind === "rotate") {
+        const bb = dr.startBBox;
+        const cx = bb.x + bb.w / 2;
+        const cy = bb.y + bb.h / 2;
+
+        const a0 = Math.atan2(dr.startWorld.y - cy, dr.startWorld.x - cx);
+        const a1 = Math.atan2(world.y - cy, world.x - cx);
+        const deg = ((a1 - a0) * 180) / Math.PI;
+
+        const next = dr.startItems.map((it) => {
+          if (!movingIds.includes(it.id)) return it;
+          if (it.locked) return it;
+          if (it.type === "wall") return it; // skip wall rotation for now (keep simple)
+          return { ...it, rotation: (it.rotation || 0) + deg };
+        });
+
+        setItems(next);
+        return;
+      }
+
+      if (dr.kind === "resize") {
+        const bb0 = dr.startBBox;
+        let dx = world.x - dr.startWorld.x;
+        let dy = world.y - dr.startWorld.y;
+
+        // no hard grid restriction, optional snap
+        if (snapToGrid && !e.shiftKey) {
+          dx = snapValue(dx, SNAP_STEP);
+          dy = snapValue(dy, SNAP_STEP);
+        }
+
+        // Resize tables/areas/text (not walls)
+        const next = dr.startItems.map((it) => {
+          if (!movingIds.includes(it.id)) return it;
+          if (it.locked) return it;
+          if (it.type === "wall") return it;
+
+          // Resize in local axis-aligned space (simple)
+          let x = it.x;
+          let y = it.y;
+          let w = it.w;
+          let h = it.h;
+
+          const handle = dr.handle;
+
+          if (handle.includes("e")) w = clamp(w + dx, MIN_SIZE, 900);
+          if (handle.includes("s")) h = clamp(h + dy, MIN_SIZE, 900);
+          if (handle.includes("w")) {
+            w = clamp(w - dx, MIN_SIZE, 900);
+            x = it.x + dx;
+          }
+          if (handle.includes("n")) {
+            h = clamp(h - dy, MIN_SIZE, 900);
+            y = it.y + dy;
+          }
+
+          // keep text height reasonable
+          if (it.type === "textBox") {
+            h = clamp(h, 28, 120);
+            w = clamp(w, 80, 600);
+          }
+
+          return { ...it, x, y, w, h };
+        });
+
+        if (preventOverlap && wouldOverlap(next, movingIds)) return;
+        setItems(next);
+      }
+    }
+
+    function onUp() {
+      const dr = dragRef.current;
+      if (!dr.active) return;
+      if (dr.kind === "resize" || dr.kind === "rotate") {
+        pushHistory(snapshot());
+      }
+      dragRef.current = { active: false, kind: null };
+    }
+
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items, selection, selBBox, snapToGrid, preventOverlap, outline, history, hIndex]);
+
+  // ---------- Keyboard shortcuts ----------
+  useEffect(() => {
+    function onKeyDown(e) {
+      // delete
+      if ((e.key === "Backspace" || e.key === "Delete") && selection.length) {
+        deleteIds(selection);
+      }
+      // escape
+      if (e.key === "Escape") {
+        setCtxMenu((m) => ({ ...m, open: false }));
+        setColorPop((p) => ({ ...p, open: false }));
+        setAiModal((a) => ({ ...a, open: false }));
+        setSelection([]);
+      }
+      // undo/redo
+      const isCmd = e.metaKey || e.ctrlKey;
+      if (isCmd && e.key.toLowerCase() === "z" && !e.shiftKey) {
+        e.preventDefault();
+        undo();
+      }
+      if (isCmd && (e.key.toLowerCase() === "y" || (e.key.toLowerCase() === "z" && e.shiftKey))) {
+        e.preventDefault();
+        redo();
+      }
+      // quick tools
+      if (e.key === "v") setTool("select");
+      if (e.key === "h") setTool("pan");
+      if (e.key === "w") setTool("wall");
+      if (e.key === "t") setTool("text");
+      if (e.key === "a") setTool("area");
+      if (e.key === "o") setTool("outline");
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selection, history, hIndex, outline, items]);
+
+  // ---------- “Ask AI” (local placeholder + hook point for real AI) ----------
+  async function runAi(prompt, mode) {
+    // This is a “good enough” local AI stand-in.
+    // You can replace internals with your Base44 LLM call later.
+    const lower = prompt.toLowerCase();
+
+    if (mode === "layout") {
+      // Generate tables based on text (heuristic)
+      const seatsMatch = lower.match(/(\d+)\s*seats/);
+      const totalSeatsTarget = seatsMatch ? parseInt(seatsMatch[1], 10) : 40;
+
+      const mix = (() => {
+        if (lower.includes("date night")) return { two: 0.5, four: 0.35, six: 0.15 };
+        if (lower.includes("family")) return { two: 0.15, four: 0.5, six: 0.35 };
+        return { two: 0.25, four: 0.55, six: 0.20 };
+      })();
+
+      const counts = { 2: 0, 4: 0, 6: 0, 8: 0, 10: 0 };
+      let remaining = totalSeatsTarget;
+
+      while (remaining > 0) {
+        const r = Math.random();
+        let pick = 4;
+        if (r < mix.two) pick = 2;
+        else if (r < mix.two + mix.four) pick = 4;
+        else pick = 6;
+
+        if (remaining - pick < 0) pick = remaining >= 4 ? 4 : 2;
+        counts[pick] += 1;
+        remaining -= pick;
+        if (Object.values(counts).reduce((a, b) => a + b, 0) > 60) break;
+      }
+
+      // Place inside outline if exists, else center area
+      const region = outline
+        ? { x: outline.x + 80, y: outline.y + 80, w: outline.w - 160, h: outline.h - 160 }
+        : { x: 200, y: 160, w: 1200, h: 800 };
+
+      const next = items.filter((it) => it.type !== "table"); // replace tables
+      let x = region.x;
+      let y = region.y;
+      const rowH = 120;
+      const gap = 34;
+
+      const makeOne = (seats) => {
+        const preset = DEFAULT_TABLES.find((p) => p.seats === seats) || DEFAULT_TABLES[1];
+        const t = createTableAt(x, y, { seats, ...preset });
+        // keep consistent labels
+        t.label = `T${next.filter((i) => i.type === "table").length + 1}`;
+        t.x = x;
+        t.y = y;
+        return t;
       };
 
-      const cand = applySnapping(t);
-      const reason = getInvalidReason(cand);
-      if (reason) {
-        toast.error(`Can't place: ${reason}`);
-        return;
-      }
+      const addMany = (seats, n) => {
+        for (let i = 0; i < n; i++) {
+          const preset = DEFAULT_TABLES.find((p) => p.seats === seats) || DEFAULT_TABLES[1];
+          const w = preset.w + gap;
+          if (x + w > region.x + region.w) {
+            x = region.x;
+            y += rowH;
+          }
+          if (y + rowH > region.y + region.h) break;
 
-      const next = [...tables, cand];
-      setTables(next);
-      pushHistory({ outline, areas, tables: next });
-      setSelectedId(cand.id);
-      setMode("select");
-      return;
+          const t = createTableAt(x + preset.w / 2, y + preset.h / 2, { seats, ...preset });
+          t.x = x;
+          t.y = y;
+          next.push(t);
+          x += w;
+        }
+      };
+
+      // order: bigger first (looks nicer)
+      addMany(6, counts[6]);
+      addMany(4, counts[4]);
+      addMany(2, counts[2]);
+
+      return { type: "layout", nextItems: next };
     }
 
-    if (mode === "draw-outline") {
-      setOutlineDraft({ x: world.x, y: world.y, width: 0, height: 0 });
-      return;
+    // Selection AI: simple smart actions
+    const ids = selection.length ? selection : aiModal.targetId ? [aiModal.targetId] : [];
+    if (!ids.length) return { type: "none" };
+
+    if (lower.includes("align") || lower.includes("straight")) {
+      // align selected items to same y
+      const moving = items.filter((it) => ids.includes(it.id) && it.type !== "wall" && !it.locked);
+      if (!moving.length) return { type: "none" };
+      const targetY = Math.round(moving[0].y);
+      const nextItems = items.map((it) => (ids.includes(it.id) ? { ...it, y: targetY } : it));
+      return { type: "selection", nextItems };
     }
 
-    // clicking empty -> deselect
-    setSelectedId(null);
-  };
+    if (lower.includes("space") || lower.includes("spread")) {
+      // distribute horizontally
+      const moving = items
+        .filter((it) => ids.includes(it.id) && it.type !== "wall" && !it.locked)
+        .sort((a, b) => a.x - b.x);
 
-  const onPointerMove = (e) => {
-    if (panning) {
-      const dx = e.clientX - panning.startX;
-      const dy = e.clientY - panning.startY;
-      setPan({ x: panning.panX + dx, y: panning.panY + dy });
-      return;
+      if (moving.length < 2) return { type: "none" };
+      const left = moving[0].x;
+      const right = moving[moving.length - 1].x;
+      const step = (right - left) / (moving.length - 1);
+
+      const nextItems = items.map((it) => {
+        const idx = moving.findIndex((m) => m.id === it.id);
+        if (idx === -1) return it;
+        return { ...it, x: left + step * idx };
+      });
+      return { type: "selection", nextItems };
     }
 
-    const world = screenToWorld(e.clientX, e.clientY);
-
-    // outline draft
-    if (outlineDraft && mode === "draw-outline") {
-      const w = world.x - outlineDraft.x;
-      const h = world.y - outlineDraft.y;
-      const nx = w < 0 ? world.x : outlineDraft.x;
-      const ny = h < 0 ? world.y : outlineDraft.y;
-      setOutlineDraft({ x: nx, y: ny, width: Math.abs(w), height: Math.abs(h) });
-      return;
+    if (lower.includes("rotate")) {
+      const nextItems = items.map((it) => {
+        if (!ids.includes(it.id) || it.locked) return it;
+        if (it.type === "wall") return it;
+        return { ...it, rotation: ((it.rotation || 0) + 45) % 360 };
+      });
+      return { type: "selection", nextItems };
     }
 
-    // drag table
-    if (drag) {
-      const t = tables.find((x) => x.id === drag.id);
-      if (!t) return;
+    return { type: "none" };
+  }
 
-      let cand = { ...t, x: world.x - drag.offsetX, y: world.y - drag.offsetY };
-      cand = applySnapping(cand);
-
-      // clamp into outline if possible
-      if (outline) {
-        const ux = outline.x + PAD;
-        const uy = outline.y + PAD;
-        const uw = outline.width - PAD * 2;
-        const uh = outline.height - PAD * 2;
-        cand.x = clamp(cand.x, ux, ux + uw - cand.width);
-        cand.y = clamp(cand.y, uy, uy + uh - cand.height);
-      }
-
-      const reason = getInvalidReason(cand);
-      const valid = !reason;
-      setGhost({ table: cand, valid, reason });
-
-      if (valid) {
-        setTables((prev) => prev.map((x) => (x.id === t.id ? { ...x, x: cand.x, y: cand.y } : x)));
-        setDrag((d) => (d ? { ...d, lastValid: { x: cand.x, y: cand.y } } : d));
-      }
-    }
-  };
-
-  const onPointerUp = () => {
-    setPanning(null);
-
-    if (outlineDraft && mode === "draw-outline") {
-      if (outlineDraft.width < 60 || outlineDraft.height < 60) {
-        toast.error("Outline too small — drag bigger.");
-        setOutlineDraft(null);
-        return;
-      }
-      const o = { x: outlineDraft.x, y: outlineDraft.y, width: outlineDraft.width, height: outlineDraft.height };
-      setOutline(o);
-      setOutlineDraft(null);
-      pushHistory({ outline: o, areas, tables });
-      return;
-    }
-
-    if (drag) {
-      // if invalid end, snap back
-      if (ghost && !ghost.valid) {
-        setTables((prev) =>
-          prev.map((x) => (x.id === drag.id ? { ...x, x: drag.lastValid.x, y: drag.lastValid.y } : x))
-        );
-        toast.error(ghost.reason || "Invalid placement");
-      }
-      pushHistory({ outline, areas, tables });
-      setDrag(null);
-      setGhost(null);
-    }
-  };
-
-  const onTableDown = (e, t) => {
-    e.stopPropagation();
-    setSelectedId(t.id);
-
-    if (mode !== "select") return;
-
-    const world = screenToWorld(e.clientX, e.clientY);
-    setDrag({
-      id: t.id,
-      offsetX: world.x - t.x,
-      offsetY: world.y - t.y,
-      lastValid: { x: t.x, y: t.y },
+  async function handleAskAi(mode = "selection", targetId = null) {
+    setAiModal({
+      open: true,
+      targetId,
+      prompt: "",
+      mode,
+      isRunning: false,
     });
-  };
+    setCtxMenu((m) => ({ ...m, open: false }));
+  }
 
-  // Actions
-  const rotateSelected = (deg) => {
-    if (!selectedTable) return;
-    const next = tables.map((t) => (t.id === selectedTable.id ? { ...t, rotation: ((t.rotation || 0) + deg) % 360 } : t));
-    setTables(next);
-    pushHistory({ outline, areas, tables: next });
-  };
-
-  const duplicateSelected = () => {
-    if (!selectedTable) return;
-
-    const copy = {
-      ...selectedTable,
-      id: Date.now() + Math.random(),
-      x: selectedTable.x + 18,
-      y: selectedTable.y + 18,
-      label: `${selectedTable.label}-copy`,
-    };
-
-    const reason = getInvalidReason(copy);
-    if (reason) {
-      toast.error(`Can't duplicate: ${reason}`);
-      return;
+  async function runAiApply() {
+    setAiModal((a) => ({ ...a, isRunning: true }));
+    try {
+      const res = await runAi(aiModal.prompt || "", aiModal.mode);
+      if (res?.nextItems) {
+        setItems(res.nextItems);
+        pushHistory({ outline, items: res.nextItems });
+        toast.success("AI applied");
+      } else {
+        toast.message("AI had no changes for that request.");
+      }
+    } catch {
+      toast.error("AI failed");
+    } finally {
+      setAiModal((a) => ({ ...a, isRunning: false, open: false }));
     }
+  }
 
-    const next = [...tables, copy];
-    setTables(next);
-    pushHistory({ outline, areas, tables: next });
-    setSelectedId(copy.id);
-  };
-
-  const deleteSelected = () => {
-    if (!selectedTable) return;
-    const next = tables.filter((t) => t.id !== selectedTable.id);
-    setTables(next);
-    pushHistory({ outline, areas, tables: next });
-    setSelectedId(null);
-  };
-
-  const runAI = () => {
-    if (!outline) {
-      toast.error("Draw the outline first.");
-      return;
-    }
-
-    const tableMix = aiUseMix
-      ? { ...aiMix }
-      : null;
-
-    const { tables: gen, warnings } = generateSmartLayout({
+  // ---------- Publish ----------
+  function floorPlanDataForSave() {
+    return {
       outline,
-      vibe: aiVibe === "max" ? "max" : aiVibe === "cozy" ? "cozy" : "balanced",
-      targetSeats: aiTargetSeats,
-      aisle: aiAisle,
-      includeBooths: aiBooths,
-      tableMix,
-    });
+      items,
+      settings: { showGrid, snapToGrid, preventOverlap },
+      publishedAt: new Date().toISOString(),
+    };
+  }
 
-    if (!gen.length) {
-      toast.error("Could not generate layout. Try a bigger outline.");
+  async function handlePublish() {
+    const warn = computeWarnings(items);
+    const critical = warn.filter((w) => w.type === "critical");
+    if (critical.length) {
+      toast.error("Fix required issues before publishing.");
       return;
     }
 
-    setTables(gen);
-    pushHistory({ outline, areas, tables: gen });
-    setSelectedId(null);
-
-    warnings.forEach((w) => toast.message(w));
-    toast.success("AI layout generated!");
-  };
-
-  const tidy = () => {
-    if (!outline || tables.length === 0) return;
-    const next = tidyLayout(tables, outline);
-    setTables(next);
-    pushHistory({ outline, areas, tables: next });
-    toast.success("Tidied layout.");
-  };
-
-  const handlePublish = async () => {
-    const ok = validate();
-    if (!ok) {
-      toast.error("Fix issues before publishing.");
+    // If overlaps exist and preventOverlap is OFF, allow publish but warn
+    const hasOverlap = warn.some((w) => w.type === "warn");
+    if (hasOverlap && preventOverlap) {
+      toast.error("Overlaps detected. Turn off Prevent Overlap or adjust tables.");
       return;
     }
 
     setIsSaving(true);
     try {
+      const tables = items.filter((i) => i.type === "table");
       const totalSeats = tables.reduce((sum, t) => sum + (t.seats || 0), 0);
-      const floorPlanData = { outline, areas, tables, publishedAt: new Date().toISOString() };
+
+      const fp = floorPlanDataForSave();
 
       await base44.entities.Restaurant.update(restaurant.id, {
-        floor_plan_data: floorPlanData,
+        floor_plan_data: fp,
         total_seats: totalSeats,
         available_seats: totalSeats,
       });
 
-      const existingTables = await base44.entities.Table.filter({ restaurant_id: restaurant.id });
+      // Sync Tables entity
+      const existingTables = await base44.entities.Table.filter({
+        restaurant_id: restaurant.id,
+      });
       await Promise.all(existingTables.map((t) => base44.entities.Table.delete(t.id)));
 
       for (const t of tables) {
@@ -776,7 +1303,7 @@ export default function FloorPlanBuilderPremium({ restaurant, onPublish }) {
           restaurant_id: restaurant.id,
           label: t.label,
           capacity: t.seats,
-          status: t.state || "free",
+          status: "free",
           position_x: t.x,
           position_y: t.y,
           shape: t.shape,
@@ -787,492 +1314,866 @@ export default function FloorPlanBuilderPremium({ restaurant, onPublish }) {
       toast.success("Floor plan published!");
       onPublish?.();
     } catch (e) {
-      toast.error("Publish failed.");
+      toast.error("Failed to publish");
+    } finally {
+      setIsSaving(false);
     }
-    setIsSaving(false);
-  };
+  }
 
+  // ---------- UI helpers ----------
+  const totalSeats = useMemo(() => {
+    return items
+      .filter((i) => i.type === "table")
+      .reduce((s, t) => s + (t.seats || 0), 0);
+  }, [items]);
+
+  const tableCount = useMemo(() => items.filter((i) => i.type === "table").length, [items]);
+
+  const topErrors = useMemo(() => errors.slice(0, 5), [errors]);
+
+  // ---------- Render: SVG layers ----------
+  const orderedItems = useMemo(() => [...items].sort(sortByZ), [items]);
+
+  function renderGrid() {
+    if (!showGrid) return null;
+    return (
+      <g>
+        <defs>
+          <pattern id="gridFine" width={GRID_SIZE} height={GRID_SIZE} patternUnits="userSpaceOnUse">
+            <path
+              d={`M ${GRID_SIZE} 0 L 0 0 0 ${GRID_SIZE}`}
+              fill="none"
+              stroke="#e2e8f0"
+              strokeWidth="1"
+            />
+          </pattern>
+        </defs>
+        <rect x={0} y={0} width={CANVAS_W} height={CANVAS_H} fill="url(#gridFine)" />
+      </g>
+    );
+  }
+
+  function isSelected(id) {
+    return selection.includes(id);
+  }
+
+  function renderArea(it) {
+    const fill = it.style?.fill ?? AREA_STYLE_PRESET.fill;
+    const stroke = it.style?.stroke ?? AREA_STYLE_PRESET.stroke;
+    const dash = it.style?.dash ?? AREA_STYLE_PRESET.dash;
+    const opacity = it.style?.opacity ?? AREA_STYLE_PRESET.opacity;
+
+    return (
+      <g key={it.id}>
+        <rect
+          x={it.x}
+          y={it.y}
+          width={it.w}
+          height={it.h}
+          rx={12}
+          fill={fill}
+          opacity={opacity}
+          stroke={stroke}
+          strokeWidth={2}
+          strokeDasharray={dash}
+        />
+        {/* Area label ALWAYS visible (top layer-ish) */}
+        <g pointerEvents="none">
+          <rect
+            x={it.x + 12}
+            y={it.y + 10}
+            width={Math.max(70, (it.name?.length || 4) * 8 + 26)}
+            height={26}
+            rx={8}
+            fill={stroke}
+            opacity={0.95}
+          />
+          <text x={it.x + 24} y={it.y + 28} fill="#ffffff" fontSize={13} fontWeight={700}>
+            {it.name || "Area"}
+          </text>
+        </g>
+      </g>
+    );
+  }
+
+  function renderWall(it) {
+    const stroke = it.style?.stroke ?? WALL_STYLE_PRESET.stroke;
+    const width = it.style?.width ?? WALL_STYLE_PRESET.width;
+
+    const selected = isSelected(it.id);
+    return (
+      <g key={it.id}>
+        <line
+          x1={it.x1}
+          y1={it.y1}
+          x2={it.x2}
+          y2={it.y2}
+          stroke={stroke}
+          strokeWidth={width}
+          strokeLinecap="round"
+        />
+        {selected && (
+          <line
+            x1={it.x1}
+            y1={it.y1}
+            x2={it.x2}
+            y2={it.y2}
+            stroke="#8b5cf6"
+            strokeWidth={width + 6}
+            strokeLinecap="round"
+            opacity={0.25}
+          />
+        )}
+      </g>
+    );
+  }
+
+  function renderText(it) {
+    const selected = isSelected(it.id);
+    const color = it.style?.color ?? TEXT_STYLE_PRESET.color;
+    const size = it.style?.size ?? TEXT_STYLE_PRESET.size;
+
+    return (
+      <g key={it.id} transform={`rotate(${it.rotation || 0}, ${it.x + it.w / 2}, ${it.y + it.h / 2})`}>
+        {selected && (
+          <rect
+            x={it.x - 6}
+            y={it.y - 6}
+            width={it.w + 12}
+            height={it.h + 12}
+            rx={10}
+            fill="none"
+            stroke="#8b5cf6"
+            strokeWidth={2}
+            strokeDasharray="6,4"
+          />
+        )}
+        <rect x={it.x} y={it.y} width={it.w} height={it.h} rx={10} fill="#ffffff" opacity={0.65} />
+        <text x={it.x + 10} y={it.y + it.h / 2 + 6} fill={color} fontSize={size} fontWeight={700}>
+          {it.text || "Label"}
+        </text>
+      </g>
+    );
+  }
+
+  function renderTable(it) {
+    const selected = isSelected(it.id);
+    const fill = it.style?.fill ?? TABLE_STYLE_PRESET.fill;
+    const stroke = it.style?.stroke ?? TABLE_STYLE_PRESET.stroke;
+
+    const shadow = it.style?.shadow ?? true;
+
+    const cx = it.x + it.w / 2;
+    const cy = it.y + it.h / 2;
+
+    const baseStroke = selected ? "#8b5cf6" : stroke;
+    const baseStrokeW = selected ? 3 : 2;
+
+    return (
+      <g
+        key={it.id}
+        transform={`rotate(${it.rotation || 0}, ${cx}, ${cy})`}
+      >
+        {/* shadow */}
+        {shadow && (
+          <ellipse
+            cx={cx}
+            cy={it.y + it.h + 10}
+            rx={it.w / 2}
+            ry={8}
+            fill="#00000012"
+          />
+        )}
+
+        {/* shape */}
+        {it.shape === "round" ? (
+          <circle cx={cx} cy={cy} r={Math.min(it.w, it.h) / 2} fill={fill} stroke={baseStroke} strokeWidth={baseStrokeW} />
+        ) : (
+          <rect x={it.x} y={it.y} width={it.w} height={it.h} rx={14} fill={fill} stroke={baseStroke} strokeWidth={baseStrokeW} />
+        )}
+
+        {/* label + seats (centered, clean) */}
+        <text x={cx} y={cy - 2} textAnchor="middle" fontSize={14} fontWeight={800} fill="#111827">
+          {it.label || "T"}
+        </text>
+        <text x={cx} y={cy + 18} textAnchor="middle" fontSize={12} fontWeight={700} fill="#475569">
+          {it.seats} seats
+        </text>
+
+        {/* lock badge */}
+        {it.locked && (
+          <g>
+            <circle cx={it.x + it.w - 10} cy={it.y + 10} r={10} fill="#111827" opacity={0.9} />
+            <text x={it.x + it.w - 10} y={it.y + 14} textAnchor="middle" fontSize={10} fill="#fff">
+              🔒
+            </text>
+          </g>
+        )}
+      </g>
+    );
+  }
+
+  function renderOutline() {
+    if (!outline) return null;
+    return (
+      <g>
+        <rect
+          x={outline.x}
+          y={outline.y}
+          width={outline.w}
+          height={outline.h}
+          fill="none"
+          stroke="#f97316"
+          strokeWidth={3}
+          strokeDasharray="10,8"
+          rx={14}
+        />
+        <g pointerEvents="none">
+          <rect x={outline.x + 14} y={outline.y + 12} width={170} height={30} rx={10} fill="#f97316" opacity={0.95} />
+          <text x={outline.x + 26} y={outline.y + 32} fill="#fff" fontSize={13} fontWeight={800}>
+            Restaurant Outline
+          </text>
+        </g>
+      </g>
+    );
+  }
+
+  // ---------- Selection box + handles ----------
+  function renderSelectionUI() {
+    if (!selBBox || selection.length === 0) return null;
+
+    const { x, y, w, h } = selBBox;
+
+    const handleSize = 10;
+    const handles = [
+      { k: "nw", x: x, y: y },
+      { k: "n", x: x + w / 2, y: y },
+      { k: "ne", x: x + w, y: y },
+      { k: "e", x: x + w, y: y + h / 2 },
+      { k: "se", x: x + w, y: y + h },
+      { k: "s", x: x + w / 2, y: y + h },
+      { k: "sw", x: x, y: y + h },
+      { k: "w", x: x, y: y + h / 2 },
+    ];
+
+    return (
+      <g>
+        <rect x={x} y={y} width={w} height={h} fill="none" stroke="#8b5cf6" strokeWidth={2} strokeDasharray="8,6" />
+        {/* rotate handle */}
+        <g onPointerDown={startRotate} style={{ cursor: "grab" }}>
+          <line x1={x + w / 2} y1={y} x2={x + w / 2} y2={y - 26} stroke="#8b5cf6" strokeWidth={2} />
+          <circle cx={x + w / 2} cy={y - 34} r={10} fill="#8b5cf6" />
+          <text x={x + w / 2} y={y - 30} textAnchor="middle" fontSize={12} fill="#fff">
+            ⟳
+          </text>
+        </g>
+
+        {/* resize handles */}
+        {handles.map((hnd) => (
+          <rect
+            key={hnd.k}
+            x={hnd.x - handleSize / 2}
+            y={hnd.y - handleSize / 2}
+            width={handleSize}
+            height={handleSize}
+            rx={3}
+            fill="#ffffff"
+            stroke="#8b5cf6"
+            strokeWidth={2}
+            onPointerDown={(e) => startResize(e, hnd.k)}
+            style={{ cursor: `${hnd.k}-resize` }}
+          />
+        ))}
+      </g>
+    );
+  }
+
+  // ---------- Inspector panel ----------
+  const primary = selectedItems[0] || null;
+
+  function updateItem(id, patch) {
+    setItems((prev) => {
+      const next = prev.map((it) => (it.id === id ? { ...it, ...patch } : it));
+      return next;
+    });
+  }
+
+  function updateItemStyle(id, patch) {
+    setItems((prev) => {
+      const next = prev.map((it) => (it.id === id ? { ...it, style: { ...(it.style || {}), ...patch } } : it));
+      return next;
+    });
+  }
+
+  function commitInspector() {
+    pushHistory(snapshot());
+  }
+
+  // ---------- Layout ----------
   return (
-    <div className="space-y-4">
-      {/* Top controls (minimal + premium) */}
-      <Card className="p-3">
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-2 flex-wrap">
-            <Button size="sm" variant={mode === "select" ? "default" : "outline"} onClick={() => setMode("select")}>
-              <MousePointer2 className="w-4 h-4 mr-1" /> Select
-            </Button>
-            <Button size="sm" variant={mode === "add-table" ? "default" : "outline"} onClick={() => setMode("add-table")}>
-              <Plus className="w-4 h-4 mr-1" /> Add
-            </Button>
-            <Button size="sm" variant={mode === "draw-outline" ? "default" : "outline"} onClick={() => setMode("draw-outline")}>
-              <PencilRuler className="w-4 h-4 mr-1" /> Outline
-            </Button>
-
-            <Button size="sm" variant="outline" onClick={() => { setPanelOpen(true); setPanelTab("ai"); }}>
-              <Sparkles className="w-4 h-4 mr-1" /> AI Layout
-            </Button>
-
-            <Button size="sm" variant="outline" onClick={tidy} disabled={!outline || tables.length === 0}>
-              Tidy
-            </Button>
+    <div className="w-full space-y-3">
+      {/* TOP BAR (pro look) */}
+      <div className="rounded-xl overflow-hidden shadow-sm border bg-white">
+        <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-orange-500 to-orange-400">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center text-white font-black">
+              SF
+            </div>
+            <div className="text-white">
+              <div className="text-sm font-black tracking-wide">START BUILDING YOUR FLOOR PLAN</div>
+              <div className="text-xs opacity-90">
+                {restaurant?.name || "Restaurant"} • {tableCount} tables • {totalSeats} seats
+              </div>
+            </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <Button size="sm" variant="outline" onClick={undo} disabled={historyIndex <= 0}>
-              <Undo className="w-4 h-4" />
+            <Button size="sm" variant="secondary" onClick={undo} disabled={hIndex <= 0}>
+              <Undo className="w-4 h-4 mr-1" /> Undo
             </Button>
-            <Button size="sm" variant="outline" onClick={redo} disabled={historyIndex >= history.length - 1}>
-              <Redo className="w-4 h-4" />
+            <Button size="sm" variant="secondary" onClick={redo} disabled={hIndex >= history.length - 1}>
+              <Redo className="w-4 h-4 mr-1" /> Redo
             </Button>
 
-            <Button size="sm" variant="outline" onClick={() => setZoom((z) => Math.max(0.55, +(z - 0.1).toFixed(2)))}>
+            <div className="mx-2 h-8 w-px bg-white/25" />
+
+            <Button size="sm" variant="secondary" onClick={() => setZoom((z) => clamp(z - 0.1, 0.4, 2))}>
               <ZoomOut className="w-4 h-4" />
             </Button>
-            <span className="text-sm font-medium px-2">{Math.round(zoom * 100)}%</span>
-            <Button size="sm" variant="outline" onClick={() => setZoom((z) => Math.min(2.2, +(z + 0.1).toFixed(2)))}>
+            <div className="px-2 text-white text-sm font-bold">{Math.round(zoom * 100)}%</div>
+            <Button size="sm" variant="secondary" onClick={() => setZoom((z) => clamp(z + 0.1, 0.4, 2))}>
               <ZoomIn className="w-4 h-4" />
             </Button>
-            <Button size="sm" variant="outline" onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }); }}>
-              <Maximize2 className="w-4 h-4" />
-            </Button>
 
-            <Button size="sm" variant="outline" onClick={() => setPanelOpen((v) => !v)}>
-              {panelOpen ? <PanelRightClose className="w-4 h-4" /> : <PanelRightOpen className="w-4 h-4" />}
-            </Button>
-          </div>
-        </div>
+            <div className="mx-2 h-8 w-px bg-white/25" />
 
-        <div className="mt-3 flex items-center gap-5 text-xs text-slate-500 flex-wrap">
-          <span><b>Alt + drag</b> to pan • <b>Add</b> places one table • <b>AI Layout</b> generates a clean plan</span>
-          <label className="flex items-center gap-2">
-            <Switch checked={showGrid} onCheckedChange={setShowGrid} />
-            Grid
-          </label>
-          <label className="flex items-center gap-2">
-            <Switch checked={showSeatDots} onCheckedChange={setShowSeatDots} />
-            Seat dots
-          </label>
-          <label className="flex items-center gap-2">
-            <Switch checked={snapOn} onCheckedChange={setSnapOn} />
-            Snap
-          </label>
-        </div>
-      </Card>
-
-      {/* Main layout */}
-      <div className={`grid gap-4 ${panelOpen ? "grid-cols-1 lg:grid-cols-[1fr_360px]" : "grid-cols-1"}`}>
-        {/* Canvas */}
-        <Card className="relative overflow-hidden" style={{ height: "680px" }}>
-          <div
-            ref={canvasRef}
-            className="absolute inset-0"
-            style={{
-              background:
-                "radial-gradient(900px 500px at 20% 10%, rgba(59,130,246,0.08), transparent 60%), radial-gradient(900px 500px at 90% 90%, rgba(16,185,129,0.08), transparent 60%), #ffffff",
-              touchAction: "none",
-            }}
-            onPointerDown={onPointerDown}
-            onPointerMove={onPointerMove}
-            onPointerUp={onPointerUp}
-            onPointerLeave={onPointerUp}
-          >
-            <svg
-              width="100%"
-              height="100%"
-              style={{
-                transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
-                transformOrigin: "0 0",
-              }}
+            <Button
+              size="sm"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+              onClick={handlePublish}
+              disabled={isSaving || errors.some((e) => e.type === "critical")}
             >
-              {/* optional grid */}
-              {showGrid && (
-                <>
-                  <defs>
-                    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#e2e8f0" strokeWidth="0.6" />
-                    </pattern>
-                  </defs>
-                  <rect width={CANVAS_W} height={CANVAS_H} fill="url(#grid)" />
-                </>
-              )}
-
-              {/* subtle canvas bounds */}
-              <rect x={0} y={0} width={CANVAS_W} height={CANVAS_H} fill="transparent" stroke="#f1f5f9" strokeWidth="2" rx="18" />
-
-              {/* outline */}
-              {outline && (
-                <rect
-                  x={outline.x}
-                  y={outline.y}
-                  width={outline.width}
-                  height={outline.height}
-                  rx="18"
-                  fill="rgba(16,185,129,0.06)"
-                  stroke="#10b981"
-                  strokeWidth="2"
-                  strokeDasharray="8,8"
-                />
-              )}
-
-              {/* draft outline */}
-              {outlineDraft && (
-                <rect
-                  x={outlineDraft.x}
-                  y={outlineDraft.y}
-                  width={outlineDraft.width}
-                  height={outlineDraft.height}
-                  rx="18"
-                  fill="rgba(59,130,246,0.06)"
-                  stroke="#3b82f6"
-                  strokeWidth="2"
-                  strokeDasharray="6,6"
-                />
-              )}
-
-              {/* tables */}
-              {tables.map((t) => {
-                const isSel = selectedId === t.id;
-                const style = TABLE_STYLES[t.state || "free"] || TABLE_STYLES.free;
-
-                // premium shadow is a separate shape under it
-                const cx = t.x + t.width / 2;
-                const cy = t.y + t.height / 2;
-
-                return (
-                  <g
-                    key={t.id}
-                    onPointerDown={(e) => onTableDown(e, t)}
-                    style={{ cursor: mode === "select" ? "grab" : "pointer" }}
-                    transform={`rotate(${t.rotation || 0}, ${cx}, ${cy})`}
-                  >
-                    {/* shadow */}
-                    <ellipse
-                      cx={cx}
-                      cy={t.y + t.height + 8}
-                      rx={t.width / 2}
-                      ry={6}
-                      fill="rgba(2,6,23,0.10)"
-                    />
-
-                    {/* shape */}
-                    {t.shape === "round" ? (
-                      <circle
-                        cx={cx}
-                        cy={cy}
-                        r={t.width / 2}
-                        fill={style.fill}
-                        stroke={isSel ? style.ring : style.stroke}
-                        strokeWidth={isSel ? 3 : 2}
-                      />
-                    ) : (
-                      <rect
-                        x={t.x}
-                        y={t.y}
-                        width={t.width}
-                        height={t.height}
-                        rx={t.shape === "booth" ? 18 : 14}
-                        fill={style.fill}
-                        stroke={isSel ? style.ring : style.stroke}
-                        strokeWidth={isSel ? 3 : 2}
-                      />
-                    )}
-
-                    {/* label (only if zoom or selected => less clutter) */}
-                    {(zoom > 0.85 || isSel) && (
-                      <>
-                        <rect
-                          x={cx - 30}
-                          y={cy - 12}
-                          width={60}
-                          height={24}
-                          rx={12}
-                          fill="rgba(255,255,255,0.88)"
-                          stroke="#e2e8f0"
-                        />
-                        <text
-                          x={cx}
-                          y={cy + 1}
-                          textAnchor="middle"
-                          dominantBaseline="middle"
-                          style={{ fontSize: 12, fontWeight: 800 }}
-                          fill="#0f172a"
-                        >
-                          {t.label}
-                        </text>
-                      </>
-                    )}
-
-                    {/* seat dots only when enabled OR selected */}
-                    {(showSeatDots || isSel) &&
-                      Array.from({ length: Math.min(12, t.seats || 0) }).map((_, i) => {
-                        const seats = Math.max(1, t.seats || 1);
-                        const ang = (i / seats) * Math.PI * 2;
-                        const rr = t.width / 2 + 14;
-                        const dx = Math.cos(ang) * rr;
-                        const dy = Math.sin(ang) * rr;
-                        return <circle key={i} cx={cx + dx} cy={cy + dy} r={3.4} fill="#94a3b8" />;
-                      })}
-                  </g>
-                );
-              })}
-
-              {/* ghost preview */}
-              {ghost?.table && (
-                <g opacity={0.55}>
-                  {ghost.table.shape === "round" ? (
-                    <circle
-                      cx={ghost.table.x + ghost.table.width / 2}
-                      cy={ghost.table.y + ghost.table.height / 2}
-                      r={ghost.table.width / 2}
-                      fill={ghost.valid ? "rgba(16,185,129,0.18)" : "rgba(239,68,68,0.18)"}
-                      stroke={ghost.valid ? "#10b981" : "#ef4444"}
-                      strokeWidth="3"
-                      strokeDasharray="7,7"
-                    />
-                  ) : (
-                    <rect
-                      x={ghost.table.x}
-                      y={ghost.table.y}
-                      width={ghost.table.width}
-                      height={ghost.table.height}
-                      rx="14"
-                      fill={ghost.valid ? "rgba(16,185,129,0.18)" : "rgba(239,68,68,0.18)"}
-                      stroke={ghost.valid ? "#10b981" : "#ef4444"}
-                      strokeWidth="3"
-                      strokeDasharray="7,7"
-                    />
-                  )}
-                </g>
-              )}
-            </svg>
-
-            {/* small status chip */}
-            <div className="absolute left-4 bottom-4">
-              <div className="px-3 py-2 rounded-xl text-xs bg-white/80 border border-slate-200 shadow-sm text-slate-600">
-                Seats: <b className="text-slate-900">{totalSeats}</b> • Tables: <b className="text-slate-900">{tables.length}</b>
-                {ghost && drag && (
-                  <>
-                    {" • "}
-                    <span className={ghost.valid ? "text-emerald-600" : "text-red-600"}>
-                      {ghost.valid ? "Placement OK" : ghost.reason}
-                    </span>
-                  </>
-                )}
-              </div>
-            </div>
+              {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CheckCircle className="w-4 h-4 mr-2" />}
+              Publish
+            </Button>
           </div>
-        </Card>
+        </div>
 
-        {/* Right panel (premium & not crowded) */}
-        {panelOpen && (
-          <Card className="p-4 h-[680px] overflow-auto">
-            <div className="flex items-center justify-between">
-              <div className="text-sm font-semibold text-slate-900">Builder Panel</div>
-              <div className="flex gap-2">
-                <Button size="sm" variant={panelTab === "ai" ? "default" : "outline"} onClick={() => setPanelTab("ai")}>
-                  AI
-                </Button>
-                <Button size="sm" variant={panelTab === "props" ? "default" : "outline"} onClick={() => setPanelTab("props")}>
-                  Properties
-                </Button>
-              </div>
+        {/* MAIN STUDIO GRID */}
+        <div className="grid grid-cols-[270px_1fr_300px] gap-3 p-3 bg-slate-50">
+          {/* LEFT TOOLKIT */}
+          <Card className="p-3 h-[680px] overflow-auto">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-xs font-black tracking-wider text-slate-600">TOOLKIT</div>
+              <Layers className="w-4 h-4 text-slate-400" />
             </div>
 
-            {/* AI TAB */}
-            {panelTab === "ai" && (
-              <div className="mt-4 space-y-4">
-                <div className="p-3 rounded-xl border bg-slate-50">
-                  <div className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-                    <Sparkles className="w-4 h-4" /> AI Layout Assistant
-                  </div>
-                  <div className="text-xs text-slate-600 mt-1">
-                    Generates a clean, realistic plan (aisles + balanced table mix). One click — no manual pain.
-                  </div>
-                </div>
+            {/* Tools */}
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                variant={tool === "select" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setTool("select")}
+              >
+                <MousePointer2 className="w-4 h-4 mr-1" /> Select
+              </Button>
+              <Button
+                variant={tool === "pan" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setTool("pan")}
+              >
+                <Hand className="w-4 h-4 mr-1" /> Pan
+              </Button>
+              <Button
+                variant={tool === "wall" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setTool("wall")}
+              >
+                <Pencil className="w-4 h-4 mr-1" /> Wall
+              </Button>
+              <Button
+                variant={tool === "outline" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setTool("outline")}
+              >
+                <Square className="w-4 h-4 mr-1" /> Outline
+              </Button>
+              <Button
+                variant={tool === "area" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setTool("area")}
+              >
+                <Grid3x3 className="w-4 h-4 mr-1" /> Area
+              </Button>
+              <Button
+                variant={tool === "text" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setTool("text")}
+              >
+                <Type className="w-4 h-4 mr-1" /> Text
+              </Button>
+            </div>
 
-                <div className="space-y-2">
-                  <label className="text-xs font-medium text-slate-700">Vibe</label>
-                  <Select value={aiVibe} onValueChange={setAiVibe}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="cozy">Cozy (more 2/4-tops)</SelectItem>
-                      <SelectItem value="balanced">Balanced</SelectItem>
-                      <SelectItem value="max">Max Seats</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+            <div className="my-3 border-t" />
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <label className="text-xs font-medium text-slate-700">Target Seats</label>
-                    <Input
-                      type="number"
-                      min="10"
-                      value={aiTargetSeats}
-                      onChange={(e) => setAiTargetSeats(Number(e.target.value || 40))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-medium text-slate-700">Aisle Width</label>
-                    <Input
-                      type="number"
-                      min="40"
-                      max="160"
-                      value={aiAisle}
-                      onChange={(e) => setAiAisle(Number(e.target.value || 80))}
-                    />
-                  </div>
-                </div>
-
-                <label className="flex items-center justify-between gap-3 p-3 rounded-xl border">
-                  <div>
-                    <div className="text-sm font-medium text-slate-900">Include booths</div>
-                    <div className="text-xs text-slate-600">Adds wall seating for realism</div>
-                  </div>
-                  <Switch checked={aiBooths} onCheckedChange={setAiBooths} />
-                </label>
-
-                <label className="flex items-center justify-between gap-3 p-3 rounded-xl border">
-                  <div>
-                    <div className="text-sm font-medium text-slate-900">Use custom table mix</div>
-                    <div className="text-xs text-slate-600">Instead of auto-calculating from seats</div>
-                  </div>
-                  <Switch checked={aiUseMix} onCheckedChange={setAiUseMix} />
-                </label>
-
-                {aiUseMix && (
-                  <div className="grid grid-cols-2 gap-3">
-                    {["t2", "t4", "t6", "t8"].map((k) => (
-                      <div key={k} className="space-y-2">
-                        <label className="text-xs font-medium text-slate-700">{k.toUpperCase()} count</label>
-                        <Input
-                          type="number"
-                          min="0"
-                          value={aiMix[k]}
-                          onChange={(e) => setAiMix((m) => ({ ...m, [k]: Number(e.target.value || 0) }))}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                <Button onClick={runAI} className="w-full bg-emerald-600 hover:bg-emerald-700">
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  Generate Layout
+            {/* Table presets */}
+            <div className="text-xs font-black tracking-wider text-slate-600 mb-2">TABLES</div>
+            <div className="space-y-2">
+              {[2, 4, 6, 8, 10].map((n) => (
+                <Button key={n} variant="outline" className="w-full justify-between" onClick={() => addTablePreset(n)}>
+                  <span className="font-semibold">{n}-Top</span>
+                  <Badge variant="secondary">{n} seats</Badge>
                 </Button>
+              ))}
+              <Button
+                variant="outline"
+                className="w-full justify-between"
+                onClick={() => {
+                  setTool("table");
+                  dragRef.current.pendingTable = { seats: 4, w: 120, h: 70, shape: "rect" };
+                  toast.message("Click to place a custom table, then resize it.");
+                }}
+              >
+                <span className="font-semibold">Custom Table</span>
+                <Badge variant="secondary">resize</Badge>
+              </Button>
+            </div>
 
-                <div className="text-[11px] text-slate-500">
-                  Pro tip: If it can’t fit all tables, reduce aisle width or increase outline size.
-                </div>
+            <div className="my-3 border-t" />
+
+            {/* View toggles */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="text-sm font-semibold text-slate-700">Grid</div>
+                <Switch checked={showGrid} onCheckedChange={setShowGrid} />
               </div>
-            )}
+              <div className="flex items-center justify-between">
+                <div className="text-sm font-semibold text-slate-700">Snap</div>
+                <Switch checked={snapToGrid} onCheckedChange={setSnapToGrid} />
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="text-sm font-semibold text-slate-700">Prevent overlap</div>
+                <Switch checked={preventOverlap} onCheckedChange={setPreventOverlap} />
+              </div>
 
-            {/* PROPERTIES TAB */}
-            {panelTab === "props" && (
-              <div className="mt-4 space-y-4">
-                {!selectedTable ? (
-                  <div className="p-4 rounded-xl border bg-slate-50 text-sm text-slate-700">
-                    Select a table to edit details.
-                  </div>
-                ) : (
-                  <>
-                    <div className="p-3 rounded-xl border bg-white">
-                      <div className="text-sm font-semibold text-slate-900">Selected: {selectedTable.label}</div>
-                      <div className="text-xs text-slate-600">Make quick changes without clutter.</div>
+              <Button
+                variant="outline"
+                className="w-full mt-2"
+                onClick={() => handleAskAi("layout", null)}
+              >
+                <Sparkles className="w-4 h-4 mr-2" />
+                Ask AI to build layout
+              </Button>
+            </div>
+
+            <div className="my-3 border-t" />
+
+            {/* Mini legend */}
+            <div className="text-xs text-slate-500 leading-relaxed">
+              Tips:
+              <div>• Right-click anything → Ask AI / Color / Lock</div>
+              <div>• Shift-click multi-select</div>
+              <div>• Press V/H/W/T/A/O for tools</div>
+              <div>• Hold Shift while dragging to ignore snap</div>
+            </div>
+          </Card>
+
+          {/* CANVAS */}
+          <Card className="relative overflow-hidden h-[680px]">
+            <div
+              ref={viewportRef}
+              className={cn(
+                "absolute inset-0 bg-white",
+                tool === "table" ? "cursor-crosshair" : tool === "wall" ? "cursor-crosshair" : "cursor-default"
+              )}
+              onPointerDown={onViewportPointerDown}
+              onPointerMove={onViewportPointerMove}
+              onPointerUp={onViewportPointerUp}
+              onContextMenu={onContextMenu}
+            >
+              <svg
+                width="100%"
+                height="100%"
+                viewBox={`0 0 ${CANVAS_W} ${CANVAS_H}`}
+                style={{
+                  transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+                  transformOrigin: "0 0",
+                  touchAction: "none",
+                }}
+              >
+                {renderGrid()}
+                {renderOutline()}
+
+                {/* Items */}
+                {orderedItems.map((it) => {
+                  if (it._preview) {
+                    // preview wall on top
+                    return renderWall(it);
+                  }
+                  if (it.type === "area") return renderArea(it);
+                  if (it.type === "textBox") return renderText(it);
+                  if (it.type === "wall") return renderWall(it);
+                  if (it.type === "table") return renderTable(it);
+                  return null;
+                })}
+
+                {/* Selection handles */}
+                {renderSelectionUI()}
+              </svg>
+
+              {/* Context menu */}
+              {ctxMenu.open && (
+                <div
+                  className="fixed z-50"
+                  style={{ left: ctxMenu.x, top: ctxMenu.y }}
+                >
+                  <Card className="p-2 w-[220px] shadow-lg border">
+                    <div className="text-xs text-slate-500 px-2 pb-2">
+                      {ctxMenu.targetId ? "Item actions" : "Canvas actions"}
                     </div>
 
-                    <div className="space-y-2">
-                      <label className="text-xs font-medium text-slate-700">Label</label>
-                      <Input
-                        value={selectedTable.label}
-                        onChange={(e) => {
-                          const next = tables.map((t) => (t.id === selectedTable.id ? { ...t, label: e.target.value } : t));
-                          setTables(next);
-                        }}
-                      />
-                    </div>
+                    <div className="space-y-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full justify-start"
+                        onClick={() => handleAskAi(ctxMenu.targetId ? "selection" : "layout", ctxMenu.targetId)}
+                      >
+                        <Sparkles className="w-4 h-4 mr-2" /> Ask AI
+                      </Button>
 
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-2">
-                        <label className="text-xs font-medium text-slate-700">Seats</label>
-                        <Input
-                          type="number"
-                          min="1"
-                          max="12"
-                          value={selectedTable.seats}
-                          onChange={(e) => {
-                            const v = Number(e.target.value || 1);
-                            const next = tables.map((t) => (t.id === selectedTable.id ? { ...t, seats: v } : t));
-                            setTables(next);
-                          }}
+                      {ctxMenu.targetId && (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="w-full justify-start"
+                            onClick={() => {
+                              duplicateIds([ctxMenu.targetId]);
+                              setCtxMenu((m) => ({ ...m, open: false }));
+                            }}
+                          >
+                            <Copy className="w-4 h-4 mr-2" /> Duplicate
+                          </Button>
+
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="w-full justify-start"
+                            onClick={() => {
+                              toggleLock([ctxMenu.targetId]);
+                              setCtxMenu((m) => ({ ...m, open: false }));
+                            }}
+                          >
+                            {items.find((i) => i.id === ctxMenu.targetId)?.locked ? (
+                              <>
+                                <Unlock className="w-4 h-4 mr-2" /> Unlock
+                              </>
+                            ) : (
+                              <>
+                                <Lock className="w-4 h-4 mr-2" /> Lock
+                              </>
+                            )}
+                          </Button>
+
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="w-full justify-start"
+                            onClick={() => {
+                              bringToFront([ctxMenu.targetId]);
+                              setCtxMenu((m) => ({ ...m, open: false }));
+                            }}
+                          >
+                            <BringToFront className="w-4 h-4 mr-2" /> Bring to front
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="w-full justify-start"
+                            onClick={() => {
+                              sendToBack([ctxMenu.targetId]);
+                              setCtxMenu((m) => ({ ...m, open: false }));
+                            }}
+                          >
+                            <SendToBack className="w-4 h-4 mr-2" /> Send to back
+                          </Button>
+
+                          <div className="h-px bg-slate-100 my-1" />
+
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="w-full justify-start"
+                            onClick={() => openColorPicker("fill")}
+                          >
+                            🎨 Fill color
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="w-full justify-start"
+                            onClick={() => openColorPicker("stroke")}
+                          >
+                            🎯 Stroke color
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="w-full justify-start"
+                            onClick={() => openColorPicker("text")}
+                          >
+                            🔤 Text color
+                          </Button>
+
+                          <div className="h-px bg-slate-100 my-1" />
+
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="w-full justify-start text-red-600 hover:text-red-700"
+                            onClick={() => {
+                              deleteIds([ctxMenu.targetId]);
+                              setCtxMenu((m) => ({ ...m, open: false }));
+                            }}
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" /> Delete
+                          </Button>
+                        </>
+                      )}
+
+                      {!ctxMenu.targetId && (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="w-full justify-start"
+                            onClick={() => {
+                              setTool("outline");
+                              setCtxMenu((m) => ({ ...m, open: false }));
+                            }}
+                          >
+                            <Square className="w-4 h-4 mr-2" /> Draw outline
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="w-full justify-start"
+                            onClick={() => {
+                              setTool("wall");
+                              setCtxMenu((m) => ({ ...m, open: false }));
+                            }}
+                          >
+                            <Pencil className="w-4 h-4 mr-2" /> Draw wall
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </Card>
+                </div>
+              )}
+
+              {/* Color picker popover */}
+              {colorPop.open && (
+                <div className="fixed z-50" style={{ left: colorPop.x + 10, top: colorPop.y + 10 }}>
+                  <Card className="p-3 w-[220px] shadow-lg border">
+                    <div className="text-sm font-bold mb-2">Pick a color</div>
+                    <div className="grid grid-cols-8 gap-2">
+                      {COLORS.map((c) => (
+                        <button
+                          key={c}
+                          className="w-5 h-5 rounded-full border"
+                          style={{ background: c }}
+                          onClick={() => applyColor(c)}
                         />
-                      </div>
-
-                      <div className="space-y-2">
-                        <label className="text-xs font-medium text-slate-700">Shape</label>
-                        <Select
-                          value={selectedTable.shape}
-                          onValueChange={(v) => {
-                            const next = tables.map((t) => (t.id === selectedTable.id ? { ...t, shape: v } : t));
-                            setTables(next);
-                          }}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {Object.entries(SHAPES).map(([k, v]) => (
-                              <SelectItem key={k} value={k}>
-                                {v.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-
-                    <div className="flex gap-2">
-                      <Button size="sm" variant="outline" onClick={() => rotateSelected(15)}>
-                        <RotateCw className="w-4 h-4 mr-1" /> Rotate
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={duplicateSelected}>
-                        <Copy className="w-4 h-4 mr-1" /> Duplicate
-                      </Button>
-                      <Button size="sm" variant="destructive" onClick={deleteSelected}>
-                        <Trash2 className="w-4 h-4 mr-1" /> Delete
-                      </Button>
-                    </div>
-                  </>
-                )}
-
-                <div className="pt-2 border-t">
-                  {errors.length > 0 && (
-                    <div className="space-y-2 mb-3">
-                      {errors.slice(0, 4).map((e, i) => (
-                        <div key={i} className="flex items-start gap-2 text-xs text-red-700">
-                          <AlertCircle className="w-4 h-4 mt-0.5" /> {e.message}
-                        </div>
                       ))}
-                      {errors.length > 4 && <div className="text-xs text-red-600">+ {errors.length - 4} more…</div>}
                     </div>
-                  )}
+                    <div className="mt-3 flex justify-end">
+                      <Button size="sm" variant="outline" onClick={() => setColorPop((p) => ({ ...p, open: false }))}>
+                        Close
+                      </Button>
+                    </div>
+                  </Card>
+                </div>
+              )}
+            </div>
+          </Card>
 
+          {/* RIGHT INSPECTOR */}
+          <Card className="p-3 h-[680px] overflow-auto">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-xs font-black tracking-wider text-slate-600">PROPERTIES</div>
+              {selection.length > 0 && (
+                <Badge variant="secondary">{selection.length} selected</Badge>
+              )}
+            </div>
+
+            {primary ? (
+              <div className="space-y-3">
+                {/* Shared actions */}
+                <div className="flex gap-2">
                   <Button
-                    onClick={handlePublish}
-                    disabled={isSaving || errors.length > 0}
-                    className="w-full bg-emerald-600 hover:bg-emerald-700"
+                    size="sm"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => handleAskAi("selection", primary.id)}
                   >
-                    {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle className="w-4 h-4 mr-2" />}
-                    Publish Floor Plan
+                    <Sparkles className="w-4 h-4 mr-1" /> Ask AI
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => toggleLock(selection.length ? selection : [primary.id])}
+                  >
+                    {primary.locked ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
                   </Button>
                 </div>
-              </div>
-            )}
-          </Card>
-        )}
-      </div>
-    </div>
-  );
-}
+
+                {selection.length >= 2 && (
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" className="flex-1" onClick={groupSelection}>
+                      Group
+                    </Button>
+                    <Button size="sm" variant="outline" className="flex-1" onClick={ungroupSelection}>
+                      Ungroup
+                    </Button>
+                  </div>
+                )}
+
+                <div className="border-t" />
+
+                {primary.type === "table" && (
+                  <>
+                    <div>
+                      <div className="text-xs font-bold text-slate-600 mb-1">Table label</div>
+                      <Input
+                        value={primary.label || ""}
+                        onChange={(e) => updateItem(primary.id, { label: e.target.value })}
+                        onBlur={commitInspector}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <div className="text-xs font-bold text-slate-600 mb-1">Seats</div>
+                        <Input
+                          type="number"
+                          min={1}
+                          max={20}
+                          value={primary.seats || 4}
+                          onChange={(e) =>
+                            updateItem(primary.id, { seats: parseInt(e.target.value || "4", 10) })
+                          }
+                          onBlur={commitInspector}
+                        />
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold text-slate-600 mb-1">Rotation</div>
+                        <Button
+                          variant="outline"
+                          className="w-full"
+                          onClick={() => {
+                            updateItem(primary.id, { rotation: ((primary.rotation || 0) + 45) % 360 });
+                            setTimeout(commitInspector, 0);
+                          }}
+                        >
+                          <RotateCw className="w-4 h-4 mr-2" />
+                          {primary.rotation || 0}°
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          updateItem(primary.id, { shape: "round" });
+                          setTimeout(commitInspector, 0);
+                        }}
+                      >
+                        <Circle className="w-4 h-4 mr-2" /> Round
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          updateItem(primary.id, { shape: "rect" });
+                          setTimeout(commitInspector, 0);
+                        }}
+                      >
+                        <Square className="w-4 h-4 mr-2" /> Rect
+                      </Button>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          updateItemStyle(primary.id, { shadow: !primary.style?.shadow });
+                          setTimeout(commitInspector, 0);
+                        }}
+                      >
+                        Shadow: {primary.style?.shadow ? "On" : "Off"}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          duplicateIds([primary.id]);
+                        }}
+                      >
+                        <Copy className="w-4 h-4 mr-2" /> Copy
+                      </Button>
+                    </div>
+                  </>
+                )}
+
+                {primary.type === "area" && (
+                  <>
+                    <div>
+                      <div className="text-xs font-bold text-slate-600 mb-1">Area name</div>
+                      <Input
+                        value={primary.name || ""}
+                        onChange={(e) => updateItem(primary.id, { name: e.target.value })}
+                        onBlur={commitInspector}
+                      />
+                    </div>
+                    <div className="text-xs text-slate-500">
+                      Tip: Areas are background zones. Labels always stay visible.
+                    </div>
+                  </>
+                )}
+
+                {primary.type === "wall" && (
+                  <>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <div className="text-xs font-bold text-slate-600 mb-1">Thickness</div>
+                        <Input
+                          type="number"
+                          min={2}
+                          max={24}
+                          value={primary.style?.width || 6}
+                          onChange={(e) =>
+                            updateItemStyle(primary.id, { width: parseInt(e.target.value || "6", 10) })
+                          }
+                          onBlur={commitInspector}
+                        />
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold text-slate-600 mb-1">Color</div>
+                        <Button variant="outline" className="w-full" onClick={() => {
+                          setColorPop({ open: true, x: window.innerWidth / 2, y: 180, targetId: primary.id, field: "stroke" });
+                        }}>
+                          Pick
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="text-xs text-slate-500">
+                      Tip: Hold <b>Shift</b> while drawing to snap to angles.
+                    </div>
+                  </>
+                )}
+
+                {primary.type === "textBox" && (
+                  <>
+                    <div>
+                      <div className="text-xs font-bold text-slate-600 mb-
