@@ -324,8 +324,34 @@ export default function Home() {
 
   const mapCenter = selectedCity ? [selectedCity.latitude, selectedCity.longitude] : null;
 
+  const [showAnnouncement, setShowAnnouncement] = useState(true);
+
   return (
     <div className="min-h-screen bg-slate-50">
+      {/* Announcement Banner */}
+      {showAnnouncement && (
+        <div className="relative bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 text-white py-3 px-4 z-50">
+          <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3 flex-1">
+              <span className="text-2xl">🎉</span>
+              <div>
+                <p className="font-bold text-sm md:text-base">New Feature Alert!</p>
+                <p className="text-xs md:text-sm opacity-90">Restaurants are beginning to add pre-order menus - reserve your table and order ahead!</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowAnnouncement(false)}
+              className="p-2 hover:bg-white/20 rounded-full transition-colors shrink-0"
+              aria-label="Close announcement"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <header className="sticky top-0 z-50 bg-white border-b border-slate-100">
         <div className="max-w-7xl mx-auto px-4 py-4">
