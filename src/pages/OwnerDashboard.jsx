@@ -4,8 +4,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { 
-  Store, Users, Clock, BarChart3, Settings, Plus, 
-  ChevronRight, Eye, Heart, MousePointerClick, LayoutGrid
+  Store, Users, BarChart3, Settings, Plus, 
+  Eye, Heart, MousePointerClick, LayoutGrid
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,7 +14,6 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import LiveSeating from '@/components/owner/LiveSeating';
 import WaitlistManager from '@/components/owner/WaitlistManager';
-import AreaManager from '@/components/owner/AreaManager';
 import ReservationManagerPremium from '@/components/owner/ReservationManagerPremium';
 import FloorPlanBuilderPremium from '@/components/owner/FloorPlanBuilderPremium';
 import AITableAssigner from '@/components/ai/AITableAssigner';
@@ -506,7 +505,7 @@ export default function OwnerDashboard() {
 
                       <div className="grid lg:grid-cols-2 gap-6">
                         <ReservationManagerPremium
-                          reservations={Array.isArray(reservations) ? reservations : []}
+                          reservations={reservations || []}
                           restaurantId={selectedRestaurant?.id}
                           restaurantName={currentRestaurant?.name}
                         />
