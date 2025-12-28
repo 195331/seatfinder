@@ -16,7 +16,7 @@ import { format } from 'date-fns';
 import moment from 'moment';
 import { cn } from "@/lib/utils";
 
-export default function ReservationManagerPremium({ reservations, restaurantId, restaurantName }) {
+export default function ReservationManagerPremium({ reservations = [], restaurantId, restaurantName }) {
   const queryClient = useQueryClient();
   const [expandedOrders, setExpandedOrders] = useState(new Set());
   const [rescheduleDialog, setRescheduleDialog] = useState({ open: false, reservation: null });
@@ -46,7 +46,10 @@ export default function ReservationManagerPremium({ reservations, restaurantId, 
   // Fetch tables to update status
   const { data: tables = [] } = useQuery({
     queryKey: ['tables', restaurantId],
-    queryFn: () => base44.entities.Table.filter({ restaurant_id: restaurantId }),
+    queryFn: async () => {
+      if (!restaurantId) return [];
+      return await base44.entities.Table.filter({ restaurant_id: restaurantId });
+    },
     enabled: !!restaurantId
   });
 
