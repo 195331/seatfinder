@@ -512,8 +512,15 @@ export default function Home() {
         </div>
       </header>
 
+      {/* Background Watermark */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden opacity-[0.02] select-none z-0">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[20vw] font-black text-slate-900 whitespace-nowrap">
+          SEATFINDER
+        </div>
+      </div>
+
       {/* Content */}
-      <main className="max-w-7xl mx-auto px-4 py-6">
+      <main className="max-w-7xl mx-auto px-4 py-6 relative z-10">
         {/* Tabs for Explore / Mood Boards / AI */}
         {currentUser && (
           <Tabs value={activeSection} onValueChange={setActiveSection} className="mb-6">
