@@ -506,7 +506,7 @@ export default function OwnerDashboard() {
 
                       <div className="grid lg:grid-cols-2 gap-6">
                         <ReservationManagerPremium
-                          reservations={reservations}
+                          reservations={reservations || []}
                           restaurantId={selectedRestaurant?.id}
                           restaurantName={currentRestaurant?.name}
                         />
