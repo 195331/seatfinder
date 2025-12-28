@@ -8,9 +8,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import RestaurantCard from './RestaurantCard';
+import MoodBoardAI from '../ai/MoodBoardAI';
 import { cn } from "@/lib/utils";
 
-export default function MoodBoardManager({ currentUser }) {
+export default function MoodBoardManager({ currentUser, allRestaurants, onRestaurantClick }) {
   const queryClient = useQueryClient();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newBoardName, setNewBoardName] = useState('');
@@ -218,37 +219,49 @@ export default function MoodBoardManager({ currentUser }) {
       )}
 
       {selectedBoard && (
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <span className="text-3xl">{selectedBoard.icon}</span>
-                <div>
-                  <h3 className="font-semibold text-lg">{selectedBoard.name}</h3>
-                  <p className="text-sm text-slate-500">{selectedBoardRestaurants.length} restaurants</p>
+        <>
+          {/* AI Suggestions */}
+          {allRestaurants && allRestaurants.length > 0 && (
+            <div className="mb-4">
+              <MoodBoardAI
+                moodBoard={selectedBoard}
+                restaurants={allRestaurants}
+                onRestaurantClick={onRestaurantClick}
+              />
+            </div>
+          )}
+          
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl">{selectedBoard.icon}</span>
+                  <div>
+                    <h3 className="font-semibold text-lg">{selectedBoard.name}</h3>
+                    <p className="text-sm text-slate-500">{selectedBoardRestaurants.length} restaurants</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => shareBoard(selectedBoard)}
+                    className="gap-2"
+                  >
+                    <Share2 className="w-4 h-4" />
+                    Share
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => deleteBoardMutation.mutate(selectedBoard.id)}
+                    className="gap-2 text-red-600 hover:text-red-700"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Delete
+                  </Button>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => shareBoard(selectedBoard)}
-                  className="gap-2"
-                >
-                  <Share2 className="w-4 h-4" />
-                  Share
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => deleteBoardMutation.mutate(selectedBoard.id)}
-                  className="gap-2 text-red-600 hover:text-red-700"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  Delete
-                </Button>
-              </div>
-            </div>
 
             {selectedBoardRestaurants.length === 0 ? (
               <div className="text-center py-8">

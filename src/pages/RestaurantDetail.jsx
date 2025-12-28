@@ -25,6 +25,8 @@ import FloorPlanViewPremium from "@/components/customer/FloorPlanViewPremium";
 import AIWaitTimePredictor from "@/components/ai/AIWaitTimePredictor";
 import MenuView from "@/components/customer/MenuView";
 import PromotionBanner from "@/components/customer/PromotionBanner";
+import MenuHighlights from "@/components/restaurant/MenuHighlights";
+import ReviewSummary from "@/components/restaurant/ReviewSummary";
 import LoyaltyCard from "@/components/customer/LoyaltyCard";
 import { OpeningHoursDisplay } from "@/components/owner/OpeningHoursEditor";
 import PhotoGallery from "@/components/customer/PhotoGallery";
@@ -827,12 +829,23 @@ export default function RestaurantDetail() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="menu" className="mt-6">
+          <TabsContent value="menu" className="mt-6 space-y-6">
+            {/* AI-Generated Menu Highlights */}
+            {menuItems.length > 0 && (
+              <MenuHighlights
+                restaurantId={restaurantId}
+                menuItems={menuItems}
+                restaurantName={restaurant.name}
+                cuisine={restaurant.cuisine}
+              />
+            )}
+
+            {/* Full Menu */}
             <Card className="border-0 shadow-lg">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <UtensilsCrossed className="w-5 h-5" />
-                  Menu
+                  Full Menu
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -900,6 +913,9 @@ export default function RestaurantDetail() {
           </TabsContent>
 
           <TabsContent value="reviews" className="mt-6 space-y-6">
+            {/* AI Review Summary */}
+            <ReviewSummary reviews={reviews} restaurantName={restaurant.name} />
+
             {/* Photo Gallery */}
             <Card className="border-0 shadow-lg">
               <CardContent className="p-6">

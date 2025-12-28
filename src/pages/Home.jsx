@@ -20,6 +20,7 @@ import RecentlyViewed from '@/components/customer/RecentlyViewed';
 import ExpressProfileSetup from '@/components/customer/ExpressProfileSetup';
 import MoodBoardManager from '@/components/customer/MoodBoardManager';
 import NotificationBell from '@/components/notifications/NotificationBell';
+import SurpriseMe from '@/components/ai/SurpriseMe';
 import { getIsVerifiedLive, getIsStale } from '@/components/ui/FreshnessIndicator';
 import { Switch } from "@/components/ui/switch";
 
@@ -530,13 +531,28 @@ export default function Home() {
             </TabsList>
 
             <TabsContent value="moodboards" className="mt-6">
-              <MoodBoardManager currentUser={currentUser} />
+              <MoodBoardManager 
+                currentUser={currentUser}
+                allRestaurants={restaurants}
+                onRestaurantClick={handleRestaurantClick}
+              />
             </TabsContent>
           </Tabs>
         )}
 
         {activeSection === 'explore' && (
           <>
+            {/* Surprise Me Feature */}
+            {currentUser && (
+              <div className="mb-6">
+                <SurpriseMe
+                  restaurants={filteredRestaurants}
+                  currentUser={currentUser}
+                  onRestaurantClick={handleRestaurantClick}
+                />
+              </div>
+            )}
+
             {/* AI Search Results */}
             {showAISearch && (
               <div className="mb-6">
