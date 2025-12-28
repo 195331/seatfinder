@@ -64,7 +64,7 @@ export default function ReservationManagerPremium({ reservations = [], restauran
   };
 
   const getPreOrderForReservation = (reservationId) => {
-    return preOrders.find(po => po.reservation_id === reservationId);
+    return (preOrders || []).find(po => po?.reservation_id === reservationId);
   };
 
   const updateReservationMutation = useMutation({
