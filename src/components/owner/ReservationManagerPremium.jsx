@@ -265,21 +265,21 @@ export default function ReservationManagerPremium({ reservations = [], restauran
                           <div className="flex items-center gap-2">
                             <UtensilsCrossed className="w-4 h-4 text-emerald-600" />
                             <span className="font-medium text-emerald-900">Pre-Order</span>
-                            <Badge className="bg-emerald-600">{(preOrder.items || []).length} items</Badge>
-                            <span className="text-sm text-emerald-700">${(preOrder.total_amount || 0).toFixed(2)}</span>
+                            <Badge className="bg-emerald-600">{((preOrder?.items || []).length)} items</Badge>
+                            <span className="text-sm text-emerald-700">${((preOrder?.total_amount || 0)).toFixed(2)}</span>
                           </div>
                           {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                         </button>
-                        
+
                         {isExpanded && (
                           <div className="p-3 pt-0 space-y-2">
-                            {(preOrder.items || []).map((item, i) => (
+                            {((preOrder?.items || [])).map((item, i) => (
                               <div key={i} className="flex items-center justify-between text-sm">
-                                <span className="text-slate-700">{item.quantity}x {item.name}</span>
-                                <span className="text-slate-900 font-medium">${(item.price * item.quantity).toFixed(2)}</span>
+                                <span className="text-slate-700">{item?.quantity}x {item?.name}</span>
+                                <span className="text-slate-900 font-medium">${((item?.price || 0) * (item?.quantity || 1)).toFixed(2)}</span>
                               </div>
                             ))}
-                            {preOrder.special_instructions && (
+                            {preOrder?.special_instructions && (
                               <div className="pt-2 mt-2 border-t text-xs text-slate-600">
                                 <span className="font-medium">Instructions:</span> {preOrder.special_instructions}
                               </div>
@@ -356,7 +356,7 @@ export default function ReservationManagerPremium({ reservations = [], restauran
                         <div className="flex items-center gap-2 mt-1">
                           <Badge variant="outline" className="text-xs border-emerald-500 text-emerald-700">
                             <UtensilsCrossed className="w-3 h-3 mr-1" />
-                            Pre-Order: ${(preOrder.total_amount || 0).toFixed(2)}
+                            Pre-Order: ${((preOrder?.total_amount || 0)).toFixed(2)}
                           </Badge>
                         </div>
                       )}
