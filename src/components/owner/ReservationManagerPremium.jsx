@@ -219,7 +219,7 @@ export default function ReservationManagerPremium({ reservations = [], restauran
             <p className="text-slate-500 text-center py-6">No pending reservation requests</p>
           ) : (
             <div className="space-y-4">
-              {pendingReservations.map((reservation) => {
+              {(pendingReservations || []).map((reservation) => {
                 const preOrder = getPreOrderForReservation(reservation.id);
                 const isExpanded = expandedOrders.has(reservation.id);
                 
@@ -273,7 +273,7 @@ export default function ReservationManagerPremium({ reservations = [], restauran
                         
                         {isExpanded && (
                           <div className="p-3 pt-0 space-y-2">
-                            {preOrder.items.map((item, i) => (
+                            {(preOrder.items || []).map((item, i) => (
                               <div key={i} className="flex items-center justify-between text-sm">
                                 <span className="text-slate-700">{item.quantity}x {item.name}</span>
                                 <span className="text-slate-900 font-medium">${(item.price * item.quantity).toFixed(2)}</span>
@@ -338,7 +338,7 @@ export default function ReservationManagerPremium({ reservations = [], restauran
             <p className="text-slate-500 text-center py-6">No confirmed reservations</p>
           ) : (
             <div className="space-y-3">
-              {confirmedReservations.map((reservation) => {
+              {(confirmedReservations || []).map((reservation) => {
                 const preOrder = getPreOrderForReservation(reservation.id);
                 const tableLabel = tables.find(t => t.id === reservation.table_id)?.label || '?';
                 
@@ -408,7 +408,7 @@ export default function ReservationManagerPremium({ reservations = [], restauran
               <div>
                 <Label className="text-sm font-medium">New Time</Label>
                 <div className="grid grid-cols-4 gap-2 mt-1.5">
-                  {TIME_SLOTS.map(time => (
+                  {(TIME_SLOTS || []).map(time => (
                     <Button
                       key={time}
                       variant={newTime === time ? "default" : "outline"}
