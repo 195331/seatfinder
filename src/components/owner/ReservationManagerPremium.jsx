@@ -265,8 +265,8 @@ export default function ReservationManagerPremium({ reservations = [], restauran
                           <div className="flex items-center gap-2">
                             <UtensilsCrossed className="w-4 h-4 text-emerald-600" />
                             <span className="font-medium text-emerald-900">Pre-Order</span>
-                            <Badge className="bg-emerald-600">{preOrder.items.length} items</Badge>
-                            <span className="text-sm text-emerald-700">${preOrder.total_amount.toFixed(2)}</span>
+                            <Badge className="bg-emerald-600">{(preOrder.items || []).length} items</Badge>
+                            <span className="text-sm text-emerald-700">${(preOrder.total_amount || 0).toFixed(2)}</span>
                           </div>
                           {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                         </button>
@@ -356,7 +356,7 @@ export default function ReservationManagerPremium({ reservations = [], restauran
                         <div className="flex items-center gap-2 mt-1">
                           <Badge variant="outline" className="text-xs border-emerald-500 text-emerald-700">
                             <UtensilsCrossed className="w-3 h-3 mr-1" />
-                            Pre-Order: ${preOrder.total_amount.toFixed(2)}
+                            Pre-Order: ${(preOrder.total_amount || 0).toFixed(2)}
                           </Badge>
                         </div>
                       )}
