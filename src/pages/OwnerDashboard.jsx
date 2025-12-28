@@ -505,8 +505,9 @@ export default function OwnerDashboard() {
                       <AutoReservationRules restaurantId={selectedRestaurant?.id} />
 
                       <div className="grid lg:grid-cols-2 gap-6">
-                        <ReservationManager
+                        <ReservationManagerPremium
                           reservations={reservations}
+                          restaurantId={selectedRestaurant?.id}
                           restaurantName={currentRestaurant?.name}
                         />
                         <FeatureGate
