@@ -30,11 +30,11 @@ export default function ReservationManagerPremium({ reservations = [], restauran
 
   // Fetch pre-orders
   const { data: preOrders = [] } = useQuery({
-    queryKey: ['preOrders', reservations?.map(r => r.id) || []],
+    queryKey: ['preOrders', (reservations || []).map(r => r.id)],
     queryFn: async () => {
       if (!reservations || reservations.length === 0) return [];
       const orders = await Promise.all(
-        reservations.map(r => 
+        (reservations || []).map(r => 
           base44.entities.PreOrder.filter({ reservation_id: r.id }).then(o => o[0])
         )
       );
