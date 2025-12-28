@@ -30,9 +30,9 @@ export default function ReservationManagerPremium({ reservations, restaurantId, 
 
   // Fetch pre-orders
   const { data: preOrders = [] } = useQuery({
-    queryKey: ['preOrders', reservations.map(r => r.id)],
+    queryKey: ['preOrders', reservations?.map(r => r.id) || []],
     queryFn: async () => {
-      if (reservations.length === 0) return [];
+      if (!reservations || reservations.length === 0) return [];
       const orders = await Promise.all(
         reservations.map(r => 
           base44.entities.PreOrder.filter({ reservation_id: r.id }).then(o => o[0])
@@ -40,7 +40,7 @@ export default function ReservationManagerPremium({ reservations, restaurantId, 
       );
       return orders.filter(Boolean);
     },
-    enabled: reservations.length > 0
+    enabled: !!reservations && reservations.length > 0
   });
 
   // Fetch tables to update status
@@ -148,8 +148,8 @@ export default function ReservationManagerPremium({ reservations, restaurantId, 
     }
   });
 
-  const pendingReservations = reservations.filter(r => r.status === 'pending');
-  const confirmedReservations = reservations.filter(r => r.status === 'approved');
+  const pendingReservations = (reservations || []).filter(r => r.status === 'pending');
+  const confirmedReservations = (reservations || []).filter(r => r.status === 'approved');
 
   const handleApprove = (reservation) => {
     updateReservationMutation.mutate({
