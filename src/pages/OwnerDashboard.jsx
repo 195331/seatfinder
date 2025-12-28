@@ -15,7 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import LiveSeating from '@/components/owner/LiveSeating';
 import WaitlistManager from '@/components/owner/WaitlistManager';
 import AreaManager from '@/components/owner/AreaManager';
-import ReservationManager from '@/components/owner/ReservationManager';
+import ReservationManagerPremium from '@/components/owner/ReservationManagerPremium';
 import FloorPlanBuilderPremium from '@/components/owner/FloorPlanBuilderPremium';
 import AITableAssigner from '@/components/ai/AITableAssigner';
 import OccupancyForecaster from '@/components/ai/OccupancyForecaster';

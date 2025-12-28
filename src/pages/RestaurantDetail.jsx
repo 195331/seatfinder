@@ -21,7 +21,7 @@ import OccupancyBadge from "@/components/ui/OccupancyBadge";
 import SeatingBar from "@/components/ui/SeatingBar";
 import PriceLevel from "@/components/ui/PriceLevel";
 import StarRating from "@/components/ui/StarRating";
-import FloorPlanView from "@/components/customer/FloorPlanView";
+import FloorPlanViewPremium from "@/components/customer/FloorPlanViewPremium";
 import AIWaitTimePredictor from "@/components/ai/AIWaitTimePredictor";
 import MenuView from "@/components/customer/MenuView";
 import PromotionBanner from "@/components/customer/PromotionBanner";
@@ -858,14 +858,20 @@ export default function RestaurantDetail() {
                   )}
                 </CardHeader>
                 <CardContent>
-                  {displayTables.length > 0 ? (
-                    <FloorPlanView
-                      tables={displayTables}
-                      areas={floorPlanAreas}
+                  {restaurant.floor_plan_data?.items ? (
+                    <FloorPlanViewPremium
+                      floorPlanData={restaurant.floor_plan_data}
+                      tables={tables}
                       onReserveTable={(data) => reserveTableMutation.mutate(data)}
                       isSubmitting={reserveTableMutation.isPending}
                       currentUser={currentUser}
                     />
+                  ) : displayTables.length > 0 ? (
+                    <div className="text-center py-12">
+                      <LayoutGrid className="w-12 h-12 mx-auto text-slate-300 mb-3" />
+                      <p className="text-slate-500">This restaurant hasn't set up their floor plan yet</p>
+                      <p className="text-sm text-slate-400 mt-1">Try joining the waitlist instead</p>
+                    </div>
                   ) : (
                     <div className="text-center py-12">
                       <LayoutGrid className="w-12 h-12 mx-auto text-slate-300 mb-3" />

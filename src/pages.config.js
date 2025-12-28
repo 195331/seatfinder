@@ -2,6 +2,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import ConfirmWaitlist from './pages/ConfirmWaitlist';
 import CreateRestaurant from './pages/CreateRestaurant';
 import Favorites from './pages/Favorites';
+import ForgotPassword from './pages/ForgotPassword';
 import Home from './pages/Home';
 import Inbox from './pages/Inbox';
 import Landing from './pages/Landing';
@@ -14,7 +15,6 @@ import Profile from './pages/Profile';
 import RestaurantDetail from './pages/RestaurantDetail';
 import RestaurantSettings from './pages/RestaurantSettings';
 import Settings from './pages/Settings';
-import ForgotPassword from './pages/ForgotPassword';
 import __Layout from './Layout.jsx';
 
 
@@ -23,6 +23,7 @@ export const PAGES = {
     "ConfirmWaitlist": ConfirmWaitlist,
     "CreateRestaurant": CreateRestaurant,
     "Favorites": Favorites,
+    "ForgotPassword": ForgotPassword,
     "Home": Home,
     "Inbox": Inbox,
     "Landing": Landing,
@@ -35,7 +36,6 @@ export const PAGES = {
     "RestaurantDetail": RestaurantDetail,
     "RestaurantSettings": RestaurantSettings,
     "Settings": Settings,
-    "ForgotPassword": ForgotPassword,
 }
 
 export const pagesConfig = {
