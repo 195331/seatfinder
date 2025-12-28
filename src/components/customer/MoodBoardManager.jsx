@@ -290,6 +290,7 @@ export default function MoodBoardManager({ currentUser, allRestaurants, onRestau
             )}
           </CardContent>
         </Card>
+        </>
       )}
 
       {/* Quick Add to Board - show for favorites not in any board */}
