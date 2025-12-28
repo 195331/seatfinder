@@ -2176,4 +2176,132 @@ export default function FloorPlanBuilderPremium({ restaurant, onPublish }) {
                 {primary.type === "textBox" && (
                   <>
                     <div>
-                      <div className="text-xs font-bold text-slate-600 mb-
+                      <div className="text-xs font-bold text-slate-600 mb-1">Text content</div>
+                      <Input
+                        value={primary.text || ""}
+                        onChange={(e) => updateItem(primary.id, { text: e.target.value })}
+                        onBlur={commitInspector}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <div className="text-xs font-bold text-slate-600 mb-1">Font size</div>
+                        <Input
+                          type="number"
+                          min={10}
+                          max={48}
+                          value={primary.style?.size || 16}
+                          onChange={(e) =>
+                            updateItemStyle(primary.id, { size: parseInt(e.target.value || "16", 10) })
+                          }
+                          onBlur={commitInspector}
+                        />
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold text-slate-600 mb-1">Color</div>
+                        <Button variant="outline" className="w-full" onClick={() => {
+                          setColorPop({ open: true, x: window.innerWidth / 2, y: 180, targetId: primary.id, field: "text" });
+                        }}>
+                          Pick
+                        </Button>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                <div className="border-t mt-3 pt-3" />
+
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => deleteIds(selection.length ? selection : [primary.id])}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" /> Delete
+                </Button>
+              </div>
+            ) : (
+              <div className="text-sm text-slate-500 text-center py-12">
+                Select an item to edit properties
+              </div>
+            )}
+
+            <div className="border-t mt-4 pt-4" />
+
+            {/* Warnings / errors */}
+            {topErrors.length > 0 && (
+              <div className="space-y-2">
+                <div className="text-xs font-black tracking-wider text-slate-600 mb-2">ISSUES</div>
+                {topErrors.map((err, i) => (
+                  <div
+                    key={i}
+                    className={cn(
+                      "flex items-start gap-2 p-2 rounded-lg text-xs",
+                      err.type === "critical" && "bg-red-50 text-red-800",
+                      err.type === "warn" && "bg-amber-50 text-amber-800",
+                      err.type === "info" && "bg-blue-50 text-blue-800"
+                    )}
+                  >
+                    <AlertCircle className="w-4 h-4 mt-0.5" />
+                    <span>{err.message}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+        </div>
+      </div>
+
+      {/* AI modal */}
+      {aiModal.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <Card className="w-[500px] p-6 shadow-2xl">
+            <div className="flex items-center gap-3 mb-4">
+              <Sparkles className="w-6 h-6 text-purple-600" />
+              <div className="text-lg font-bold">Ask AI</div>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <div className="text-sm text-slate-600 mb-2">
+                  {aiModal.mode === "layout"
+                    ? "Example: 'Generate 40 seats with a date night vibe' or 'Add a family area with 10 six-tops'"
+                    : "Example: 'Align these tables' or 'Space them evenly' or 'Rotate 45 degrees'"}
+                </div>
+                <Input
+                  placeholder="What would you like me to do?"
+                  value={aiModal.prompt}
+                  onChange={(e) => setAiModal((a) => ({ ...a, prompt: e.target.value }))}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !aiModal.isRunning) runAiApply();
+                  }}
+                />
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setAiModal((a) => ({ ...a, open: false }))}>
+                  Cancel
+                </Button>
+                <Button
+                  className="bg-purple-600 hover:bg-purple-700"
+                  onClick={runAiApply}
+                  disabled={aiModal.isRunning || !aiModal.prompt.trim()}
+                >
+                  {aiModal.isRunning ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Running...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4 mr-2" /> Apply
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+    </div>
+  );
+}
