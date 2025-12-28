@@ -461,7 +461,7 @@ export default function FloorPlanBuilderPremium({ restaurant, onPublish }) {
             {/* Tables */}
             {tables.map(table => {
               const isSelected = selectedTable?.id === table.id;
-              const state = TABLE_STATES[table.state];
+              const state = TABLE_STATES[table.state || 'free'];
               
               return (
                 <g
