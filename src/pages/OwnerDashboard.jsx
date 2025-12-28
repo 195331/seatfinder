@@ -16,7 +16,7 @@ import LiveSeating from '@/components/owner/LiveSeating';
 import WaitlistManager from '@/components/owner/WaitlistManager';
 import AreaManager from '@/components/owner/AreaManager';
 import ReservationManager from '@/components/owner/ReservationManager';
-import FloorPlanBuilder from '@/components/owner/FloorPlanBuilder';
+import FloorPlanBuilderPremium from '@/components/owner/FloorPlanBuilderPremium';
 import AITableAssigner from '@/components/ai/AITableAssigner';
 import OccupancyForecaster from '@/components/ai/OccupancyForecaster';
 import AIRecommendations from '@/components/ai/AIRecommendations';
@@ -455,7 +455,7 @@ export default function OwnerDashboard() {
               </TabsContent>
 
               <TabsContent value="floorplan">
-                <FloorPlanBuilder
+                <FloorPlanBuilderPremium
                   restaurant={currentRestaurant}
                   onPublish={() => queryClient.invalidateQueries(['ownedRestaurants'])}
                 />
