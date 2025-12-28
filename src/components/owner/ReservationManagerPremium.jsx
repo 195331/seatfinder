@@ -244,8 +244,8 @@ export default function ReservationManagerPremium({ reservations = [], restauran
                         {moment(reservation.reservation_date).format('ddd, MMM D')} at {reservation.reservation_time}
                       </div>
                       <div className="flex items-center gap-1.5 text-slate-600">
-                        <Users className="w-4 h-4" />
-                        {reservation.party_size} guests • Table {tables.find(t => t.id === reservation.table_id)?.label || '?'}
+                       <Users className="w-4 h-4" />
+                       {reservation.party_size} guests • Table {(tables || []).find(t => t.id === reservation.table_id)?.label || '?'}
                       </div>
                     </div>
 
@@ -340,7 +340,7 @@ export default function ReservationManagerPremium({ reservations = [], restauran
             <div className="space-y-3">
               {(confirmedReservations || []).map((reservation) => {
                 const preOrder = getPreOrderForReservation(reservation.id);
-                const tableLabel = tables.find(t => t.id === reservation.table_id)?.label || '?';
+                const tableLabel = (tables || []).find(t => t.id === reservation.table_id)?.label || '?';
                 
                 return (
                   <div
