@@ -1,46 +1,64 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { base44 } from '@/api/base44Client';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useNavigate, Link } from 'react-router-dom';
-import { createPageUrl } from '@/utils';
+// /app/src/pages/OwnerDashboard.jsx
+import React, { useEffect, useMemo, useState } from "react";
+import { base44 } from "@/api/base44Client";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate, Link } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 import {
-  Store, Users, BarChart3, Settings, Plus,
-  Eye, Heart, MousePointerClick, LayoutGrid
-} from 'lucide-react';
+  Store,
+  Users,
+  BarChart3,
+  Settings,
+  Plus,
+  Eye,
+  Heart,
+  MousePointerClick,
+  LayoutGrid,
+} from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import LiveSeating from '@/components/owner/LiveSeating';
-import WaitlistManager from '@/components/owner/WaitlistManager';
-import ReservationManagerPremium from '@/components/owner/ReservationManagerPremium';
-import FloorPlanBuilderPremium from '@/components/owner/FloorPlanBuilderPremium';
-import AITableAssigner from '@/components/ai/AITableAssigner';
-import OccupancyForecaster from '@/components/ai/OccupancyForecaster';
-import AIRecommendations from '@/components/ai/AIRecommendations';
-import AIReviewAnalyzer from '@/components/ai/AIReviewAnalyzer';
-import AIReservationManager from '@/components/ai/AIReservationManager';
-import AIFloorPlanOptimizer from '@/components/ai/AIFloorPlanOptimizer';
-import AutoReservationRules from '@/components/owner/AutoReservationRules';
-import ReservationCalendar from '@/components/owner/ReservationCalendar';
-import WaitlistSMSManager from '@/components/owner/WaitlistSMSManager';
-import PredictiveAnalytics from '@/components/analytics/PredictiveAnalytics';
-import SeatingHeatmap from '@/components/analytics/SeatingHeatmap';
-import ABTestingSuggestions from '@/components/analytics/ABTestingSuggestions';
-import FeatureGate from '@/components/subscription/FeatureGate';
-import { useFeatureAccess } from '@/components/subscription/SubscriptionPlans';
-import LoyaltyProgramManager from '@/components/owner/LoyaltyProgramManager';
-import MenuBuilder from '@/components/owner/MenuBuilder';
-import OfferManager from '@/components/owner/OfferManager';
-import AIPersonalizedOffers from '@/components/ai/AIPersonalizedOffers';
-import AIDynamicPricing from '@/components/ai/AIDynamicPricing';
-import ShiftModePanel from '@/components/owner/ShiftModePanel';
-import OwnerAI from '@/components/ai/OwnerAI';
-import NotificationBell from '@/components/notifications/NotificationBell';
 import { cn } from "@/lib/utils";
 
-// Normalize anything into an array (prevents undefined.map crashes)
+import LiveSeating from "@/components/owner/LiveSeating";
+import WaitlistManager from "@/components/owner/WaitlistManager";
+import ReservationManagerPremium from "@/components/owner/ReservationManagerPremium";
+import FloorPlanBuilderPremium from "@/components/owner/FloorPlanBuilderPremium";
+
+import AITableAssigner from "@/components/ai/AITableAssigner";
+import OccupancyForecaster from "@/components/ai/OccupancyForecaster";
+import AIRecommendations from "@/components/ai/AIRecommendations";
+import AIReviewAnalyzer from "@/components/ai/AIReviewAnalyzer";
+import AIReservationManager from "@/components/ai/AIReservationManager";
+import AIFloorPlanOptimizer from "@/components/ai/AIFloorPlanOptimizer";
+
+import AutoReservationRules from "@/components/owner/AutoReservationRules";
+import ReservationCalendar from "@/components/owner/ReservationCalendar";
+import WaitlistSMSManager from "@/components/owner/WaitlistSMSManager";
+
+import PredictiveAnalytics from "@/components/analytics/PredictiveAnalytics";
+import SeatingHeatmap from "@/components/analytics/SeatingHeatmap";
+import ABTestingSuggestions from "@/components/analytics/ABTestingSuggestions";
+
+import FeatureGate from "@/components/subscription/FeatureGate";
+import { useFeatureAccess } from "@/components/subscription/SubscriptionPlans";
+
+import LoyaltyProgramManager from "@/components/owner/LoyaltyProgramManager";
+import MenuBuilder from "@/components/owner/MenuBuilder";
+import OfferManager from "@/components/owner/OfferManager";
+import AIPersonalizedOffers from "@/components/ai/AIPersonalizedOffers";
+import AIDynamicPricing from "@/components/ai/AIDynamicPricing";
+
+import ShiftModePanel from "@/components/owner/ShiftModePanel";
+import OwnerAI from "@/components/ai/OwnerAI";
+import NotificationBell from "@/components/notifications/NotificationBell";
+
+/**
+ * Normalize anything into an array (prevents undefined.map crashes)
+ */
 const norm = (v) => {
   if (Array.isArray(v)) return v;
   if (Array.isArray(v?.data)) return v.data;
@@ -55,64 +73,113 @@ export default function OwnerDashboard() {
 
   const [currentUser, setCurrentUser] = useState(null);
   const [selectedRestaurant, setSelectedRestaurant] = useState(null);
-  const [activeTab, setActiveTab] = useState('seating');
+  const [activeTab, setActiveTab] = useState("seating");
 
+  // ---- Auth / role check ----
   useEffect(() => {
+    let mounted = true;
+
     const fetchUser = async () => {
       try {
         const isAuth = await base44.auth.isAuthenticated();
-        if (!isAuth) return navigate(createPageUrl('Home'));
+        if (!isAuth) {
+          navigate(createPageUrl("Home"));
+          return;
+        }
+
         const user = await base44.auth.me();
-        const ok = (user?.user_type === 'owner' || user?.user_type === 'admin' || user?.role === 'admin');
-        if (!ok) return navigate(createPageUrl('Home'));
-        setCurrentUser(user);
-      } catch {
-        navigate(createPageUrl('Home'));
+        const isOwnerOrAdmin =
+          user?.user_type === "owner" ||
+          user?.user_type === "admin" ||
+          user?.role === "admin";
+
+        if (!isOwnerOrAdmin) {
+          navigate(createPageUrl("Home"));
+          return;
+        }
+
+        if (mounted) setCurrentUser(user);
+      } catch (e) {
+        navigate(createPageUrl("Home"));
       }
     };
+
     fetchUser();
+    return () => {
+      mounted = false;
+    };
   }, [navigate]);
 
-  const ownedRestaurantsQ = useQuery({
-    queryKey: ['ownedRestaurants', currentUser?.id],
+  // ---- Queries ----
+
+  // Owned restaurants
+  const {
+    data: ownedRestaurantsRaw,
+    isLoading: loadingRestaurants,
+    isFetching: fetchingRestaurants,
+  } = useQuery({
+    queryKey: ["ownedRestaurants", currentUser?.id],
     enabled: !!currentUser?.id,
-    queryFn: async () => norm(await base44.entities.Restaurant.filter({ owner_id: currentUser.id })),
-    staleTime: 10_000,
+    queryFn: async () => {
+      // Base44 filter can return [] or {data: []} depending on backend
+      return base44.entities.Restaurant.filter({ owner_id: currentUser.id });
+    },
   });
-  const ownedRestaurants = norm(ownedRestaurantsQ.data);
 
-  const staffAssignmentsQ = useQuery({
-    queryKey: ['staffAssignments', currentUser?.email],
+  const ownedRestaurants = useMemo(
+    () => norm(ownedRestaurantsRaw),
+    [ownedRestaurantsRaw]
+  );
+
+  // Staff assignments (optional)
+  const { data: staffAssignmentsRaw } = useQuery({
+    queryKey: ["staffAssignments", currentUser?.email],
     enabled: !!currentUser?.email,
-    queryFn: async () => norm(await base44.entities.RestaurantStaff.filter({
-      user_email: currentUser.email,
-      is_active: true
-    })),
-    staleTime: 10_000,
+    queryFn: async () => {
+      return base44.entities.RestaurantStaff.filter({
+        user_email: currentUser.email,
+        is_active: true,
+      });
+    },
   });
-  const staffAssignments = norm(staffAssignmentsQ.data);
 
-  const staffRestaurantsQ = useQuery({
-    queryKey: ['staffRestaurants', staffAssignments.map(a => a?.restaurant_id).filter(Boolean).join('|')],
+  const staffAssignments = useMemo(
+    () => norm(staffAssignmentsRaw),
+    [staffAssignmentsRaw]
+  );
+
+  // Staff restaurants
+  const staffRestaurantIdsKey = useMemo(() => {
+    const ids = staffAssignments.map((s) => s?.restaurant_id).filter(Boolean);
+    return ids.join("|");
+  }, [staffAssignments]);
+
+  const { data: staffRestaurantsRaw } = useQuery({
+    queryKey: ["staffRestaurants", staffRestaurantIdsKey],
     enabled: staffAssignments.length > 0,
     queryFn: async () => {
-      if (staffAssignments.length === 0) return [];
+      // Fetch each restaurant by id; tolerate any weird return shape
+      const ids = staffAssignments.map((s) => s?.restaurant_id).filter(Boolean);
       const results = await Promise.all(
-        staffAssignments.map(async (a) => {
-          const res = norm(await base44.entities.Restaurant.filter({ id: a.restaurant_id }));
-          return res[0] || null;
+        ids.map(async (id) => {
+          const r = await base44.entities.Restaurant.filter({ id });
+          return norm(r)[0] || null;
         })
       );
       return results.filter(Boolean);
     },
-    staleTime: 10_000,
   });
-  const staffRestaurants = norm(staffRestaurantsQ.data);
+
+  const staffRestaurants = useMemo(
+    () => norm(staffRestaurantsRaw),
+    [staffRestaurantsRaw]
+  );
 
   const allRestaurants = useMemo(() => {
-    const merged = [...ownedRestaurants, ...staffRestaurants].filter(Boolean);
+    // Avoid nulls + avoid duplicates by id
+    const combined = [...ownedRestaurants, ...staffRestaurants].filter(Boolean);
     const seen = new Set();
-    return merged.filter(r => {
+    return combined.filter((r) => {
       if (!r?.id) return false;
       if (seen.has(r.id)) return false;
       seen.add(r.id);
@@ -120,72 +187,185 @@ export default function OwnerDashboard() {
     });
   }, [ownedRestaurants, staffRestaurants]);
 
+  // Default selected restaurant
   useEffect(() => {
-    if (allRestaurants.length === 0) {
-      if (selectedRestaurant) setSelectedRestaurant(null);
-      return;
+    if (allRestaurants.length > 0 && !selectedRestaurant) {
+      setSelectedRestaurant(allRestaurants[0]);
     }
-    if (!selectedRestaurant) return setSelectedRestaurant(allRestaurants[0]);
-    if (!allRestaurants.some(r => r.id === selectedRestaurant.id)) setSelectedRestaurant(allRestaurants[0]);
   }, [allRestaurants, selectedRestaurant]);
 
-  const restaurantId = selectedRestaurant?.id;
+  const selectedRestaurantId = selectedRestaurant?.id || null;
 
-  const tablesQ = useQuery({
-    queryKey: ['tables', restaurantId],
-    enabled: !!restaurantId,
-    queryFn: async () => norm(await base44.entities.Table.filter({ restaurant_id: restaurantId })),
+  // Tables
+  const { data: tablesRaw } = useQuery({
+    queryKey: ["tables", selectedRestaurantId],
+    enabled: !!selectedRestaurantId,
+    queryFn: async () => {
+      return base44.entities.Table.filter({ restaurant_id: selectedRestaurantId });
+    },
   });
-  const tables = norm(tablesQ.data);
+  const tables = useMemo(() => norm(tablesRaw), [tablesRaw]);
 
-  const waitlistQ = useQuery({
-    queryKey: ['waitlist', restaurantId],
-    enabled: !!restaurantId,
-    queryFn: async () => norm(await base44.entities.WaitlistEntry.filter({ restaurant_id: restaurantId }, '-created_date')),
+  // Waitlist
+  const { data: waitlistRaw } = useQuery({
+    queryKey: ["waitlist", selectedRestaurantId],
+    enabled: !!selectedRestaurantId,
+    queryFn: async () => {
+      return base44.entities.WaitlistEntry.filter(
+        { restaurant_id: selectedRestaurantId },
+        "-created_date"
+      );
+    },
   });
-  const waitlist = norm(waitlistQ.data);
+  const waitlist = useMemo(() => norm(waitlistRaw), [waitlistRaw]);
 
-  const eventsQ = useQuery({
-    queryKey: ['events', restaurantId],
-    enabled: !!restaurantId,
-    queryFn: async () => norm(await base44.entities.AnalyticsEvent.filter({ restaurant_id: restaurantId }, '-created_date', 100)),
+  // Recent events
+  const { data: recentEventsRaw } = useQuery({
+    queryKey: ["events", selectedRestaurantId],
+    enabled: !!selectedRestaurantId,
+    queryFn: async () => {
+      return base44.entities.AnalyticsEvent.filter(
+        { restaurant_id: selectedRestaurantId },
+        "-created_date",
+        100
+      );
+    },
   });
-  const recentEvents = norm(eventsQ.data);
+  const recentEvents = useMemo(() => norm(recentEventsRaw), [recentEventsRaw]);
 
-  const reservationsQ = useQuery({
-    queryKey: ['reservations', restaurantId],
-    enabled: !!restaurantId,
-    queryFn: async () => norm(await base44.entities.Reservation.filter({ restaurant_id: restaurantId }, '-created_date')),
+  // Reservations
+  const { data: reservationsRaw } = useQuery({
+    queryKey: ["reservations", selectedRestaurantId],
+    enabled: !!selectedRestaurantId,
+    queryFn: async () => {
+      return base44.entities.Reservation.filter(
+        { restaurant_id: selectedRestaurantId },
+        "-created_date"
+      );
+    },
   });
-  const reservations = norm(reservationsQ.data);
+  const reservations = useMemo(() => norm(reservationsRaw), [reservationsRaw]);
+
+  // Areas (optional prefetch; not used directly here)
+  useQuery({
+    queryKey: ["areas", selectedRestaurantId],
+    enabled: !!selectedRestaurantId,
+    queryFn: async () => {
+      return base44.entities.RestaurantArea.filter({
+        restaurant_id: selectedRestaurantId,
+      });
+    },
+  });
+
+  // Pick current restaurant object from list (keeps it fresh)
+  const currentRestaurant = useMemo(() => {
+    if (!selectedRestaurantId) return null;
+    return (
+      allRestaurants.find((r) => r?.id === selectedRestaurantId) ||
+      selectedRestaurant ||
+      null
+    );
+  }, [allRestaurants, selectedRestaurant, selectedRestaurantId]);
+
+  const featureAccess = useFeatureAccess(selectedRestaurantId);
+
+  // ---- Mutations ----
+
+  const updateSeatingMutation = useMutation({
+    mutationFn: async (newAvailable) => {
+      if (!currentRestaurant?.id) return;
+
+      const totalSeats = Number(currentRestaurant.total_seats || 0);
+      const safeAvailable = Number(newAvailable || 0);
+
+      await base44.entities.Restaurant.update(currentRestaurant.id, {
+        available_seats: safeAvailable,
+        seating_updated_at: new Date().toISOString(),
+      });
+
+      if (totalSeats > 0) {
+        await base44.entities.SeatingHistory.create({
+          restaurant_id: currentRestaurant.id,
+          available_seats: safeAvailable,
+          total_seats: totalSeats,
+          occupancy_percent: ((totalSeats - safeAvailable) / totalSeats) * 100,
+          recorded_at: new Date().toISOString(),
+        });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ownedRestaurants"] });
+      queryClient.invalidateQueries({ queryKey: ["staffRestaurants"] });
+      queryClient.invalidateQueries({ queryKey: ["events"] });
+    },
+  });
+
+  const toggleFullMutation = useMutation({
+    mutationFn: async (isFull) => {
+      if (!currentRestaurant?.id) return;
+      await base44.entities.Restaurant.update(currentRestaurant.id, {
+        is_full: !!isFull,
+        seating_updated_at: new Date().toISOString(),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ownedRestaurants"] });
+      queryClient.invalidateQueries({ queryKey: ["staffRestaurants"] });
+    },
+  });
 
   const seatEntryMutation = useMutation({
-    mutationFn: (entry) => base44.entities.WaitlistEntry.update(entry.id, {
-      status: 'seated',
-      seated_at: new Date().toISOString()
-    }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['waitlist', restaurantId] })
+    mutationFn: async (entry) => {
+      if (!entry?.id) return;
+      return base44.entities.WaitlistEntry.update(entry.id, {
+        status: "seated",
+        seated_at: new Date().toISOString(),
+      });
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["waitlist"] }),
   });
 
   const cancelEntryMutation = useMutation({
-    mutationFn: (entry) => base44.entities.WaitlistEntry.update(entry.id, { status: 'cancelled' }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['waitlist', restaurantId] })
+    mutationFn: async (entry) => {
+      if (!entry?.id) return;
+      return base44.entities.WaitlistEntry.update(entry.id, {
+        status: "cancelled",
+      });
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["waitlist"] }),
   });
 
-  const viewCount = recentEvents.filter(e => e?.event_type === 'view').length;
-  const clickCount = recentEvents.filter(e => ['call_click', 'directions_click', 'website_click'].includes(e?.event_type)).length;
-  const waitlistWaitingCount = waitlist.filter(w => w?.status === 'waiting').length;
+  // ---- Analytics (safe) ----
+  const viewCount = useMemo(
+    () => recentEvents.filter((e) => e?.event_type === "view").length,
+    [recentEvents]
+  );
 
-  const currentRestaurant = allRestaurants.find(r => r?.id === restaurantId) || selectedRestaurant;
-  const featureAccess = useFeatureAccess(restaurantId);
+  const clickCount = useMemo(
+    () =>
+      recentEvents.filter((e) =>
+        ["call_click", "directions_click", "website_click"].includes(e?.event_type)
+      ).length,
+    [recentEvents]
+  );
 
-  const isLoading =
-    !currentUser ||
-    ownedRestaurantsQ.isLoading ||
-    staffAssignmentsQ.isLoading ||
-    staffRestaurantsQ.isLoading;
+  const waitlistJoins = useMemo(
+    () => recentEvents.filter((e) => e?.event_type === "waitlist_join").length,
+    [recentEvents]
+  );
 
-  if (isLoading) {
+  const waitingCount = useMemo(
+    () => waitlist.filter((w) => w?.status === "waiting").length,
+    [waitlist]
+  );
+
+  const pendingReservationsCount = useMemo(
+    () => reservations.filter((r) => r?.status === "pending").length,
+    [reservations]
+  );
+
+  // ---- Loading state ----
+  if (!currentUser || loadingRestaurants || fetchingRestaurants) {
     return (
       <div className="min-h-screen bg-slate-50 p-6">
         <div className="max-w-6xl mx-auto space-y-6">
@@ -201,8 +381,10 @@ export default function OwnerDashboard() {
     );
   }
 
+  // ---- Render ----
   return (
     <div className="min-h-screen bg-slate-50">
+      {/* Header */}
       <header className="bg-white border-b sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
@@ -213,20 +395,20 @@ export default function OwnerDashboard() {
               <div>
                 <h1 className="font-bold text-lg text-slate-900">Owner Dashboard</h1>
                 <p className="text-sm text-slate-500">
-                  {allRestaurants.length} restaurant{allRestaurants.length !== 1 ? 's' : ''}
+                  {allRestaurants.length} restaurant{allRestaurants.length !== 1 ? "s" : ""}
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-3">
-              {currentUser && <NotificationBell currentUser={currentUser} />}
-              <Link to={createPageUrl('RestaurantSettings') + `?id=${restaurantId || ''}`}>
+              {!!currentUser && <NotificationBell currentUser={currentUser} />}
+              <Link to={createPageUrl("RestaurantSettings") + `?id=${selectedRestaurantId || ""}`}>
                 <Button variant="outline" className="rounded-full gap-2">
                   <Settings className="w-4 h-4" />
                   Settings
                 </Button>
               </Link>
-              <Link to={createPageUrl('OwnerAnalytics') + `?id=${restaurantId || ''}`}>
+              <Link to={createPageUrl("OwnerAnalytics") + `?id=${selectedRestaurantId || ""}`}>
                 <Button variant="outline" className="rounded-full gap-2">
                   <BarChart3 className="w-4 h-4" />
                   Analytics
@@ -235,6 +417,7 @@ export default function OwnerDashboard() {
             </div>
           </div>
 
+          {/* Restaurant Selector */}
           {allRestaurants.length > 1 && (
             <div className="flex gap-2 mt-4 overflow-x-auto pb-2">
               {allRestaurants.map((restaurant) => (
@@ -243,13 +426,13 @@ export default function OwnerDashboard() {
                   onClick={() => setSelectedRestaurant(restaurant)}
                   className={cn(
                     "px-4 py-2 rounded-full border whitespace-nowrap transition-all",
-                    restaurantId === restaurant.id
+                    selectedRestaurantId === restaurant.id
                       ? "bg-slate-900 text-white border-slate-900"
                       : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
                   )}
                 >
                   {restaurant.name}
-                  {restaurant.status !== 'approved' && (
+                  {restaurant.status && restaurant.status !== "approved" && (
                     <Badge variant="secondary" className="ml-2">
                       {restaurant.status}
                     </Badge>
@@ -261,14 +444,17 @@ export default function OwnerDashboard() {
         </div>
       </header>
 
+      {/* Main */}
       <main className="max-w-6xl mx-auto px-4 py-6">
         {allRestaurants.length === 0 ? (
           <Card className="border-0 shadow-lg">
             <CardContent className="py-16 text-center">
               <Store className="w-16 h-16 mx-auto mb-4 text-slate-300" />
               <h2 className="text-xl font-semibold text-slate-900 mb-2">No restaurants yet</h2>
-              <p className="text-slate-500 mb-6">Create your first restaurant to start managing seating</p>
-              <Link to={createPageUrl('CreateRestaurant')}>
+              <p className="text-slate-500 mb-6">
+                Create your first restaurant to start managing seating
+              </p>
+              <Link to={createPageUrl("CreateRestaurant")}>
                 <Button className="rounded-full gap-2">
                   <Plus className="w-4 h-4" />
                   Add Restaurant
@@ -278,79 +464,166 @@ export default function OwnerDashboard() {
           </Card>
         ) : currentRestaurant ? (
           <>
+            {/* Shift Mode */}
             <ShiftModePanel restaurant={currentRestaurant} />
 
+            {/* Quick Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-              <Card className="border-0 shadow-sm"><CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
-                    <Eye className="w-5 h-5 text-blue-600" />
+              <Card className="border-0 shadow-sm">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
+                      <Eye className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-slate-900">{viewCount}</p>
+                      <p className="text-sm text-slate-500">Views today</p>
+                    </div>
                   </div>
-                  <div><p className="text-2xl font-bold text-slate-900">{viewCount}</p><p className="text-sm text-slate-500">Views today</p></div>
-                </div>
-              </CardContent></Card>
+                </CardContent>
+              </Card>
 
-              <Card className="border-0 shadow-sm"><CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
-                    <MousePointerClick className="w-5 h-5 text-emerald-600" />
+              <Card className="border-0 shadow-sm">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
+                      <MousePointerClick className="w-5 h-5 text-emerald-600" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-slate-900">{clickCount}</p>
+                      <p className="text-sm text-slate-500">Clicks</p>
+                    </div>
                   </div>
-                  <div><p className="text-2xl font-bold text-slate-900">{clickCount}</p><p className="text-sm text-slate-500">Clicks</p></div>
-                </div>
-              </CardContent></Card>
+                </CardContent>
+              </Card>
 
-              <Card className="border-0 shadow-sm"><CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
-                    <Users className="w-5 h-5 text-purple-600" />
+              <Card className="border-0 shadow-sm">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
+                      <Users className="w-5 h-5 text-purple-600" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-slate-900">{waitingCount}</p>
+                      <p className="text-sm text-slate-500">On waitlist</p>
+                    </div>
                   </div>
-                  <div><p className="text-2xl font-bold text-slate-900">{waitlistWaitingCount}</p><p className="text-sm text-slate-500">On waitlist</p></div>
-                </div>
-              </CardContent></Card>
+                </CardContent>
+              </Card>
 
-              <Card className="border-0 shadow-sm"><CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center">
-                    <Heart className="w-5 h-5 text-red-600" />
+              <Card className="border-0 shadow-sm">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center">
+                      <Heart className="w-5 h-5 text-red-600" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-slate-900">
+                        {Number(currentRestaurant.favorite_count || 0)}
+                      </p>
+                      <p className="text-sm text-slate-500">Favorites</p>
+                    </div>
                   </div>
-                  <div><p className="text-2xl font-bold text-slate-900">{currentRestaurant.favorite_count || 0}</p><p className="text-sm text-slate-500">Favorites</p></div>
-                </div>
-              </CardContent></Card>
+                </CardContent>
+              </Card>
             </div>
 
+            {/* Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="mb-6 bg-white shadow-sm rounded-full p-1 flex-wrap">
-                <TabsTrigger value="seating" className="rounded-full gap-1.5"><LayoutGrid className="w-4 h-4" />Live Seating</TabsTrigger>
-                <TabsTrigger value="floorplan" className="rounded-full gap-1.5"><LayoutGrid className="w-4 h-4" />Floor Plan Builder</TabsTrigger>
+                <TabsTrigger value="seating" className="rounded-full gap-1.5">
+                  <LayoutGrid className="w-4 h-4" />
+                  Live Seating
+                </TabsTrigger>
+
+                <TabsTrigger value="floorplan" className="rounded-full gap-1.5">
+                  <LayoutGrid className="w-4 h-4" />
+                  Floor Plan Builder
+                </TabsTrigger>
+
                 <TabsTrigger value="waitlist" className="rounded-full">
                   Waitlist
-                  {waitlistWaitingCount > 0 && <Badge className="ml-2 bg-emerald-600">{waitlistWaitingCount}</Badge>}
-                </TabsTrigger>
-                <TabsTrigger value="reservations" className="rounded-full">
-                  Reservations
-                  {reservations.filter(r => r?.status === 'pending').length > 0 && (
-                    <Badge className="ml-2 bg-amber-500">{reservations.filter(r => r?.status === 'pending').length}</Badge>
+                  {waitingCount > 0 && (
+                    <Badge className="ml-2 bg-emerald-600">{waitingCount}</Badge>
                   )}
                 </TabsTrigger>
-                <TabsTrigger value="calendar" className="rounded-full">Calendar</TabsTrigger>
-                <TabsTrigger value="ai" className="rounded-full">AI Insights</TabsTrigger>
-                <TabsTrigger value="loyalty" className="rounded-full">Loyalty</TabsTrigger>
-                <TabsTrigger value="menu" className="rounded-full">Menu</TabsTrigger>
-                <TabsTrigger value="offers" className="rounded-full">Offers & Pricing</TabsTrigger>
+
+                <TabsTrigger value="reservations" className="rounded-full">
+                  Reservations
+                  {pendingReservationsCount > 0 && (
+                    <Badge className="ml-2 bg-amber-500">{pendingReservationsCount}</Badge>
+                  )}
+                </TabsTrigger>
+
+                <TabsTrigger value="calendar" className="rounded-full gap-1.5">
+                  <svg
+                    className="w-4 h-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                    <line x1="16" y1="2" x2="16" y2="6" />
+                    <line x1="8" y1="2" x2="8" y2="6" />
+                    <line x1="3" y1="10" x2="21" y2="10" />
+                  </svg>
+                  Calendar
+                </TabsTrigger>
+
+                <TabsTrigger value="ai" className="rounded-full gap-1.5">
+                  <svg
+                    className="w-4 h-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                  </svg>
+                  AI Insights
+                </TabsTrigger>
+
+                <TabsTrigger value="loyalty" className="rounded-full">
+                  Loyalty
+                </TabsTrigger>
+
+                <TabsTrigger value="menu" className="rounded-full">
+                  Menu
+                </TabsTrigger>
+
+                <TabsTrigger value="offers" className="rounded-full gap-1.5">
+                  <svg
+                    className="w-4 h-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="M20 12v10H4V12M2 7h20v5H2z" />
+                  </svg>
+                  Offers & Pricing
+                </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="seating"><LiveSeating restaurant={currentRestaurant} /></TabsContent>
+              <TabsContent value="seating">
+                <LiveSeating restaurant={currentRestaurant} />
+              </TabsContent>
 
               <TabsContent value="floorplan">
                 <FloorPlanBuilderPremium
                   restaurant={currentRestaurant}
-                  onPublish={() => queryClient.invalidateQueries({ queryKey: ['ownedRestaurants'] })}
+                  onPublish={() => queryClient.invalidateQueries({ queryKey: ["ownedRestaurants"] })}
                 />
               </TabsContent>
 
               <TabsContent value="waitlist">
-                <FeatureGate restaurantId={restaurantId} feature="waitlist" requiredPlan="pro"
-                  title="Waitlist Management" description="Upgrade to Pro to manage your waitlist with AI-powered features."
+                <FeatureGate
+                  restaurantId={selectedRestaurantId}
+                  feature="waitlist"
+                  requiredPlan="pro"
+                  title="Waitlist Management"
+                  description="Upgrade to Pro to manage your waitlist with AI-powered features."
                 >
                   <div className="grid lg:grid-cols-2 gap-6">
                     <div className="space-y-6">
@@ -359,88 +632,140 @@ export default function OwnerDashboard() {
                         onSeat={(entry) => seatEntryMutation.mutate(entry)}
                         onCancel={(entry) => cancelEntryMutation.mutate(entry)}
                         isUpdating={seatEntryMutation.isPending || cancelEntryMutation.isPending}
-                        restaurantId={restaurantId}
+                        restaurantId={selectedRestaurantId}
                       />
 
-                      {featureAccess?.isPlus && waitlistWaitingCount > 0 && (
+                      {featureAccess?.isPlus && waitingCount > 0 && (
                         <AITableAssigner
-                          restaurantId={restaurantId}
+                          restaurantId={selectedRestaurantId}
                           waitlistEntries={waitlist}
                           tables={tables}
-                          onAssignmentMade={() => queryClient.invalidateQueries({ queryKey: ['waitlist', restaurantId] })}
+                          onAssignmentMade={() =>
+                            queryClient.invalidateQueries({ queryKey: ["waitlist"] })
+                          }
                         />
                       )}
                     </div>
 
-                    <WaitlistSMSManager restaurantId={restaurantId} restaurantName={currentRestaurant?.name} />
+                    <WaitlistSMSManager
+                      restaurantId={selectedRestaurantId}
+                      restaurantName={currentRestaurant?.name}
+                    />
                   </div>
                 </FeatureGate>
               </TabsContent>
 
               <TabsContent value="reservations">
                 <div className="space-y-6">
-                  <AutoReservationRules restaurantId={restaurantId} />
+                  <AutoReservationRules restaurantId={selectedRestaurantId} />
+
                   <div className="grid lg:grid-cols-2 gap-6">
-                    <ReservationManagerPremium reservations={reservations} restaurantId={restaurantId} restaurantName={currentRestaurant?.name} />
-                    <FeatureGate restaurantId={restaurantId} feature="aiReservations" requiredPlan="plus"
-                      title="AI Reservation Manager" description="Let AI automatically handle reservations based on your rules."
+                    <ReservationManagerPremium
+                      reservations={reservations}
+                      restaurantId={selectedRestaurantId}
+                      restaurantName={currentRestaurant?.name}
+                    />
+
+                    <FeatureGate
+                      restaurantId={selectedRestaurantId}
+                      feature="aiReservations"
+                      requiredPlan="plus"
+                      title="AI Reservation Manager"
+                      description="Let AI automatically handle reservations based on your rules."
                     >
-                      <AIReservationManager restaurantId={restaurantId} restaurantName={currentRestaurant?.name} reservations={reservations} tables={tables} />
+                      <AIReservationManager
+                        restaurantId={selectedRestaurantId}
+                        restaurantName={currentRestaurant?.name}
+                        reservations={reservations}
+                        tables={tables}
+                      />
                     </FeatureGate>
                   </div>
                 </div>
               </TabsContent>
 
               <TabsContent value="calendar">
-                <ReservationCalendar restaurantId={restaurantId} restaurantName={currentRestaurant?.name} />
+                <ReservationCalendar
+                  restaurantId={selectedRestaurantId}
+                  restaurantName={currentRestaurant?.name}
+                />
               </TabsContent>
 
               <TabsContent value="ai">
-                <FeatureGate restaurantId={restaurantId} feature="ai" requiredPlan="plus"
-                  title="AI Insights & Analytics" description="Get powerful AI-driven insights, occupancy forecasting, and review analysis."
+                <FeatureGate
+                  restaurantId={selectedRestaurantId}
+                  feature="ai"
+                  requiredPlan="plus"
+                  title="AI Insights & Analytics"
+                  description="Get powerful AI-driven insights, occupancy forecasting, and review analysis."
                 >
                   <div className="space-y-6">
                     <OwnerAI restaurant={currentRestaurant} />
+
                     <div className="grid lg:grid-cols-2 gap-6">
-                      <OccupancyForecaster restaurantId={restaurantId} />
-                      <AIRecommendations restaurantId={restaurantId} restaurant={currentRestaurant} />
+                      <OccupancyForecaster restaurantId={selectedRestaurantId} />
+                      <AIRecommendations restaurantId={selectedRestaurantId} restaurant={currentRestaurant} />
                     </div>
-                    <PredictiveAnalytics restaurantId={restaurantId} />
+
+                    <PredictiveAnalytics restaurantId={selectedRestaurantId} />
+
                     <div className="grid lg:grid-cols-2 gap-6">
-                      <SeatingHeatmap restaurantId={restaurantId} floorPlanData={currentRestaurant?.floor_plan_data} />
-                      <ABTestingSuggestions restaurantId={restaurantId} />
+                      <SeatingHeatmap
+                        restaurantId={selectedRestaurantId}
+                        floorPlanData={currentRestaurant?.floor_plan_data}
+                      />
+                      <ABTestingSuggestions restaurantId={selectedRestaurantId} />
                     </div>
+
                     <div className="grid lg:grid-cols-2 gap-6">
-                      <AIFloorPlanOptimizer restaurantId={restaurantId} currentLayout={currentRestaurant?.floor_plan_data} />
-                      <AIReviewAnalyzer restaurantId={restaurantId} />
+                      <AIFloorPlanOptimizer
+                        restaurantId={selectedRestaurantId}
+                        currentLayout={currentRestaurant?.floor_plan_data}
+                      />
+                      <AIReviewAnalyzer restaurantId={selectedRestaurantId} />
                     </div>
                   </div>
                 </FeatureGate>
               </TabsContent>
 
               <TabsContent value="loyalty">
-                <FeatureGate restaurantId={restaurantId} feature="loyalty" requiredPlan="pro"
-                  title="Customer Loyalty Program" description="Create and manage your own loyalty program to reward repeat customers."
+                <FeatureGate
+                  restaurantId={selectedRestaurantId}
+                  feature="loyalty"
+                  requiredPlan="pro"
+                  title="Customer Loyalty Program"
+                  description="Create and manage your own loyalty program to reward repeat customers."
                 >
-                  <LoyaltyProgramManager restaurantId={restaurantId} restaurantName={currentRestaurant?.name} />
+                  <LoyaltyProgramManager
+                    restaurantId={selectedRestaurantId}
+                    restaurantName={currentRestaurant?.name}
+                  />
                 </FeatureGate>
               </TabsContent>
 
               <TabsContent value="menu">
-                <FeatureGate restaurantId={restaurantId} feature="menu" requiredPlan="pro"
-                  title="Menu Management" description="Create and manage your restaurant's menu with categories, items, and dietary info."
+                <FeatureGate
+                  restaurantId={selectedRestaurantId}
+                  feature="menu"
+                  requiredPlan="pro"
+                  title="Menu Management"
+                  description="Create and manage your restaurant's menu with categories, items, and dietary info."
                 >
-                  <MenuBuilder restaurantId={restaurantId} />
+                  <MenuBuilder restaurantId={selectedRestaurantId} />
                 </FeatureGate>
               </TabsContent>
 
               <TabsContent value="offers">
                 <div className="space-y-6">
                   <div className="grid lg:grid-cols-2 gap-6">
-                    <OfferManager restaurantId={restaurantId} />
-                    <AIPersonalizedOffers restaurantId={restaurantId} restaurantName={currentRestaurant?.name} cuisine={currentRestaurant?.cuisine} />
+                    <OfferManager restaurantId={selectedRestaurantId} />
+                    <AIPersonalizedOffers
+                      restaurantId={selectedRestaurantId}
+                      restaurantName={currentRestaurant?.name}
+                      cuisine={currentRestaurant?.cuisine}
+                    />
                   </div>
-                  <AIDynamicPricing restaurantId={restaurantId} />
+                  <AIDynamicPricing restaurantId={selectedRestaurantId} />
                 </div>
               </TabsContent>
             </Tabs>
