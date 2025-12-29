@@ -15,6 +15,7 @@ import Profile from './pages/Profile';
 import RestaurantDetail from './pages/RestaurantDetail';
 import RestaurantSettings from './pages/RestaurantSettings';
 import Settings from './pages/Settings';
+import UserProfile from './pages/UserProfile';
 import __Layout from './Layout.jsx';
 
 
@@ -36,6 +37,7 @@ export const PAGES = {
     "RestaurantDetail": RestaurantDetail,
     "RestaurantSettings": RestaurantSettings,
     "Settings": Settings,
+    "UserProfile": UserProfile,
 }
 
 export const pagesConfig = {

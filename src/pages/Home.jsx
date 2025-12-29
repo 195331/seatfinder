@@ -22,6 +22,8 @@ import ExpressProfileSetup from '@/components/customer/ExpressProfileSetup';
 import MoodBoardManager from '@/components/customer/MoodBoardManager';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import SurpriseMe from '@/components/ai/SurpriseMe';
+import DiscoverSection from '@/components/customer/DiscoverSection';
+import PersonalizedRecommendations from '@/components/customer/PersonalizedRecommendations';
 import { getIsVerifiedLive, getIsStale } from '@/components/ui/FreshnessIndicator';
 import { Switch } from "@/components/ui/switch";
 
@@ -46,6 +48,7 @@ export default function Home() {
   const [onlyVerifiedLive, setOnlyVerifiedLive] = useState(false);
   const [showAISearch, setShowAISearch] = useState(false);
   const [activeSection, setActiveSection] = useState('explore');
+  const [exploreView, setExploreView] = useState('all'); // 'all', 'discover', 'foryou'
   const [userLocation, setUserLocation] = useState(null);
   const [sortBy, setSortBy] = useState('verified'); // 'verified', 'distance', 'rating'
 
@@ -602,66 +605,133 @@ export default function Home() {
 
         {(!currentUser || activeSection === 'explore') && (
           <>
-            {/* Premium AI Card */}
+            {/* Explore View Tabs */}
             {currentUser && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mb-8"
-              >
-                <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500 p-[2px] hover:shadow-2xl hover:shadow-purple-500/30 transition-all group">
-                  <div className="absolute inset-0 bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500 opacity-0 group-hover:opacity-100 blur-xl transition-opacity" />
-                  <div className="relative bg-white rounded-[22px] p-8 md:p-10">
-                    <div className="flex items-start justify-between gap-6">
-                      <div className="flex-1">
-                        <motion.div
-                          animate={{ rotate: [0, 10, -10, 0] }}
-                          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                          className="inline-block mb-4"
-                        >
-                          <Sparkles className="w-10 h-10 text-purple-600" />
-                        </motion.div>
-                        <h3 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">
-                          Feeling adventurous?
-                        </h3>
-                        <p className="text-slate-600 text-base md:text-lg mb-6">
-                          Let AI find your perfect hidden gem right now
-                        </p>
-                        <Button
-                          onClick={() => {/* Trigger surprise me */}}
-                          className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg hover:shadow-xl hover:shadow-purple-500/30 hover:-translate-y-0.5 transition-all rounded-full px-8 h-12"
-                        >
-                          <Sparkles className="w-5 h-5 mr-2" />
-                          Surprise Me
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-
-            {/* AI Search Results */}
-            {showAISearch && (
               <div className="mb-8">
-                <DinerAI
-                  restaurants={filteredRestaurants}
-                  currentUser={currentUser}
-                  onResultsClick={handleRestaurantClick}
-                  onFiltersApply={(filters) => setFilters(prev => ({ ...prev, ...filters }))}
-                />
+                <div className="inline-flex bg-white rounded-full p-1.5 border border-slate-200 shadow-sm">
+                  <button
+                    onClick={() => setExploreView('all')}
+                    className={cn(
+                      "px-6 py-2 rounded-full text-sm font-medium transition-all",
+                      exploreView === 'all' 
+                        ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg" 
+                        : "text-slate-600 hover:text-slate-900"
+                    )}
+                  >
+                    All Restaurants
+                  </button>
+                  <button
+                    onClick={() => setExploreView('foryou')}
+                    className={cn(
+                      "px-6 py-2 rounded-full text-sm font-medium transition-all",
+                      exploreView === 'foryou' 
+                        ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg" 
+                        : "text-slate-600 hover:text-slate-900"
+                    )}
+                  >
+                    For You
+                  </button>
+                  <button
+                    onClick={() => setExploreView('discover')}
+                    className={cn(
+                      "px-6 py-2 rounded-full text-sm font-medium transition-all",
+                      exploreView === 'discover' 
+                        ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg" 
+                        : "text-slate-600 hover:text-slate-900"
+                    )}
+                  >
+                    Discover
+                  </button>
+                </div>
               </div>
             )}
 
-            {/* Recently Viewed */}
-            <RecentlyViewed
-              currentUser={currentUser}
-              onFavoriteToggle={handleFavoriteClick}
-              favoriteIds={favoriteIds}
-              onClick={handleRestaurantClick}
-            />
+            {/* Personalized For You */}
+            {currentUser && exploreView === 'foryou' && (
+              <PersonalizedRecommendations
+                currentUser={currentUser}
+                onRestaurantClick={handleRestaurantClick}
+                onFavoriteToggle={handleFavoriteClick}
+                favoriteIds={favoriteIds}
+              />
+            )}
 
-            {loadingRestaurants ? (
+            {/* Discover Section */}
+            {currentUser && exploreView === 'discover' && (
+              <DiscoverSection
+                currentUser={currentUser}
+                onRestaurantClick={handleRestaurantClick}
+                onFavoriteToggle={handleFavoriteClick}
+                favoriteIds={favoriteIds}
+                userLocation={userLocation}
+              />
+            )}
+
+            {/* All Restaurants View */}
+            {exploreView === 'all' && (
+              <>
+                {/* Premium AI Card */}
+                {currentUser && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-8"
+                  >
+                    <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500 p-[2px] hover:shadow-2xl hover:shadow-purple-500/30 transition-all group">
+                      <div className="absolute inset-0 bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500 opacity-0 group-hover:opacity-100 blur-xl transition-opacity" />
+                      <div className="relative bg-white rounded-[22px] p-8 md:p-10">
+                        <div className="flex items-start justify-between gap-6">
+                          <div className="flex-1">
+                            <motion.div
+                              animate={{ rotate: [0, 10, -10, 0] }}
+                              transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                              className="inline-block mb-4"
+                            >
+                              <Sparkles className="w-10 h-10 text-purple-600" />
+                            </motion.div>
+                            <h3 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">
+                              Feeling adventurous?
+                            </h3>
+                            <p className="text-slate-600 text-base md:text-lg mb-6">
+                              Let AI find your perfect hidden gem right now
+                            </p>
+                            <Button
+                              onClick={() => {/* Trigger surprise me */}}
+                              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg hover:shadow-xl hover:shadow-purple-500/30 hover:-translate-y-0.5 transition-all rounded-full px-8 h-12"
+                            >
+                              <Sparkles className="w-5 h-5 mr-2" />
+                              Surprise Me
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* AI Search Results */}
+                {showAISearch && (
+                  <div className="mb-8">
+                    <DinerAI
+                      restaurants={filteredRestaurants}
+                      currentUser={currentUser}
+                      onResultsClick={handleRestaurantClick}
+                      onFiltersApply={(filters) => setFilters(prev => ({ ...prev, ...filters }))}
+                    />
+                    </div>
+                    ) : null}
+
+                {/* Recently Viewed */}
+                <RecentlyViewed
+                  currentUser={currentUser}
+                  onFavoriteToggle={handleFavoriteClick}
+                  favoriteIds={favoriteIds}
+                  onClick={handleRestaurantClick}
+                />
+              </>
+            )}
+
+            {exploreView === 'all' && loadingRestaurants ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {[1, 2, 3, 4, 5, 6].map((i) => (
                   <div key={i} className="bg-white rounded-3xl overflow-hidden shadow-md">
@@ -674,7 +744,7 @@ export default function Home() {
                   </div>
                 ))}
               </div>
-            ) : view === 'list' ? (
+            ) : exploreView === 'all' && view === 'list' ? (
               <>
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-semibold text-slate-900">
@@ -737,8 +807,8 @@ export default function Home() {
                     </button>
                   </div>
                 )}
-              </>
-            ) : (
+                </>
+                ) : exploreView === 'all' && view === 'map' ? (
               <div className="h-[calc(100vh-280px)] min-h-[500px]">
                 <RestaurantMap
                   restaurants={filteredRestaurants}
