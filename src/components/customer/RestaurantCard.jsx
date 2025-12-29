@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import OccupancyBadge from "@/components/ui/OccupancyBadge";
 import PriceLevel from "@/components/ui/PriceLevel";
 import StarRating from "@/components/ui/StarRating";
+import VibeBar from "@/components/restaurant/VibeBar";
 import FreshnessIndicator, { getIsVerifiedLive, getIsStale } from "@/components/ui/FreshnessIndicator";
 import InstantConfirmBadge from "@/components/customer/InstantConfirmBadge";
 import { cn } from "@/lib/utils";

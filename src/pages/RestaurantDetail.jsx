@@ -48,6 +48,8 @@ export default function RestaurantDetail() {
   const [reviewComment, setReviewComment] = useState('');
   const [reviewTags, setReviewTags] = useState([]);
   const [reviewPhotos, setReviewPhotos] = useState([]);
+  const [reviewVibeRating, setReviewVibeRating] = useState(3);
+  const [reviewNoiseLevel, setReviewNoiseLevel] = useState(3);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [showWaitlistDialog, setShowWaitlistDialog] = useState(false);
   const [showReviewDialog, setShowReviewDialog] = useState(false);
@@ -56,6 +58,7 @@ export default function RestaurantDetail() {
   const [reservationStep, setReservationStep] = useState('select'); // 'select' or 'preorder'
   const [pendingReservation, setPendingReservation] = useState(null);
   const [preorderCart, setPreorderCart] = useState([]);
+  const [vibeData, setVibeData] = useState(null);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -105,6 +108,31 @@ export default function RestaurantDetail() {
     queryFn: () => base44.entities.Review.filter({ restaurant_id: restaurantId, is_hidden: false }),
     enabled: !!restaurantId,
   });
+
+  // Calculate vibe data from reviews
+  useEffect(() => {
+    if (reviews.length > 0) {
+      const vibeReviews = reviews.filter(r => r.vibe_rating);
+      if (vibeReviews.length > 0) {
+        const avgVibe = vibeReviews.reduce((sum, r) => sum + r.vibe_rating, 0) / vibeReviews.length;
+        
+        // Calculate recent (90 days)
+        const ninetyDaysAgo = new Date();
+        ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+        const recentVibeReviews = vibeReviews.filter(r => new Date(r.created_date) > ninetyDaysAgo);
+        const recentAvgVibe = recentVibeReviews.length > 0 
+          ? recentVibeReviews.reduce((sum, r) => sum + r.vibe_rating, 0) / recentVibeReviews.length 
+          : null;
+
+        setVibeData({
+          score: avgVibe,
+          reviewCount: vibeReviews.length,
+          recentScore: recentAvgVibe,
+          recentReviewCount: recentVibeReviews.length
+        });
+      }
+    }
+  }, [reviews]);
 
   const { data: favorites = [] } = useQuery({
     queryKey: ['favorites', currentUser?.id],
@@ -396,7 +424,9 @@ export default function RestaurantDetail() {
         rating: reviewRating,
         comment: reviewComment,
         tags: reviewTags,
-        photos: reviewPhotos
+        photos: reviewPhotos,
+        vibe_rating: reviewVibeRating,
+        noise_level: reviewNoiseLevel
       });
       const allReviews = [...reviews, { rating: reviewRating }];
       const avgRating = allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length;
@@ -413,6 +443,8 @@ export default function RestaurantDetail() {
       setReviewRating(5);
       setReviewTags([]);
       setReviewPhotos([]);
+      setReviewVibeRating(3);
+      setReviewNoiseLevel(3);
       toast.success("Review submitted!");
     }
   });
@@ -673,6 +705,20 @@ export default function RestaurantDetail() {
                 )}
               </CardContent>
             </Card>
+
+            {/* Vibe Dial */}
+            {vibeData && (
+              <Card className="border-0 shadow-lg">
+                <CardContent className="p-6 flex items-center justify-center">
+                  <VibeDial 
+                    score={vibeData.score}
+                    reviewCount={vibeData.reviewCount}
+                    recentScore={vibeData.recentScore}
+                    recentReviewCount={vibeData.recentReviewCount}
+                  />
+                </CardContent>
+              </Card>
+            )}
 
             {/* Quick Actions */}
             <div className="grid grid-cols-3 gap-3">
@@ -960,6 +1006,47 @@ export default function RestaurantDetail() {
                             placeholder="Share your experience..."
                             rows={3}
                           />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-slate-700 mb-2 block">Ambience (Optional)</label>
+                          <div className="space-y-3">
+                            <div>
+                              <div className="flex justify-between text-xs text-slate-600 mb-2">
+                                <span>Vibe</span>
+                                <span className="font-medium">{reviewVibeRating === 1 ? 'Cozy' : reviewVibeRating === 2 ? 'Chill' : reviewVibeRating === 3 ? 'Moderate' : reviewVibeRating === 4 ? 'Lively' : 'Energetic'}</span>
+                              </div>
+                              <input
+                                type="range"
+                                min="1"
+                                max="5"
+                                value={reviewVibeRating}
+                                onChange={(e) => setReviewVibeRating(Number(e.target.value))}
+                                className="w-full h-2 bg-gradient-to-r from-indigo-200 via-green-200 to-pink-200 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-purple-600 [&::-webkit-slider-thumb]:cursor-pointer"
+                              />
+                              <div className="flex justify-between text-xs text-slate-400 mt-1">
+                                <span>Cozy</span>
+                                <span>Energetic</span>
+                              </div>
+                            </div>
+                            <div>
+                              <div className="flex justify-between text-xs text-slate-600 mb-2">
+                                <span>Noise Level</span>
+                                <span className="font-medium">{reviewNoiseLevel === 1 ? 'Quiet' : reviewNoiseLevel === 2 ? 'Low' : reviewNoiseLevel === 3 ? 'Moderate' : reviewNoiseLevel === 4 ? 'Loud' : 'Very Loud'}</span>
+                              </div>
+                              <input
+                                type="range"
+                                min="1"
+                                max="5"
+                                value={reviewNoiseLevel}
+                                onChange={(e) => setReviewNoiseLevel(Number(e.target.value))}
+                                className="w-full h-2 bg-gradient-to-r from-blue-200 to-red-200 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-600 [&::-webkit-slider-thumb]:cursor-pointer"
+                              />
+                              <div className="flex justify-between text-xs text-slate-400 mt-1">
+                                <span>Quiet</span>
+                                <span>Loud</span>
+                              </div>
+                            </div>
+                          </div>
                         </div>
                         <div>
                           <label className="text-sm font-medium text-slate-700 mb-2 block">Tags</label>
