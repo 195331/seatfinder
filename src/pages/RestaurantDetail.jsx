@@ -31,6 +31,7 @@ import LoyaltyCard from "@/components/customer/LoyaltyCard";
 import { OpeningHoursDisplay } from "@/components/owner/OpeningHoursEditor";
 import PhotoGallery from "@/components/customer/PhotoGallery";
 import PreOrderCart from "@/components/customer/PreOrderCart";
+import SocialShare from "@/components/customer/SocialShare";
 import moment from 'moment';
 import { cn } from "@/lib/utils";
 
@@ -557,19 +558,27 @@ export default function RestaurantDetail() {
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => toggleFavoriteMutation.mutate()}
-            className={cn(
-              "rounded-full backdrop-blur-sm",
-              isFavorite 
-                ? "bg-red-500/90 text-white hover:bg-red-600" 
-                : "bg-white/90 hover:bg-white"
-            )}
-          >
-            <Heart className={cn("w-5 h-5", isFavorite && "fill-current")} />
-          </Button>
+          <div className="flex gap-2">
+            <SocialShare 
+              url={window.location.href}
+              title={restaurant.name}
+              description={`${restaurant.cuisine} restaurant in ${restaurant.neighborhood}`}
+              image={restaurant.cover_image}
+            />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => toggleFavoriteMutation.mutate()}
+              className={cn(
+                "rounded-full backdrop-blur-sm",
+                isFavorite 
+                  ? "bg-red-500/90 text-white hover:bg-red-600" 
+                  : "bg-white/90 hover:bg-white"
+              )}
+            >
+              <Heart className={cn("w-5 h-5", isFavorite && "fill-current")} />
+            </Button>
+          </div>
         </div>
 
         <div className="absolute bottom-6 left-4 right-4">

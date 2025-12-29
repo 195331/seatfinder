@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { Calendar, ChefHat, ShoppingCart, Sparkles, RefreshCw, Save } from 'lucide-react';
+import { Calendar, ChefHat, ShoppingCart, Sparkles, RefreshCw, Save, ArrowLeft } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -72,6 +72,14 @@ export default function MealPlanner() {
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate(createPageUrl('Home'))}
+                className="shrink-0"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
               <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl flex items-center justify-center">
                 <ChefHat className="w-5 h-5 text-white" />
               </div>

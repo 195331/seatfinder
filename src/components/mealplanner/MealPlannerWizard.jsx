@@ -135,7 +135,7 @@ Return as object with category keys and arrays of {item, amount, unit}.`;
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['mealPlans']);
-      toast.success('Your meal plan is ready!');
+      toast.success('🎉 Your personalized meal plan is ready!', { duration: 5000 });
       onOpenChange(false);
       setStep(1);
     },

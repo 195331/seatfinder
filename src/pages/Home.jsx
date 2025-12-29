@@ -420,13 +420,11 @@ export default function Home() {
                   <span className="text-white font-bold text-lg">S</span>
                 </button>
               )}
-              <button className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-slate-200 hover:border-slate-300 transition-colors shadow-sm">
-                <MapPin className="w-4 h-4 text-slate-600" />
-                <span className="text-sm font-medium text-slate-900">{selectedCity?.name || 'Select City'}</span>
-                <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
+              <CitySelector 
+                cities={cities}
+                selectedCity={selectedCity}
+                onCityChange={setSelectedCity}
+              />
             </div>
 
             {/* Center: Hero Search */}
@@ -436,13 +434,15 @@ export default function Home() {
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
+                  onFocus={() => setShowAISearch(true)}
                   placeholder="Search restaurants, cuisine, vibe…"
                   className="w-full h-12 px-6 pr-12 rounded-full bg-white border-2 border-slate-200 hover:border-purple-300 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 transition-all shadow-sm text-slate-900 placeholder:text-slate-400"
                 />
-                <button className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 flex items-center justify-center hover:shadow-lg hover:shadow-purple-500/30 transition-all">
-                  <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
+                <button 
+                  onClick={() => setShowAISearch(!showAISearch)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 flex items-center justify-center hover:shadow-lg hover:shadow-purple-500/30 transition-all"
+                >
+                  <Zap className="w-4 h-4 text-white" />
                 </button>
               </div>
             </div>
