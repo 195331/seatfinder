@@ -330,7 +330,7 @@ export default function Home() {
   // Single source of truth for filter chips
   const filterChips = React.useMemo(() => {
     const chips = [
-      ...DEFAULT_PRESETS.map(preset => ({
+      ...(DEFAULT_PRESETS || []).map(preset => ({
         id: preset.id,
         type: 'preset',
         icon: preset.icon,
@@ -360,7 +360,7 @@ export default function Home() {
     }
 
     return chips;
-  }, [DEFAULT_PRESETS, activePreset, onlyVerifiedLive, userLocation, sortBy]);
+  }, [activePreset, onlyVerifiedLive, userLocation, sortBy]);
 
   return (
     <div className="min-h-screen bg-white">
@@ -484,7 +484,7 @@ export default function Home() {
           <div className="flex items-center gap-3 overflow-x-auto scrollbar-hide pb-1">
             {/* Filter Chips */}
             <div className="flex items-center gap-2 flex-1 min-w-0">
-              {filterChips.map((chip) => (
+              {(filterChips || []).map((chip) => (
                 <button
                   key={chip.id}
                   onClick={chip.onClick}
