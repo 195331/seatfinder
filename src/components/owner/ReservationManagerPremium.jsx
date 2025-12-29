@@ -111,6 +111,15 @@ export default function ReservationManagerPremium({ reservations = [], restauran
     onSuccess: (_, { status }) => {
       queryClient.invalidateQueries(['reservations']);
       queryClient.invalidateQueries(['tables']);
+
+      // Send email notification to customer
+      await base44.integrations.Core.SendEmail({
+        to: reservation.user_email,
+        subject: status === 'approved' ? 'Reservation Confirmed! 🎉' : 'Reservation Update',
+        body: status === 'approved' 
+          ? `Great news! Your reservation at ${restaurant.name} has been confirmed.\n\nDetails:\n📅 ${reservation.reservation_date}\n⏰ ${reservation.reservation_time}\n👥 ${reservation.party_size} guests\n\nWe look forward to seeing you!`
+          : `Thank you for your interest in ${restaurant.name}. Unfortunately, we cannot accommodate your reservation request at this time. Please try a different date/time or contact us directly.`
+      }).catch(() => {});
       toast.success(status === 'approved' ? 'Reservation approved! Table marked as reserved.' : 'Reservation declined. Customer notified.');
     },
     onError: () => {
