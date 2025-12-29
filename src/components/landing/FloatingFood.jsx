@@ -2,34 +2,40 @@ import React from 'react';
 import { motion } from 'framer-motion';
 
 const foodItems = [
-  { emoji: '🍕', size: 80, top: '10%', left: '5%', delay: 0 },
-  { emoji: '🍝', size: 60, top: '20%', right: '10%', delay: 0.5 },
-  { emoji: '🍷', size: 70, bottom: '25%', left: '8%', delay: 1 },
-  { emoji: '🥗', size: 50, top: '60%', right: '5%', delay: 1.5 },
-  { emoji: '🍔', size: 65, bottom: '15%', right: '15%', delay: 2 },
+  { emoji: '🍕', size: 120, top: '10%', left: '5%', delay: 0 },
+  { emoji: '🍝', size: 100, top: '15%', right: '8%', delay: 0.5 },
+  { emoji: '🍷', size: 110, bottom: '20%', left: '7%', delay: 1 },
+  { emoji: '🥗', size: 90, top: '55%', right: '6%', delay: 1.5 },
+  { emoji: '🍔', size: 105, bottom: '12%', right: '12%', delay: 2 },
+  { emoji: '🍣', size: 95, top: '40%', left: '10%', delay: 2.5 },
+  { emoji: '🍰', size: 85, bottom: '40%', right: '20%', delay: 3 },
+  { emoji: '🍜', size: 100, top: '70%', left: '15%', delay: 3.5 },
 ];
 
-export default function FloatingFood() {
+export default function FloatingFood({ size = 'normal' }) {
+  const sizeMultiplier = size === 'large' ? 1.3 : 1;
+  const opacity = size === 'large' ? 0.15 : 0.2;
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
       {foodItems.map((item, i) => (
         <motion.div
           key={i}
-          className="absolute opacity-20"
+          className="absolute"
           style={{
-            fontSize: `${item.size}px`,
+            fontSize: `${item.size * sizeMultiplier}px`,
+            opacity: opacity,
             top: item.top,
             bottom: item.bottom,
             left: item.left,
             right: item.right,
           }}
           animate={{
-            y: [0, -20, 0],
-            x: [0, 10, 0],
-            rotate: [0, 5, -5, 0],
+            y: [0, -30, 0],
+            x: [0, 15, 0],
+            rotate: [0, 8, -8, 0],
           }}
           transition={{
-            duration: 8,
+            duration: 10,
             repeat: Infinity,
             delay: item.delay,
             ease: 'easeInOut',
