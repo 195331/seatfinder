@@ -109,7 +109,7 @@ export default function Home() {
     }
   }, [cities, selectedCity]);
 
-  // Fetch restaurants
+  // Fetch restaurants with real-time polling
   const { data: restaurants = [], isLoading: loadingRestaurants } = useQuery({
     queryKey: ['restaurants', selectedCity?.id],
     queryFn: () => base44.entities.Restaurant.filter({ 
@@ -117,6 +117,7 @@ export default function Home() {
       status: 'approved'
     }),
     enabled: !!selectedCity,
+    refetchInterval: 30000, // Refresh every 30 seconds for live availability
   });
 
   // Fetch favorites
