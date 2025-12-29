@@ -104,8 +104,15 @@ export default function RestaurantCard({
           )}
         </div>
 
-        <div className="flex items-center gap-2 mb-3">
+        <div className="flex items-center gap-2 mb-3 flex-wrap">
           <StarRating rating={restaurant.average_rating} count={restaurant.review_count} />
+          {restaurant.vibe_score > 0 && (
+            <VibeBar 
+              score={restaurant.vibe_score} 
+              reviewCount={restaurant.vibe_review_count || 0}
+              compact
+            />
+          )}
         </div>
 
         {/* Seating Status */}
