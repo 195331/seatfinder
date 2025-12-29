@@ -113,7 +113,7 @@ export default function ReservationManagerPremium({ reservations = [], restauran
       queryClient.invalidateQueries(['tables']);
 
       // Send email notification to customer
-      await base44.integrations.Core.SendEmail({
+      base44.integrations.Core.SendEmail({
         to: reservation.user_email,
         subject: status === 'approved' ? 'Reservation Confirmed! 🎉' : 'Reservation Update',
         body: status === 'approved' 
