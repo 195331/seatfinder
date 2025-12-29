@@ -327,11 +327,46 @@ export default function Home() {
 
   const [showAnnouncement, setShowAnnouncement] = useState(true);
 
+  // Single source of truth for filter chips
+  const filterChips = React.useMemo(() => {
+    const chips = [
+      ...DEFAULT_PRESETS.map(preset => ({
+        id: preset.id,
+        type: 'preset',
+        icon: preset.icon,
+        label: preset.name,
+        active: activePreset?.id === preset.id,
+        onClick: () => handlePresetSelect(preset)
+      })),
+      {
+        id: 'verified-live',
+        type: 'toggle',
+        icon: '✓',
+        label: 'Verified Live',
+        active: onlyVerifiedLive,
+        onClick: () => setOnlyVerifiedLive(!onlyVerifiedLive)
+      }
+    ];
+
+    if (userLocation) {
+      chips.push({
+        id: 'near-me',
+        type: 'toggle',
+        icon: '📍',
+        label: 'Near Me',
+        active: sortBy === 'distance',
+        onClick: () => setSortBy('distance')
+      });
+    }
+
+    return chips;
+  }, [DEFAULT_PRESETS, activePreset, onlyVerifiedLive, userLocation, sortBy]);
+
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-white">
       {/* Announcement Banner */}
       {showAnnouncement && (
-        <div className="relative bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 text-white py-3 px-4 z-50">
+        <div className="relative bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 text-white py-3 px-4 z-50">
           <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
             <div className="flex items-center gap-3 flex-1">
               <span className="text-2xl">🎉</span>
@@ -353,11 +388,15 @@ export default function Home() {
         </div>
       )}
 
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-white border-b border-slate-100">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          {/* Promise line */}
-          <div className="flex items-center justify-between mb-3">
+      {/* Premium Header with Aurora Glow */}
+      <header className="sticky top-0 z-50 backdrop-blur-xl bg-white/80 border-b border-slate-200/50 shadow-sm">
+        {/* Aurora glow background */}
+        <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 via-pink-500/5 to-orange-500/5 pointer-events-none" />
+        
+        <div className="max-w-7xl mx-auto px-4 py-4 relative">
+          {/* Row 1: Logo + Search + Actions */}
+          <div className="flex items-center gap-4 mb-3">
+            {/* Left: Logo + Location */}
             <div className="flex items-center gap-3">
               {currentUser ? (
                 <ProfileDrawer 
@@ -365,150 +404,130 @@ export default function Home() {
                   onLogout={() => base44.auth.logout(createPageUrl('Home'))}
                 />
               ) : (
-                  <button 
-                    onClick={() => base44.auth.redirectToLogin(window.location.href)}
-                    className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center hover:opacity-90 transition-opacity"
-                  >
-                    <span className="text-white font-bold text-lg">S</span>
-                  </button>
-                )}
-                <div>
-                  <p className="text-slate-900 font-medium">
-                    See who has open tables right now in{' '}
-                    <CitySelector 
-                      cities={cities}
-                      selectedCity={selectedCity}
-                      onCityChange={setSelectedCity}
-                    />
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex-1 max-w-lg hidden md:block">
-                <AISmartSearch
-                  onSearchChange={setSearch}
-                  onFiltersExtracted={(data) => {
-                    if (data?.filters) {
-                      setFilters(prev => ({ ...prev, ...data.filters }));
-                      setActivePreset(null);
-                    } else if (data === null) {
-                      // Clear AI filters when search is cleared
-                    }
-                  }}
-                />
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Link to={createPageUrl('MealPlanner')}>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-2"
-                  >
-                    <ChefHat className="w-4 h-4" />
-                    <span className="hidden sm:inline">Meal Planner</span>
-                  </Button>
-                </Link>
-
-                <Button
-                  variant={showAISearch ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setShowAISearch(!showAISearch)}
-                  className="gap-2"
+                <button 
+                  onClick={() => base44.auth.redirectToLogin(window.location.href)}
+                  className="w-10 h-10 bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl flex items-center justify-center hover:opacity-90 transition-all hover:shadow-lg hover:shadow-purple-500/30"
                 >
-                  <Zap className="w-4 h-4" />
-                  <span className="hidden sm:inline">Ask AI</span>
-                </Button>
+                  <span className="text-white font-bold text-lg">S</span>
+                </button>
+              )}
+              <button className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-slate-200 hover:border-slate-300 transition-colors shadow-sm">
+                <MapPin className="w-4 h-4 text-slate-600" />
+                <span className="text-sm font-medium text-slate-900">{selectedCity?.name || 'Select City'}</span>
+                <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+            </div>
 
-                <Tabs value={view} onValueChange={setView}>
-                  <TabsList className="bg-slate-100">
-                    <TabsTrigger value="list" className="gap-1.5">
-                      <List className="w-4 h-4" />
-                      <span className="hidden sm:inline">List</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="map" className="gap-1.5">
-                      <Map className="w-4 h-4" />
-                      <span className="hidden sm:inline">Map</span>
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
+            {/* Center: Hero Search */}
+            <div className="flex-1 max-w-2xl mx-auto">
+              <div className="relative">
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search restaurants, cuisine, vibe…"
+                  className="w-full h-12 px-6 pr-12 rounded-full bg-white border-2 border-slate-200 hover:border-purple-300 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 transition-all shadow-sm text-slate-900 placeholder:text-slate-400"
+                />
+                <button className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 flex items-center justify-center hover:shadow-lg hover:shadow-purple-500/30 transition-all">
+                  <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </button>
+              </div>
+            </div>
 
-                {currentUser && (
-                  <>
-                    <NotificationBell currentUser={currentUser} />
-                    <Link to={createPageUrl('Favorites')}>
-                      <button className="p-2 rounded-full hover:bg-slate-100 relative">
-                        <Heart className="w-5 h-5 text-slate-600" />
-                        {favorites.length > 0 && (
-                          <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                            {favorites.length}
-                          </span>
-                        )}
-                      </button>
-                    </Link>
-                  </>
-                )}
+            {/* Right: Actions */}
+            <div className="flex items-center gap-2">
+              {/* List/Map Toggle */}
+              <div className="hidden sm:flex items-center bg-slate-100 rounded-full p-1">
+                <button
+                  onClick={() => setView('list')}
+                  className={cn(
+                    "px-3 py-1.5 rounded-full text-sm font-medium transition-all",
+                    view === 'list' ? "bg-white shadow-sm" : "text-slate-600 hover:text-slate-900"
+                  )}
+                >
+                  <List className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setView('map')}
+                  className={cn(
+                    "px-3 py-1.5 rounded-full text-sm font-medium transition-all",
+                    view === 'map' ? "bg-white shadow-sm" : "text-slate-600 hover:text-slate-900"
+                  )}
+                >
+                  <Map className="w-4 h-4" />
+                </button>
+              </div>
+
+              {currentUser && (
+                <>
+                  <NotificationBell currentUser={currentUser} />
+                  <Link to={createPageUrl('Favorites')}>
+                    <button className="p-2 rounded-full hover:bg-slate-100 relative transition-colors">
+                      <Heart className="w-5 h-5 text-slate-600" />
+                      {favorites.length > 0 && (
+                        <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-gradient-to-r from-pink-500 to-red-500 text-white text-xs rounded-full flex items-center justify-center font-medium">
+                          {favorites.length}
+                        </span>
+                      )}
+                    </button>
+                  </Link>
+                </>
+              )}
             </div>
           </div>
 
-          {/* Mobile Search */}
-          <div className="mt-3 md:hidden">
-            <AISmartSearch
-              onSearchChange={setSearch}
-              onFiltersExtracted={(data) => {
-                if (data?.filters) {
-                  setFilters(prev => ({ ...prev, ...data.filters }));
-                  setActivePreset(null);
-                }
-              }}
-            />
-          </div>
-
-          {/* Mood Presets + Verified Live Toggle */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
-            {DEFAULT_PRESETS.map((preset) => (
+          {/* Row 2: Filter Chips + AI Actions */}
+          <div className="flex items-center gap-3 overflow-x-auto scrollbar-hide pb-1">
+            {/* Filter Chips */}
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              {filterChips.map((chip) => (
+                <button
+                  key={chip.id}
+                  onClick={chip.onClick}
+                  className={cn(
+                    "px-4 py-2 rounded-full border text-sm font-medium whitespace-nowrap transition-all shrink-0",
+                    chip.active
+                      ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white border-transparent shadow-lg shadow-purple-500/30"
+                      : "bg-white text-slate-600 border-slate-200 hover:border-purple-300 hover:shadow-md"
+                  )}
+                >
+                  <span className="mr-1.5">{chip.icon}</span>
+                  {chip.label}
+                </button>
+              ))}
               <button
-                key={preset.id}
-                onClick={() => handlePresetSelect(preset)}
+                onClick={() => {/* Open filter panel */}}
+                className="px-4 py-2 rounded-full border text-sm font-medium whitespace-nowrap bg-white text-slate-600 border-slate-200 hover:border-purple-300 hover:shadow-md transition-all shrink-0"
+              >
+                More Filters
+              </button>
+            </div>
+
+            {/* AI Actions */}
+            <div className="hidden lg:flex items-center gap-2 shrink-0">
+              <Link to={createPageUrl('MealPlanner')}>
+                <button className="px-4 py-2 rounded-full bg-white border border-slate-200 hover:border-orange-300 text-sm font-medium text-slate-700 hover:text-orange-600 transition-all hover:shadow-md">
+                  <ChefHat className="w-4 h-4 inline mr-1.5" />
+                  Meal Planner
+                </button>
+              </Link>
+              <button
+                onClick={() => setShowAISearch(!showAISearch)}
                 className={cn(
-                  "px-4 py-2 rounded-full border whitespace-nowrap transition-all flex items-center gap-2",
-                  activePreset?.id === preset.id
-                    ? "bg-slate-900 text-white border-slate-900"
-                    : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
+                  "px-4 py-2 rounded-full border text-sm font-medium transition-all hover:shadow-md",
+                  showAISearch
+                    ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white border-transparent shadow-lg shadow-purple-500/30"
+                    : "bg-white text-slate-700 border-slate-200 hover:border-purple-300"
                 )}
               >
-                <span>{preset.icon}</span>
-                <span className="text-sm font-medium">{preset.name}</span>
+                <Zap className="w-4 h-4 inline mr-1.5" />
+                Ask AI
               </button>
-            ))}
-            <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 border border-emerald-200 rounded-full ml-2">
-            <Switch checked={onlyVerifiedLive} onCheckedChange={setOnlyVerifiedLive} />
-            <span className="text-sm font-medium text-emerald-800 whitespace-nowrap">Verified Live Only</span>
             </div>
-            {userLocation && (
-            <button
-            onClick={() => setSortBy('distance')}
-            className={cn(
-              "px-4 py-2 rounded-full border whitespace-nowrap transition-all flex items-center gap-2",
-              sortBy === 'distance'
-                ? "bg-blue-600 text-white border-blue-600"
-                : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
-            )}
-            >
-            📍 Near Me
-            </button>
-            )}
-            </div>
-
-          {/* Filters */}
-          <div className="mt-3">
-            <FilterPanel
-              filters={filters}
-              onFiltersChange={setFilters}
-              presets={DEFAULT_PRESETS}
-              activePreset={activePreset}
-              onPresetSelect={handlePresetSelect}
-            />
           </div>
         </div>
       </header>
@@ -521,41 +540,109 @@ export default function Home() {
       </div>
 
       {/* Content */}
-      <main className="max-w-7xl mx-auto px-4 py-6 relative z-10">
-        {/* Tabs for Explore / Mood Boards / AI */}
+      <main className="max-w-7xl mx-auto px-4 py-8 relative z-10">
+        {/* Premium Segmented Toggle for Explore / Mood Boards */}
         {currentUser && (
-          <Tabs value={activeSection} onValueChange={setActiveSection} className="mb-6">
-            <TabsList className="bg-white shadow-sm">
-              <TabsTrigger value="explore">Explore</TabsTrigger>
-              <TabsTrigger value="moodboards">Mood Boards</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="moodboards" className="mt-6">
-              <MoodBoardManager 
-                currentUser={currentUser}
-                allRestaurants={restaurants}
-                onRestaurantClick={handleRestaurantClick}
-              />
-            </TabsContent>
-          </Tabs>
+          <div className="mb-8">
+            <div className="inline-flex bg-white rounded-full p-1.5 border border-slate-200 shadow-sm">
+              <button
+                onClick={() => setActiveSection('explore')}
+                className={cn(
+                  "relative px-6 py-2.5 rounded-full text-sm font-medium transition-all",
+                  activeSection === 'explore'
+                    ? "text-white"
+                    : "text-slate-600 hover:text-slate-900"
+                )}
+              >
+                {activeSection === 'explore' && (
+                  <motion.div
+                    layoutId="activeSection"
+                    className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full shadow-lg shadow-purple-500/30"
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                  />
+                )}
+                <span className="relative z-10 flex items-center gap-2">
+                  <Sparkles className="w-4 h-4" />
+                  Explore
+                </span>
+              </button>
+              <button
+                onClick={() => setActiveSection('moodboards')}
+                className={cn(
+                  "relative px-6 py-2.5 rounded-full text-sm font-medium transition-all",
+                  activeSection === 'moodboards'
+                    ? "text-white"
+                    : "text-slate-600 hover:text-slate-900"
+                )}
+              >
+                {activeSection === 'moodboards' && (
+                  <motion.div
+                    layoutId="activeSection"
+                    className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full shadow-lg shadow-purple-500/30"
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                  />
+                )}
+                <span className="relative z-10 flex items-center gap-2">
+                  <Heart className="w-4 h-4" />
+                  Mood Boards
+                </span>
+              </button>
+            </div>
+          </div>
         )}
 
-        {activeSection === 'explore' && (
+        {currentUser && activeSection === 'moodboards' && (
+          <MoodBoardManager 
+            currentUser={currentUser}
+            allRestaurants={restaurants}
+            onRestaurantClick={handleRestaurantClick}
+          />
+        )}
+
+        {(!currentUser || activeSection === 'explore') && (
           <>
-            {/* Surprise Me Feature */}
+            {/* Premium AI Card */}
             {currentUser && (
-              <div className="mb-6">
-                <SurpriseMe
-                  restaurants={filteredRestaurants}
-                  currentUser={currentUser}
-                  onRestaurantClick={handleRestaurantClick}
-                />
-              </div>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-8"
+              >
+                <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500 p-[2px] hover:shadow-2xl hover:shadow-purple-500/30 transition-all group">
+                  <div className="absolute inset-0 bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500 opacity-0 group-hover:opacity-100 blur-xl transition-opacity" />
+                  <div className="relative bg-white rounded-[22px] p-8 md:p-10">
+                    <div className="flex items-start justify-between gap-6">
+                      <div className="flex-1">
+                        <motion.div
+                          animate={{ rotate: [0, 10, -10, 0] }}
+                          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                          className="inline-block mb-4"
+                        >
+                          <Sparkles className="w-10 h-10 text-purple-600" />
+                        </motion.div>
+                        <h3 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">
+                          Feeling adventurous?
+                        </h3>
+                        <p className="text-slate-600 text-base md:text-lg mb-6">
+                          Let AI find your perfect hidden gem right now
+                        </p>
+                        <Button
+                          onClick={() => {/* Trigger surprise me */}}
+                          className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg hover:shadow-xl hover:shadow-purple-500/30 hover:-translate-y-0.5 transition-all rounded-full px-8 h-12"
+                        >
+                          <Sparkles className="w-5 h-5 mr-2" />
+                          Surprise Me
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
             )}
 
             {/* AI Search Results */}
             {showAISearch && (
-              <div className="mb-6">
+              <div className="mb-8">
                 <DinerAI
                   restaurants={filteredRestaurants}
                   currentUser={currentUser}
@@ -574,11 +661,11 @@ export default function Home() {
             />
 
             {loadingRestaurants ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {[1, 2, 3, 4, 5, 6].map((i) => (
-                  <div key={i} className="bg-white rounded-2xl overflow-hidden shadow-sm">
-                    <Skeleton className="aspect-[16/10]" />
-                    <div className="p-4 space-y-3">
+                  <div key={i} className="bg-white rounded-3xl overflow-hidden shadow-md">
+                    <Skeleton className="aspect-[4/3]" />
+                    <div className="p-5 space-y-3">
                       <Skeleton className="h-6 w-3/4" />
                       <Skeleton className="h-4 w-1/2" />
                       <Skeleton className="h-4 w-full" />
@@ -588,34 +675,21 @@ export default function Home() {
               </div>
             ) : view === 'list' ? (
               <>
-                <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-                  <p className="text-slate-600 text-sm">
-                    {filteredRestaurants.length} restaurant{filteredRestaurants.length !== 1 ? 's' : ''} 
-                    {onlyVerifiedLive && ' • Verified Live'}
-                    {sortBy === 'distance' && userLocation && ' • Sorted by distance'}
-                  </p>
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-semibold text-slate-900">
+                    {filteredRestaurants.length} restaurant{filteredRestaurants.length !== 1 ? 's' : ''}
+                  </h2>
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
-                    className="px-3 py-1.5 text-sm border border-slate-200 rounded-full bg-white"
+                    className="px-4 py-2 text-sm border border-slate-200 rounded-full bg-white hover:border-slate-300 transition-colors shadow-sm font-medium text-slate-700"
                   >
-                    <option value="verified">Best Match</option>
-                    <option value="rating">Top Rated</option>
-                    {userLocation && <option value="distance">Nearest</option>}
+                    <option value="verified">✨ Best Match</option>
+                    <option value="rating">⭐ Top Rated</option>
+                    {userLocation && <option value="distance">📍 Nearest</option>}
                   </select>
-                  {currentUser && !currentUser.express_profile?.phone && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowExpressSetup(true)}
-                      className="gap-2"
-                    >
-                      <Zap className="w-4 h-4" />
-                      Set up Express Profile
-                    </Button>
-                  )}
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                   {filteredRestaurants.map((restaurant) => {
                     const tasteProfile = currentUser?.taste_profile || {};
                     const isBestMatch = (
@@ -625,15 +699,22 @@ export default function Home() {
                     );
 
                     return (
-                      <RestaurantCard
+                      <motion.div
                         key={restaurant.id}
-                        restaurant={restaurant}
-                        isFavorite={favoriteIds.has(restaurant.id)}
-                        onFavoriteToggle={handleFavoriteClick}
-                        onClick={handleRestaurantClick}
-                        showBestMatch={isBestMatch}
-                        distance={restaurant.distance}
-                      />
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        whileHover={{ y: -4 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <RestaurantCard
+                          restaurant={restaurant}
+                          isFavorite={favoriteIds.has(restaurant.id)}
+                          onFavoriteToggle={handleFavoriteClick}
+                          onClick={handleRestaurantClick}
+                          showBestMatch={isBestMatch}
+                          distance={restaurant.distance}
+                        />
+                      </motion.div>
                     );
                   })}
                 </div>
