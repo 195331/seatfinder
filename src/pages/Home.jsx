@@ -718,8 +718,8 @@ export default function Home() {
                       onResultsClick={handleRestaurantClick}
                       onFiltersApply={(filters) => setFilters(prev => ({ ...prev, ...filters }))}
                     />
-                    </div>
-                    ) : null}
+                  </div>
+                )}
 
                 {/* Recently Viewed */}
                 <RecentlyViewed
@@ -807,8 +807,8 @@ export default function Home() {
                     </button>
                   </div>
                 )}
-                </>
-                ) : exploreView === 'all' && view === 'map' ? (
+              </>
+            ) : exploreView === 'all' && view === 'map' ? (
               <div className="h-[calc(100vh-280px)] min-h-[500px]">
                 <RestaurantMap
                   restaurants={filteredRestaurants}
