@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { createPageUrl } from '@/utils';
 import { Link, useNavigate } from 'react-router-dom';
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 
 import CitySelector from '@/components/customer/CitySelector';
 import FilterPanel from '@/components/customer/FilterPanel';
