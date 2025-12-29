@@ -253,10 +253,11 @@ Generate a completely different meal that fits the requirements. Include all fie
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
                 {getMealTypes().map(mealType => {
                   const mealKey = `${day}_${mealType}`;
-                  const meal = mealPlan.meals[day]?.[mealType.toLowerCase()];
+                  const normalizedMealType = mealType.toLowerCase();
+                  const meal = mealPlan.meals?.[day]?.[normalizedMealType];
                   const isLocked = (mealPlan.locked_meals || []).includes(mealKey);
 
-                  if (!meal) return null;
+                  if (!meal || !meal.name) return null;
 
                   return (
                     <div
