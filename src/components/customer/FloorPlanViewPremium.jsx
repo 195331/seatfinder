@@ -30,7 +30,8 @@ export default function FloorPlanViewPremium({
     date: null,
     time: '',
     partySize: 2,
-    notes: ''
+    notes: '',
+    seatingPreference: ''
   });
 
   // Extract data from new floor plan format
@@ -79,17 +80,21 @@ export default function FloorPlanViewPremium({
   const handleSubmitReservation = () => {
     if (!reservationData.date || !reservationData.time) return;
     
+    const notes = reservationData.seatingPreference 
+      ? `${reservationData.seatingPreference.charAt(0).toUpperCase() + reservationData.seatingPreference.slice(1)} seating preferred. ${reservationData.notes}`.trim()
+      : reservationData.notes;
+    
     onReserveTable({
       table_id: selectedTable.id,
       reservation_date: format(reservationData.date, 'yyyy-MM-dd'),
       reservation_time: reservationData.time,
       party_size: reservationData.partySize,
-      notes: reservationData.notes
+      notes
     });
     
     setShowReserveDialog(false);
     setSelectedTable(null);
-    setReservationData({ date: null, time: '', partySize: 2, notes: '' });
+    setReservationData({ date: null, time: '', partySize: 2, notes: '', seatingPreference: '' });
   };
 
   const availableCount = floorPlanTables.filter(t => t.status === 'free').length;
@@ -411,6 +416,22 @@ export default function FloorPlanViewPremium({
                 }))}
                 className="mt-1.5"
               />
+            </div>
+
+            <div>
+              <Label>Seating Preference (optional)</Label>
+              <select
+                value={reservationData.seatingPreference || ''}
+                onChange={(e) => setReservationData(prev => ({ ...prev, seatingPreference: e.target.value }))}
+                className="w-full mt-1.5 px-3 py-2 border border-slate-200 rounded-lg"
+              >
+                <option value="">No preference</option>
+                <option value="window">Window seat</option>
+                <option value="booth">Booth</option>
+                <option value="outdoor">Outdoor</option>
+                <option value="bar">Bar seating</option>
+                <option value="quiet">Quiet area</option>
+              </select>
             </div>
 
             <div>
