@@ -731,93 +731,97 @@ export default function Home() {
               </>
             )}
 
-            {exploreView === 'all' && loadingRestaurants ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {[1, 2, 3, 4, 5, 6].map((i) => (
-                  <div key={i} className="bg-white rounded-3xl overflow-hidden shadow-md">
-                    <Skeleton className="aspect-[4/3]" />
-                    <div className="p-5 space-y-3">
-                      <Skeleton className="h-6 w-3/4" />
-                      <Skeleton className="h-4 w-1/2" />
-                      <Skeleton className="h-4 w-full" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : exploreView === 'all' && view === 'list' ? (
+            {exploreView === 'all' && (
               <>
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-semibold text-slate-900">
-                    {filteredRestaurants.length} restaurant{filteredRestaurants.length !== 1 ? 's' : ''}
-                  </h2>
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value)}
-                    className="px-4 py-2 text-sm border border-slate-200 rounded-full bg-white hover:border-slate-300 transition-colors shadow-sm font-medium text-slate-700"
-                  >
-                    <option value="verified">✨ Best Match</option>
-                    <option value="rating">⭐ Top Rated</option>
-                    {userLocation && <option value="distance">📍 Nearest</option>}
-                  </select>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {filteredRestaurants.map((restaurant) => {
-                    const tasteProfile = currentUser?.taste_profile || {};
-                    const isBestMatch = (
-                      (tasteProfile.outdoor_seating && restaurant.has_outdoor) ||
-                      (tasteProfile.kid_friendly && restaurant.is_kid_friendly) ||
-                      (tasteProfile.bar_seating && restaurant.has_bar_seating)
-                    );
-
-                    return (
-                      <motion.div
-                        key={restaurant.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        whileHover={{ y: -4 }}
-                        transition={{ duration: 0.2 }}
+                {loadingRestaurants ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {[1, 2, 3, 4, 5, 6].map((i) => (
+                      <div key={i} className="bg-white rounded-3xl overflow-hidden shadow-md">
+                        <Skeleton className="aspect-[4/3]" />
+                        <div className="p-5 space-y-3">
+                          <Skeleton className="h-6 w-3/4" />
+                          <Skeleton className="h-4 w-1/2" />
+                          <Skeleton className="h-4 w-full" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : view === 'list' ? (
+                  <>
+                    <div className="flex items-center justify-between mb-6">
+                      <h2 className="text-xl font-semibold text-slate-900">
+                        {filteredRestaurants.length} restaurant{filteredRestaurants.length !== 1 ? 's' : ''}
+                      </h2>
+                      <select
+                        value={sortBy}
+                        onChange={(e) => setSortBy(e.target.value)}
+                        className="px-4 py-2 text-sm border border-slate-200 rounded-full bg-white hover:border-slate-300 transition-colors shadow-sm font-medium text-slate-700"
                       >
-                        <RestaurantCard
-                          restaurant={restaurant}
-                          isFavorite={favoriteIds.has(restaurant.id)}
-                          onFavoriteToggle={handleFavoriteClick}
-                          onClick={handleRestaurantClick}
-                          showBestMatch={isBestMatch}
-                          distance={restaurant.distance}
-                        />
-                      </motion.div>
-                    );
-                  })}
-                </div>
-                {filteredRestaurants.length === 0 && (
-                  <div className="text-center py-20">
-                    <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <span className="text-3xl">🔍</span>
+                        <option value="verified">✨ Best Match</option>
+                        <option value="rating">⭐ Top Rated</option>
+                        {userLocation && <option value="distance">📍 Nearest</option>}
+                      </select>
                     </div>
-                    <p className="text-slate-900 font-semibold text-lg mb-2">No restaurants found</p>
-                    <p className="text-slate-500 mb-6">Try adjusting your filters or exploring a different vibe</p>
-                    <button 
-                      onClick={() => {
-                        setFilters({});
-                        setActivePreset(null);
-                      }}
-                      className="px-6 py-2 bg-slate-900 text-white rounded-full hover:bg-slate-800 transition-colors"
-                    >
-                      Clear all filters
-                    </button>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                      {filteredRestaurants.map((restaurant) => {
+                        const tasteProfile = currentUser?.taste_profile || {};
+                        const isBestMatch = (
+                          (tasteProfile.outdoor_seating && restaurant.has_outdoor) ||
+                          (tasteProfile.kid_friendly && restaurant.is_kid_friendly) ||
+                          (tasteProfile.bar_seating && restaurant.has_bar_seating)
+                        );
+
+                        return (
+                          <motion.div
+                            key={restaurant.id}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            whileHover={{ y: -4 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            <RestaurantCard
+                              restaurant={restaurant}
+                              isFavorite={favoriteIds.has(restaurant.id)}
+                              onFavoriteToggle={handleFavoriteClick}
+                              onClick={handleRestaurantClick}
+                              showBestMatch={isBestMatch}
+                              distance={restaurant.distance}
+                            />
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+                    {filteredRestaurants.length === 0 && (
+                      <div className="text-center py-20">
+                        <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <span className="text-3xl">🔍</span>
+                        </div>
+                        <p className="text-slate-900 font-semibold text-lg mb-2">No restaurants found</p>
+                        <p className="text-slate-500 mb-6">Try adjusting your filters or exploring a different vibe</p>
+                        <button 
+                          onClick={() => {
+                            setFilters({});
+                            setActivePreset(null);
+                          }}
+                          className="px-6 py-2 bg-slate-900 text-white rounded-full hover:bg-slate-800 transition-colors"
+                        >
+                          Clear all filters
+                        </button>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="h-[calc(100vh-280px)] min-h-[500px]">
+                    <RestaurantMap
+                      restaurants={filteredRestaurants}
+                      center={mapCenter}
+                      selectedRestaurant={selectedMapRestaurant}
+                      onRestaurantSelect={setSelectedMapRestaurant}
+                      onRestaurantClick={handleRestaurantClick}
+                    />
                   </div>
                 )}
               </>
-            ) : exploreView === 'all' && view === 'map' ? (
-              <div className="h-[calc(100vh-280px)] min-h-[500px]">
-                <RestaurantMap
-                  restaurants={filteredRestaurants}
-                  center={mapCenter}
-                  selectedRestaurant={selectedMapRestaurant}
-                  onRestaurantSelect={setSelectedMapRestaurant}
-                  onRestaurantClick={handleRestaurantClick}
-                />
-              </div>
             )}
           </>
         )}
