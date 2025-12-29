@@ -5,6 +5,7 @@ import { List, Map, Heart, Zap, ChefHat, MapPin, Sparkles } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { createPageUrl } from '@/utils';
 import { Link, useNavigate } from 'react-router-dom';
 import { cn } from "@/lib/utils";
@@ -24,6 +25,7 @@ import NotificationBell from '@/components/notifications/NotificationBell';
 import SurpriseMe from '@/components/ai/SurpriseMe';
 import DiscoverSection from '@/components/customer/DiscoverSection';
 import PersonalizedRecommendations from '@/components/customer/PersonalizedRecommendations';
+import AIConcierge from '@/components/ai/AIConcierge';
 import { getIsVerifiedLive, getIsStale } from '@/components/ui/FreshnessIndicator';
 import { Switch } from "@/components/ui/switch";
 
@@ -51,6 +53,8 @@ export default function Home() {
   const [exploreView, setExploreView] = useState('all'); // 'all', 'discover', 'foryou'
   const [userLocation, setUserLocation] = useState(null);
   const [sortBy, setSortBy] = useState('verified'); // 'verified', 'distance', 'rating'
+  const [showSurpriseMe, setShowSurpriseMe] = useState(false);
+  const [showFilterPanel, setShowFilterPanel] = useState(false);
 
   // Fetch current user
   useEffect(() => {
@@ -505,7 +509,7 @@ export default function Home() {
                 </button>
               ))}
               <button
-                onClick={() => {/* Open filter panel */}}
+                onClick={() => setShowFilterPanel(true)}
                 className="px-4 py-2 rounded-full border text-sm font-medium whitespace-nowrap bg-white text-slate-600 border-slate-200 hover:border-purple-300 hover:shadow-md transition-all shrink-0"
               >
                 More Filters
@@ -697,7 +701,7 @@ export default function Home() {
                               Let AI find your perfect hidden gem right now
                             </p>
                             <Button
-                              onClick={() => {/* Trigger surprise me */}}
+                              onClick={() => setShowSurpriseMe(true)}
                               className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg hover:shadow-xl hover:shadow-purple-500/30 hover:-translate-y-0.5 transition-all rounded-full px-8 h-12"
                             >
                               <Sparkles className="w-5 h-5 mr-2" />
@@ -833,6 +837,44 @@ export default function Home() {
         open={showExpressSetup}
         onOpenChange={setShowExpressSetup}
         currentUser={currentUser}
+      />
+
+      {/* Filter Panel */}
+      <FilterPanel
+        filters={filters}
+        onFiltersChange={setFilters}
+        presets={[]}
+        activePreset={null}
+        onPresetSelect={() => {}}
+      />
+
+      {/* Surprise Me Dialog */}
+      {showSurpriseMe && (
+        <Dialog open={showSurpriseMe} onOpenChange={setShowSurpriseMe}>
+          <DialogContent className="sm:max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-purple-600" />
+                AI Surprise Recommendation
+              </DialogTitle>
+            </DialogHeader>
+            <SurpriseMe
+              restaurants={restaurants}
+              currentUser={currentUser}
+              onRestaurantClick={(r) => {
+                setShowSurpriseMe(false);
+                handleRestaurantClick(r);
+              }}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* AI Concierge */}
+      <AIConcierge
+        restaurants={restaurants}
+        currentUser={currentUser}
+        onRestaurantClick={handleRestaurantClick}
       />
     </div>
   );
