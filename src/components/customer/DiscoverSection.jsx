@@ -37,7 +37,7 @@ export default function DiscoverSection({
   }
 
   // Calculate distance
-  const restaurantsWithDistance = restaurants.map(r => ({
+  const restaurantsWithDistance = (restaurants || []).map(r => ({
     ...r,
     distance: userLocation && r.latitude && r.longitude
       ? getDistance(userLocation.lat, userLocation.lng, r.latitude, r.longitude)
@@ -45,7 +45,7 @@ export default function DiscoverSection({
   }));
 
   // New & Trending (recently added + high engagement)
-  const newAndTrending = restaurants
+  const newAndTrending = (restaurants || [])
     .filter(r => {
       const createdDate = new Date(r.created_date);
       const thirtyDaysAgo = new Date();
@@ -56,13 +56,13 @@ export default function DiscoverSection({
     .slice(0, 6);
 
   // Top Rated Near You
-  const topRatedNearby = restaurantsWithDistance
+  const topRatedNearby = (restaurantsWithDistance || [])
     .filter(r => r.distance !== null && r.distance < 10 && r.average_rating >= 4.0)
     .sort((a, b) => (b.average_rating || 0) - (a.average_rating || 0))
     .slice(0, 6);
 
   // Editor's Picks (high reliability + good ratings)
-  const editorsPicks = restaurants
+  const editorsPicks = (restaurants || [])
     .filter(r => (r.reliability_score || 0) >= 80 && (r.average_rating || 0) >= 4.2)
     .sort((a, b) => {
       const scoreA = (a.reliability_score || 0) + (a.average_rating || 0) * 10;

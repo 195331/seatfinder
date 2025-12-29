@@ -33,7 +33,7 @@ export default function PersonalizedRecommendations({
   if (!currentUser) return null;
 
   // Calculate personalized score
-  const scoredRestaurants = restaurants.map(restaurant => {
+  const scoredRestaurants = (restaurants || []).map(restaurant => {
     let score = 0;
 
     // User preferences
