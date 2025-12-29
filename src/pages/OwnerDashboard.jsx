@@ -110,7 +110,7 @@ export default function OwnerDashboard() {
   }, [allRestaurants, selectedRestaurant]);
 
   // Fetch areas for selected restaurant
-  const { } = useQuery({
+  const { data: areas = [] } = useQuery({
     queryKey: ['areas', selectedRestaurant?.id],
     queryFn: () => base44.entities.RestaurantArea.filter({ 
       restaurant_id: selectedRestaurant.id 
