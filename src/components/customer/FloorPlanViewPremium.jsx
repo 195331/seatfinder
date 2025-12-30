@@ -10,6 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { CalendarIcon, Users, Loader2, LogIn, Sparkles, CheckCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from "@/lib/utils";
+import SpecialRequestsForm from './SpecialRequestsForm';
 
 const TIME_SLOTS = [
   '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '14:00',
@@ -31,7 +32,10 @@ export default function FloorPlanViewPremium({
     time: '',
     partySize: 2,
     notes: '',
-    seatingPreference: ''
+    seatingPreference: '',
+    specialRequests: '',
+    dietaryNeeds: [],
+    occasion: 'none'
   });
 
   // Extract data from new floor plan format
@@ -89,12 +93,15 @@ export default function FloorPlanViewPremium({
       reservation_date: format(reservationData.date, 'yyyy-MM-dd'),
       reservation_time: reservationData.time,
       party_size: reservationData.partySize,
-      notes
+      notes,
+      special_requests: reservationData.specialRequests,
+      dietary_needs: reservationData.dietaryNeeds,
+      occasion: reservationData.occasion
     });
     
     setShowReserveDialog(false);
     setSelectedTable(null);
-    setReservationData({ date: null, time: '', partySize: 2, notes: '', seatingPreference: '' });
+    setReservationData({ date: null, time: '', partySize: 2, notes: '', seatingPreference: '', specialRequests: '', dietaryNeeds: [], occasion: 'none' });
   };
 
   const availableCount = floorPlanTables.filter(t => t.status === 'free').length;
@@ -434,12 +441,23 @@ export default function FloorPlanViewPremium({
               </select>
             </div>
 
+            {/* Special Requests Form */}
+            <SpecialRequestsForm
+              specialRequests={reservationData.specialRequests}
+              dietaryNeeds={reservationData.dietaryNeeds}
+              occasion={reservationData.occasion}
+              onSpecialRequestsChange={(val) => setReservationData(prev => ({ ...prev, specialRequests: val }))}
+              onDietaryNeedsChange={(val) => setReservationData(prev => ({ ...prev, dietaryNeeds: val }))}
+              onOccasionChange={(val) => setReservationData(prev => ({ ...prev, occasion: val }))}
+              showAITip={true}
+            />
+
             <div>
-              <Label>Special Requests (optional)</Label>
+              <Label>Additional Notes (optional)</Label>
               <Input
                 value={reservationData.notes}
                 onChange={(e) => setReservationData(prev => ({ ...prev, notes: e.target.value }))}
-                placeholder="Birthday, dietary needs, etc."
+                placeholder="Any other information..."
                 className="mt-1.5"
               />
             </div>

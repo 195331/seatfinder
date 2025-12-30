@@ -32,6 +32,8 @@ import { OpeningHoursDisplay } from "@/components/owner/OpeningHoursEditor";
 import PhotoGallery from "@/components/customer/PhotoGallery";
 import PreOrderCart from "@/components/customer/PreOrderCart";
 import SocialShare from "@/components/customer/SocialShare";
+import RecurringReservationForm from "@/components/customer/RecurringReservationForm";
+import CustomerSupportBot from "@/components/ai/CustomerSupportBot";
 import moment from 'moment';
 import { cn } from "@/lib/utils";
 
@@ -339,6 +341,9 @@ export default function RestaurantDetail() {
         reservation_date: data.reservation_date,
         reservation_time: data.reservation_time,
         notes: data.notes,
+        special_requests: data.special_requests,
+        dietary_needs: data.dietary_needs,
+        occasion: data.occasion,
         status
       });
 
@@ -913,10 +918,19 @@ export default function RestaurantDetail() {
             {reservationStep === 'select' ? (
               <Card className="border-0 shadow-lg">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <LayoutGrid className="w-5 h-5" />
-                    Select a Table to Reserve
-                  </CardTitle>
+                  <div className="flex items-center justify-between mb-2">
+                    <CardTitle className="flex items-center gap-2">
+                      <LayoutGrid className="w-5 h-5" />
+                      Select a Table to Reserve
+                    </CardTitle>
+                    {currentUser && (
+                      <RecurringReservationForm
+                        restaurantId={restaurantId}
+                        currentUser={currentUser}
+                        tables={tables}
+                      />
+                    )}
+                  </div>
                   {!restaurant.enable_preorder && menuItems.length > 0 && (
                     <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                       <p className="text-sm text-blue-800">
@@ -1152,6 +1166,13 @@ export default function RestaurantDetail() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* AI Customer Support Bot */}
+      <CustomerSupportBot
+        restaurant={restaurant}
+        currentUser={currentUser}
+        reservation={null}
+      />
     </div>
   );
 }
