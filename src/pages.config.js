@@ -16,6 +16,7 @@ import RestaurantDetail from './pages/RestaurantDetail';
 import RestaurantSettings from './pages/RestaurantSettings';
 import Settings from './pages/Settings';
 import UserProfile from './pages/UserProfile';
+import KitchenView from './pages/KitchenView';
 import __Layout from './Layout.jsx';
 
 
@@ -38,6 +39,7 @@ export const PAGES = {
     "RestaurantSettings": RestaurantSettings,
     "Settings": Settings,
     "UserProfile": UserProfile,
+    "KitchenView": KitchenView,
 }
 
 export const pagesConfig = {
