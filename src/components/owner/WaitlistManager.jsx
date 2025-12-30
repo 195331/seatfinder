@@ -16,7 +16,7 @@ export default function WaitlistManager({
   isUpdating,
   restaurantId 
 }) {
-  const waitingEntries = entries.filter(e => e.status === 'waiting');
+  const waitingEntries = (entries || []).filter(e => e?.status === 'waiting');
 
   const sendSMSUpdate = async (entry, position) => {
     if (!entry.guest_phone) {
@@ -60,7 +60,7 @@ export default function WaitlistManager({
           </div>
         ) : (
           <div className="divide-y">
-            {waitingEntries.map((entry, index) => {
+            {(waitingEntries || []).map((entry, index) => {
               const waitTime = moment().diff(moment(entry.created_date), 'minutes');
               
               return (
