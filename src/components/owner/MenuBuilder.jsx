@@ -221,20 +221,22 @@ export default function MenuBuilder({ restaurantId }) {
                     onChange={(e) => setNewItem({ ...newItem, description: e.target.value })}
                     placeholder="Describe the dish..."
                     className="mt-1.5"
-                    rows={3}
-                  />
-                  <AIMenuHelper
-                    dishName={newItem.name}
-                    currentDescription={newItem.description}
-                    price={newItem.price}
-                    dietary={{
-                      is_vegetarian: newItem.is_vegetarian,
-                      is_vegan: newItem.is_vegan,
-                      is_gluten_free: newItem.is_gluten_free
-                    }}
-                    onDescriptionGenerated={(desc) => setNewItem({ ...newItem, description: desc })}
+                    rows={2}
                   />
                 </div>
+                
+                {/* AI Helper */}
+                <AIMenuHelper
+                  dishName={newItem.name}
+                  currentDescription={newItem.description}
+                  price={newItem.price}
+                  dietary={{
+                    is_vegetarian: newItem.is_vegetarian,
+                    is_vegan: newItem.is_vegan,
+                    is_gluten_free: newItem.is_gluten_free
+                  }}
+                  onDescriptionGenerated={(desc) => setNewItem({ ...newItem, description: desc })}
+                />
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label>Price ($) *</Label>
