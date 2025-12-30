@@ -51,11 +51,11 @@ export default function LiveSeating({ restaurant }) {
   });
 
   // Calculate metrics
-  const freeTables = tables.filter(t => t.status === 'free').length;
-  const seatedTables = tables.filter(t => t.status === 'seated');
-  const totalSeatedGuests = seatedTables.reduce((sum, t) => sum + (t.party_size || t.capacity), 0);
-  const avgWaitTime = waitlist.length > 0 
-    ? Math.round(waitlist.reduce((sum, w) => sum + moment().diff(moment(w.created_date), 'minutes'), 0) / waitlist.length)
+  const freeTables = (tables || []).filter(t => t?.status === 'free').length;
+  const seatedTables = (tables || []).filter(t => t?.status === 'seated');
+  const totalSeatedGuests = (seatedTables || []).reduce((sum, t) => sum + (t?.party_size || t?.capacity || 0), 0);
+  const avgWaitTime = (waitlist || []).length > 0 
+    ? Math.round((waitlist || []).reduce((sum, w) => sum + moment().diff(moment(w?.created_date), 'minutes'), 0) / waitlist.length)
     : 0;
 
   // Mutations
@@ -179,11 +179,11 @@ export default function LiveSeating({ restaurant }) {
           tables={tables}
           selectedTable={selectedTable}
           onTableClick={handleTableClick}
-          highlightedTables={selectedWaitlistEntry ? tables.filter(t => 
-            t.status === 'free' && 
-            t.capacity >= selectedWaitlistEntry.party_size &&
-            (!selectedWaitlistEntry.preferred_area || t.area_id === selectedWaitlistEntry.preferred_area)
-          ).map(t => t.id) : []}
+          highlightedTables={selectedWaitlistEntry ? (tables || []).filter(t => 
+            t?.status === 'free' && 
+            t?.capacity >= selectedWaitlistEntry.party_size &&
+            (!selectedWaitlistEntry.preferred_area || t?.area_id === selectedWaitlistEntry.preferred_area)
+          ).map(t => t?.id).filter(Boolean) : []}
         />
       </div>
 

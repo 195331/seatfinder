@@ -51,7 +51,7 @@ export default function MenuBuilder({ restaurantId }) {
       restaurant_id: restaurantId,
       price: parseFloat(item.price) || 0,
       calories: item.calories ? parseInt(item.calories) : null,
-      sort_order: menuItems.filter(i => i.category === item.category).length
+      sort_order: (menuItems || []).filter(i => i?.category === item.category).length
     }),
     onSuccess: () => {
       queryClient.invalidateQueries(['menuItems']);
@@ -82,7 +82,7 @@ export default function MenuBuilder({ restaurantId }) {
     }
   });
 
-  const categories = [...new Set([...DEFAULT_CATEGORIES, ...menuItems.map(i => i.category)])].filter(Boolean);
+  const categories = [...new Set([...DEFAULT_CATEGORIES, ...(menuItems || []).map(i => i?.category)])].filter(Boolean);
 
   const resetNewItem = () => {
     setNewItem({
@@ -320,10 +320,10 @@ export default function MenuBuilder({ restaurantId }) {
         ) : (
           <DragDropContext onDragEnd={handleDragEnd}>
             <div className="space-y-4">
-              {categories.map((category) => {
-                const categoryItems = menuItems
-                  .filter(i => i.category === category)
-                  .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+              {(categories || []).map((category) => {
+                const categoryItems = (menuItems || [])
+                  .filter(i => i?.category === category)
+                  .sort((a, b) => (a?.sort_order || 0) - (b?.sort_order || 0));
                 
                 if (categoryItems.length === 0) return null;
                 
@@ -350,7 +350,7 @@ export default function MenuBuilder({ restaurantId }) {
                             {...provided.droppableProps}
                             className="p-2 space-y-2"
                           >
-                            {categoryItems.map((item, index) => (
+                            {(categoryItems || []).map((item, index) => (
                               <Draggable key={item.id} draggableId={item.id} index={index}>
                                 {(provided, snapshot) => (
                                   <div

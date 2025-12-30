@@ -15,8 +15,8 @@ export default function AITableAssigner({ restaurantId, waitlistEntries, tables,
   const generateSuggestions = async () => {
     setLoading(true);
     
-    const waitingEntries = waitlistEntries.filter(e => e.status === 'waiting');
-    const availableTables = tables.filter(t => t.status === 'free');
+    const waitingEntries = (waitlistEntries || []).filter(e => e?.status === 'waiting');
+    const availableTables = (tables || []).filter(t => t?.status === 'free');
     
     const newSuggestions = [];
     
@@ -118,7 +118,7 @@ export default function AITableAssigner({ restaurantId, waitlistEntries, tables,
           </div>
         ) : (
           <div className="space-y-3">
-            {suggestions.map((suggestion, index) => (
+            {(suggestions || []).map((suggestion, index) => (
               <div 
                 key={index}
                 className="flex items-center justify-between p-3 bg-white rounded-xl border border-indigo-100"
