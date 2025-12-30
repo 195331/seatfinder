@@ -22,6 +22,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ImageUploader from '@/components/owner/ImageUploader';
 import OpeningHoursEditor from '@/components/owner/OpeningHoursEditor';
 import MenuBuilder from '@/components/owner/MenuBuilder';
+import PreOrderSettings from '@/components/owner/PreOrderSettings';
 
 const CUISINES = [
   "Italian", "Japanese", "Mexican", "Chinese", "Indian", "Thai", 
@@ -124,6 +125,11 @@ export default function RestaurantSettings() {
       has_bar_seating: formData.has_bar_seating,
       is_kid_friendly: formData.is_kid_friendly,
       enable_preorder: formData.enable_preorder,
+      preorder_deadline_minutes: formData.preorder_deadline_minutes,
+      preorder_all_items_eligible: formData.preorder_all_items_eligible,
+      preorder_minimum_spend: formData.preorder_minimum_spend,
+      preorder_max_quantity: formData.preorder_max_quantity,
+      preorder_allow_instructions: formData.preorder_allow_instructions,
       latitude: formData.latitude,
       longitude: formData.longitude,
       cover_image: formData.cover_image,
@@ -188,6 +194,7 @@ export default function RestaurantSettings() {
               <UtensilsCrossed className="w-4 h-4" />
               Menu
             </TabsTrigger>
+            <TabsTrigger value="preorder" className="rounded-full">Pre-Order</TabsTrigger>
             <TabsTrigger value="staff" className="rounded-full">Staff</TabsTrigger>
             <TabsTrigger value="subscription" className="rounded-full">Subscription</TabsTrigger>
           </TabsList>
@@ -329,16 +336,7 @@ export default function RestaurantSettings() {
                   onCheckedChange={(checked) => updateField('is_kid_friendly', checked)}
                 />
               </div>
-              <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
-                <div>
-                  <span className="font-medium">Enable Pre-Order with Reservation</span>
-                  <p className="text-xs text-slate-500 mt-0.5">Allow diners to order menu items when reserving</p>
-                </div>
-                <Switch
-                  checked={formData.enable_preorder}
-                  onCheckedChange={(checked) => updateField('enable_preorder', checked)}
-                />
-              </div>
+
             </div>
           </CardContent>
         </Card>
@@ -363,6 +361,18 @@ export default function RestaurantSettings() {
 
           <TabsContent value="menu">
             <MenuBuilder restaurantId={restaurantId} />
+          </TabsContent>
+
+          <TabsContent value="preorder">
+            <PreOrderSettings 
+              restaurant={restaurant}
+              onSave={(preorderData) => {
+                Object.keys(preorderData).forEach(key => {
+                  updateField(key, preorderData[key]);
+                });
+                handleSave();
+              }}
+            />
           </TabsContent>
 
           <TabsContent value="staff">
