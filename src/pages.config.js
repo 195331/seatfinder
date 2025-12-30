@@ -5,6 +5,7 @@ import Favorites from './pages/Favorites';
 import ForgotPassword from './pages/ForgotPassword';
 import Home from './pages/Home';
 import Inbox from './pages/Inbox';
+import KitchenView from './pages/KitchenView';
 import Landing from './pages/Landing';
 import MealPlanner from './pages/MealPlanner';
 import MyLoyalty from './pages/MyLoyalty';
@@ -16,7 +17,6 @@ import RestaurantDetail from './pages/RestaurantDetail';
 import RestaurantSettings from './pages/RestaurantSettings';
 import Settings from './pages/Settings';
 import UserProfile from './pages/UserProfile';
-import KitchenView from './pages/KitchenView';
 import __Layout from './Layout.jsx';
 
 
@@ -28,6 +28,7 @@ export const PAGES = {
     "ForgotPassword": ForgotPassword,
     "Home": Home,
     "Inbox": Inbox,
+    "KitchenView": KitchenView,
     "Landing": Landing,
     "MealPlanner": MealPlanner,
     "MyLoyalty": MyLoyalty,
@@ -39,7 +40,6 @@ export const PAGES = {
     "RestaurantSettings": RestaurantSettings,
     "Settings": Settings,
     "UserProfile": UserProfile,
-    "KitchenView": KitchenView,
 }
 
 export const pagesConfig = {

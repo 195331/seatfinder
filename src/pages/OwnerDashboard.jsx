@@ -663,7 +663,7 @@ export default function OwnerDashboard() {
 
               <TabsContent value="reservations">
                 <div className="space-y-6">
-                  <AutoReservationRules restaurantId={selectedRestaurantId} />
+                  <AdvancedReservationRules restaurantId={selectedRestaurantId} />
 
                   <div className="grid lg:grid-cols-2 gap-6">
                     <ReservationManagerPremium

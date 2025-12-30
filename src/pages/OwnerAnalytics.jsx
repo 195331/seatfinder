@@ -14,6 +14,11 @@ import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, R
 import moment from 'moment';
 import { cn } from "@/lib/utils";
 
+import ReservationTrendsChart from '@/components/analytics/ReservationTrendsChart';
+import PeakTimeAnalysis from '@/components/analytics/PeakTimeAnalysis';
+import PopularMenuItems from '@/components/analytics/PopularMenuItems';
+import CustomerRetention from '@/components/analytics/CustomerRetention';
+
 export default function OwnerAnalytics() {
   const navigate = useNavigate();
   const urlParams = new URLSearchParams(window.location.search);
@@ -198,74 +203,43 @@ export default function OwnerAnalytics() {
           </Card>
         </div>
 
-        {/* Reservation Volume */}
+        {/* Reservation Trends - Enhanced */}
+        <ReservationTrendsChart reservations={reservations} />
+
+        {/* Peak Time Analysis */}
+        <PeakTimeAnalysis reservations={filteredReservations} waitlistEntries={filteredWaitlist} />
+
+        {/* Party Size Distribution */}
         <Card>
           <CardHeader>
-            <CardTitle>Reservation Volume</CardTitle>
-            <p className="text-sm text-slate-500">Track your booking trends over time</p>
+            <CardTitle>Party Size Distribution</CardTitle>
+            <p className="text-sm text-slate-500">How your guests group</p>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={volumeData}>
+              <BarChart data={partySizeData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
+                <XAxis dataKey="size" />
                 <YAxis />
                 <Tooltip />
-                <Line type="monotone" dataKey="count" stroke="#10b981" strokeWidth={2} />
-              </LineChart>
+                <Bar dataKey="count">
+                  {partySizeData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Bar>
+              </BarChart>
             </ResponsiveContainer>
+            <p className="text-sm text-slate-600 mt-4">
+              💡 <strong>Insight:</strong> Parties of 2 make up the majority. Consider optimizing your 2-top tables.
+            </p>
           </CardContent>
         </Card>
 
-        <div className="grid md:grid-cols-2 gap-6">
-          {/* Peak Hours */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Peak Hours</CardTitle>
-              <p className="text-sm text-slate-500">Your busiest time slots</p>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={peakHoursData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="hour" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="count" fill="#6366f1" />
-                </BarChart>
-              </ResponsiveContainer>
-              <p className="text-sm text-slate-600 mt-4">
-                💡 <strong>Insight:</strong> Your busiest hour is {peakHoursData[0]?.hour} with {peakHoursData[0]?.count} reservations
-              </p>
-            </CardContent>
-          </Card>
+        {/* Popular Menu Items */}
+        <PopularMenuItems restaurantId={restaurantId} />
 
-          {/* Party Size Distribution */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Party Size Distribution</CardTitle>
-              <p className="text-sm text-slate-500">How your guests group</p>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={partySizeData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="size" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="count">
-                    {partySizeData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-              <p className="text-sm text-slate-600 mt-4">
-                💡 <strong>Insight:</strong> Parties of 2 make up the majority. Consider optimizing your 2-top tables.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+        {/* Customer Retention */}
+        <CustomerRetention reservations={reservations} />
 
         {/* Waitlist Performance */}
         <Card>

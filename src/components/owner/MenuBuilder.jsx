@@ -17,6 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import AIMenuHelper from '@/components/ai/AIMenuHelper';
+import AIMenuSuggestions from '@/components/ai/AIMenuSuggestions';
 
 const DEFAULT_CATEGORIES = ['Appetizers', 'Mains', 'Desserts', 'Drinks'];
 
@@ -152,15 +153,23 @@ export default function MenuBuilder({ restaurantId }) {
           <Loader2 className="w-8 h-8 animate-spin mx-auto text-slate-400" />
         </CardContent>
       </Card>
-    );
-  }
+    </div>
+  );
+}
 
   return (
-    <Card className="border-0 shadow-lg">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle>Menu Builder</CardTitle>
-          <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+    <div className="space-y-6">
+      <AIMenuSuggestions
+        restaurantId={restaurantId}
+        cuisine="Modern American"
+        onAddItem={(item) => createItemMutation.mutate(item)}
+      />
+
+      <Card className="border-0 shadow-lg">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>Menu Builder</CardTitle>
+            <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
             <DialogTrigger asChild>
               <Button className="rounded-full gap-2">
                 <Plus className="w-4 h-4" />
