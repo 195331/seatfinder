@@ -28,27 +28,27 @@ export default function LoyaltyAnalytics({ restaurantId }) {
   });
 
   // Calculate metrics
-  const totalMembers = members.length;
-  const activeMembers = members.filter(m => {
-    if (!m.last_visit) return false;
+  const totalMembers = (members || []).length;
+  const activeMembers = (members || []).filter(m => {
+    if (!m?.last_visit) return false;
     return new Date(m.last_visit) > subDays(new Date(), 90);
   }).length;
-  const totalPointsIssued = members.reduce((sum, m) => sum + (m.lifetime_points || 0), 0);
-  const totalPointsRedeemed = members.reduce((sum, m) => 
-    sum + (m.rewards_redeemed?.reduce((s, r) => s + (r.points_used || 0), 0) || 0), 0
+  const totalPointsIssued = (members || []).reduce((sum, m) => sum + (m?.lifetime_points || 0), 0);
+  const totalPointsRedeemed = (members || []).reduce((sum, m) => 
+    sum + ((m?.rewards_redeemed || []).reduce((s, r) => s + (r?.points_used || 0), 0) || 0), 0
   );
   const avgVisitsPerMember = totalMembers > 0 
-    ? members.reduce((sum, m) => sum + (m.visits || 0), 0) / totalMembers 
+    ? (members || []).reduce((sum, m) => sum + (m?.visits || 0), 0) / totalMembers 
     : 0;
-  const totalRevenue = members.reduce((sum, m) => sum + (m.total_spent || 0), 0);
+  const totalRevenue = (members || []).reduce((sum, m) => sum + (m?.total_spent || 0), 0);
 
   // Tier distribution
   const tiers = program?.tiers || [
     { name: 'Bronze' }, { name: 'Silver' }, { name: 'Gold' }, { name: 'Platinum' }
   ];
-  const tierData = tiers.map((t, idx) => ({
-    name: t.name,
-    count: members.filter(m => m.current_tier === t.name).length,
+  const tierData = (tiers || []).map((t, idx) => ({
+    name: t?.name,
+    count: (members || []).filter(m => m?.current_tier === t?.name).length,
     color: COLORS[idx]
   }));
 
@@ -158,7 +158,7 @@ export default function LoyaltyAnalytics({ restaurantId }) {
                     paddingAngle={5}
                     dataKey="count"
                   >
-                    {tierData.map((entry, index) => (
+                    {(tierData || []).map((entry, index) => (
                       <Cell key={index} fill={entry.color} />
                     ))}
                   </Pie>
@@ -167,7 +167,7 @@ export default function LoyaltyAnalytics({ restaurantId }) {
               </ResponsiveContainer>
             </div>
             <div className="flex justify-center gap-4 mt-2">
-              {tierData.map((tier, idx) => (
+              {(tierData || []).map((tier, idx) => (
                 <div key={idx} className="flex items-center gap-1.5 text-xs">
                   <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: tier.color }} />
                   <span>{tier.name}: {tier.count}</span>

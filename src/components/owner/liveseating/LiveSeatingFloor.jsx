@@ -25,7 +25,7 @@ export default function LiveSeatingFloor({
   const [zoom, setZoom] = useState(1);
 
   const getTableData = (floorTable) => {
-    return tables.find(t => t.label === floorTable.label) || floorTable;
+    return (tables || []).find(t => t?.label === floorTable?.label) || floorTable;
   };
 
   const getSeatedDuration = (table) => {
@@ -83,7 +83,7 @@ export default function LiveSeatingFloor({
             </svg>
 
             {/* Areas */}
-            {floorPlan.areas.map(area => (
+            {(floorPlan?.areas || []).map(area => (
               <div
                 key={area.id}
                 className="absolute border-2 border-dashed rounded-lg pointer-events-none"
@@ -107,7 +107,7 @@ export default function LiveSeatingFloor({
 
             {/* Tables */}
             <TooltipProvider>
-              {floorPlan.tables.map(floorTable => {
+              {(floorPlan?.tables || []).map(floorTable => {
                 const table = getTableData(floorTable);
                 const statusInfo = STATUS_COLORS[table.status] || STATUS_COLORS.free;
                 const isSelected = selectedTable?.id === table.id;

@@ -253,7 +253,7 @@ export default function LiveSeatingTableDetails({
                     <SelectValue placeholder="Choose from waitlist" />
                   </SelectTrigger>
                   <SelectContent>
-                    {waitlist.map((entry, idx) => (
+                    {(waitlist || []).map((entry, idx) => (
                       <SelectItem key={entry.id} value={entry.id}>
                         #{idx + 1} - {entry.guest_name || 'Guest'} (Party of {entry.party_size})
                       </SelectItem>
@@ -309,7 +309,7 @@ export default function LiveSeatingTableDetails({
                 <SelectValue placeholder="Choose table" />
               </SelectTrigger>
               <SelectContent>
-                {tables.filter(t => t.status === 'free' && t.id !== table.id).map(t => (
+                {(tables || []).filter(t => t?.status === 'free' && t?.id !== table?.id).map(t => (
                   <SelectItem key={t.id} value={t.id}>
                     {t.label} ({t.capacity} seats)
                   </SelectItem>

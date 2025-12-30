@@ -38,7 +38,7 @@ export default function TableHeatmap({ restaurantId }) {
   // Calculate table popularity based on reservations
   const tablePopularity = useMemo(() => {
     const counts = {};
-    reservations.forEach(r => {
+    (reservations || []).forEach(r => {
       if (r.table_id) {
         counts[r.table_id] = (counts[r.table_id] || 0) + 1;
       }
@@ -64,8 +64,8 @@ export default function TableHeatmap({ restaurantId }) {
   // Merge floor plan tables with DB tables
   const displayTables = useMemo(() => {
     if (floorPlanData?.tables?.length > 0) {
-      return floorPlanData.tables.map(fpTable => {
-        const dbTable = tables.find(t => t.label === fpTable.label);
+      return (floorPlanData.tables || []).map(fpTable => {
+        const dbTable = (tables || []).find(t => t?.label === fpTable?.label);
         return {
           ...fpTable,
           id: dbTable?.id || fpTable.id,
@@ -74,7 +74,7 @@ export default function TableHeatmap({ restaurantId }) {
         };
       });
     }
-    return tables.map(t => ({
+    return (tables || []).map(t => ({
       ...t,
       x: t.position_x || 50 + Math.random() * 300,
       y: t.position_y || 50 + Math.random() * 200,
@@ -228,7 +228,7 @@ export default function TableHeatmap({ restaurantId }) {
             <div className="flex items-center justify-center gap-1 text-red-600 mb-1">
               <Flame className="w-4 h-4" />
               <span className="font-bold">
-                {displayTables.filter(t => t.attention === 'hot').length}
+                {(displayTables || []).filter(t => t?.attention === 'hot').length}
               </span>
             </div>
             <p className="text-xs text-slate-500">Popular Tables</p>
@@ -237,7 +237,7 @@ export default function TableHeatmap({ restaurantId }) {
             <div className="flex items-center justify-center gap-1 text-amber-600 mb-1">
               <Minus className="w-4 h-4" />
               <span className="font-bold">
-                {displayTables.filter(t => t.attention === 'medium').length}
+                {(displayTables || []).filter(t => t?.attention === 'medium').length}
               </span>
             </div>
             <p className="text-xs text-slate-500">Moderate</p>
@@ -246,7 +246,7 @@ export default function TableHeatmap({ restaurantId }) {
             <div className="flex items-center justify-center gap-1 text-blue-600 mb-1">
               <Snowflake className="w-4 h-4" />
               <span className="font-bold">
-                {displayTables.filter(t => t.attention === 'cold').length}
+                {(displayTables || []).filter(t => t?.attention === 'cold').length}
               </span>
             </div>
             <p className="text-xs text-slate-500">Low Traffic</p>
