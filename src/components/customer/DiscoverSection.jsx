@@ -76,21 +76,23 @@ export default function DiscoverSection({
       title: 'New & Trending',
       icon: TrendingUp,
       color: 'from-purple-600 to-pink-600',
-      restaurants: newAndTrending,
+      restaurants: newAndTrending || [],
       badge: 'Hot Right Now'
     },
     {
       title: 'Top Rated Near You',
       icon: MapPin,
       color: 'from-blue-600 to-cyan-600',
-      restaurants: topRatedNearby,
-      badge: userLocation ? `Within ${Math.max(...topRatedNearby.map(r => r.distance || 0)).toFixed(1)} mi` : 'Nearby'
+      restaurants: topRatedNearby || [],
+      badge: userLocation && topRatedNearby?.length > 0 
+        ? `Within ${Math.max(...topRatedNearby.map(r => r.distance || 0)).toFixed(1)} mi` 
+        : 'Nearby'
     },
     {
       title: "Editor's Picks",
       icon: Sparkles,
       color: 'from-amber-600 to-orange-600',
-      restaurants: editorsPicks,
+      restaurants: editorsPicks || [],
       badge: 'Curated Selection'
     }
   ];
@@ -119,7 +121,7 @@ export default function DiscoverSection({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {section.restaurants.map(restaurant => (
+              {(section.restaurants || []).map(restaurant => (
                 <RestaurantCard
                   key={restaurant.id}
                   restaurant={restaurant}
