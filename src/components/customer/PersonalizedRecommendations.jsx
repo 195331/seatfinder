@@ -54,8 +54,8 @@ export default function PersonalizedRecommendations({
 
     // Similar to favorites (same cuisine as favorited restaurants)
     const favoriteCuisines = new Set(
-      favorites
-        .map(f => restaurants.find(r => r.id === f.restaurant_id)?.cuisine)
+      (favorites || [])
+        .map(f => (restaurants || []).find(r => r.id === f.restaurant_id)?.cuisine)
         .filter(Boolean)
     );
     if (favoriteCuisines.has(restaurant.cuisine)) {
@@ -105,7 +105,7 @@ export default function PersonalizedRecommendations({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {recommendations.map(restaurant => (
+            {(recommendations || []).map(restaurant => (
               <RestaurantCard
                 key={restaurant.id}
                 restaurant={restaurant}
