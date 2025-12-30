@@ -18,6 +18,11 @@ import ReservationTrendsChart from '@/components/analytics/ReservationTrendsChar
 import PeakTimeAnalysis from '@/components/analytics/PeakTimeAnalysis';
 import PopularMenuItems from '@/components/analytics/PopularMenuItems';
 import CustomerRetention from '@/components/analytics/CustomerRetention';
+import FinancialPerformance from '@/components/analytics/FinancialPerformance';
+import OperationalMetrics from '@/components/analytics/OperationalMetrics';
+import LoyaltyAnalytics from '@/components/analytics/LoyaltyAnalytics';
+import AIChurnPredictor from '@/components/ai/AIChurnPredictor';
+import AICustomerSegmentation from '@/components/ai/AICustomerSegmentation';
 
 export default function OwnerAnalytics() {
   const navigate = useNavigate();
@@ -272,6 +277,42 @@ export default function OwnerAnalytics() {
           </CardContent>
         </Card>
 
+        {/* Financial Performance */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Financial Performance</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <FinancialPerformance restaurantId={restaurantId} />
+          </CardContent>
+        </Card>
+
+        {/* Operational Metrics */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Operational Efficiency</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <OperationalMetrics restaurantId={restaurantId} />
+          </CardContent>
+        </Card>
+
+        {/* Loyalty Analytics */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Loyalty Program Performance</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <LoyaltyAnalytics restaurantId={restaurantId} />
+          </CardContent>
+        </Card>
+
+        {/* AI Customer Insights */}
+        <div className="grid lg:grid-cols-2 gap-6">
+          <AIChurnPredictor restaurantId={restaurantId} />
+          <AICustomerSegmentation restaurantId={restaurantId} />
+        </div>
+
         {/* Reviews Trend */}
         <Card>
           <CardHeader>
@@ -309,7 +350,7 @@ export default function OwnerAnalytics() {
             </div>
           </CardContent>
         </Card>
-      </main>
-    </div>
-  );
-}
+        </main>
+        </div>
+        );
+        }
