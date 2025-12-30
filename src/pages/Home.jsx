@@ -27,6 +27,7 @@ import SurpriseMe from '@/components/ai/SurpriseMe';
 import DiscoverSection from '@/components/customer/DiscoverSection';
 import PersonalizedRecommendations from '@/components/customer/PersonalizedRecommendations';
 import AIConcierge from '@/components/ai/AIConcierge';
+import AICollections from '@/components/home/AICollections';
 import { getIsVerifiedLive, getIsStale } from '@/components/ui/FreshnessIndicator';
 import { Switch } from "@/components/ui/switch";
 
@@ -676,13 +677,22 @@ export default function Home() {
 
             {/* Discover Section */}
             {currentUser && exploreView === 'discover' && (
-              <DiscoverSection
-                currentUser={currentUser}
-                onRestaurantClick={handleRestaurantClick}
-                onFavoriteToggle={handleFavoriteClick}
-                favoriteIds={favoriteIds}
-                userLocation={userLocation}
-              />
+              <>
+                <AICollections
+                  restaurants={restaurants}
+                  userLocation={userLocation}
+                  onRestaurantClick={handleRestaurantClick}
+                />
+                <div className="mt-12">
+                  <DiscoverSection
+                    currentUser={currentUser}
+                    onRestaurantClick={handleRestaurantClick}
+                    onFavoriteToggle={handleFavoriteClick}
+                    favoriteIds={favoriteIds}
+                    userLocation={userLocation}
+                  />
+                </div>
+              </>
             )}
 
             {/* All Restaurants View */}
