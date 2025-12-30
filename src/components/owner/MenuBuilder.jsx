@@ -153,9 +153,8 @@ export default function MenuBuilder({ restaurantId }) {
           <Loader2 className="w-8 h-8 animate-spin mx-auto text-slate-400" />
         </CardContent>
       </Card>
-    </div>
-  );
-}
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -454,5 +453,6 @@ export default function MenuBuilder({ restaurantId }) {
         )}
       </CardContent>
     </Card>
+    </div>
   );
 }
