@@ -39,7 +39,7 @@ export default function TableHeatmap({ restaurantId }) {
   const tablePopularity = useMemo(() => {
     const counts = {};
     (reservations || []).forEach(r => {
-      if (r.table_id) {
+      if (r?.table_id) {
         counts[r.table_id] = (counts[r.table_id] || 0) + 1;
       }
     });
@@ -137,7 +137,7 @@ export default function TableHeatmap({ restaurantId }) {
         <div className="relative bg-slate-100 rounded-xl overflow-hidden" style={{ height: 350 }}>
           <svg width="100%" height="100%" viewBox="0 0 500 350" preserveAspectRatio="xMidYMid meet">
             {/* Areas */}
-            {areas.map((area) => (
+            {(areas || []).map((area) => (
               <g key={area.id}>
                 <rect
                   x={area.x || 20}
@@ -163,7 +163,7 @@ export default function TableHeatmap({ restaurantId }) {
             ))}
 
             {/* Tables */}
-            {displayTables.map((table) => {
+            {(displayTables || []).map((table) => {
               const attention = ATTENTION_COLORS[table.attention];
               const size = Math.min(table.width || 50, table.height || 50);
               
