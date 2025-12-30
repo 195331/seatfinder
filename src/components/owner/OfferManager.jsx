@@ -252,7 +252,7 @@ export default function OfferManager({ restaurantId }) {
           </div>
         ) : (
           <div className="space-y-3">
-            {offers.map((offer) => (
+            {(offers || []).map((offer) => (
               <div key={offer.id} className="p-4 bg-slate-50 rounded-xl border border-slate-200">
                 <div className="flex items-start justify-between mb-2">
                   <div>

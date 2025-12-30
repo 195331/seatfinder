@@ -104,11 +104,11 @@ export default function LoyaltyProgramManager({ restaurantId, restaurantName }) 
   };
 
   // Analytics
-  const totalMembers = members.length;
-  const totalPointsIssued = members.reduce((sum, m) => sum + (m.lifetime_points || 0), 0);
-  const tierDistribution = DEFAULT_TIERS.map(t => ({
+  const totalMembers = (members || []).length;
+  const totalPointsIssued = (members || []).reduce((sum, m) => sum + (m?.lifetime_points || 0), 0);
+  const tierDistribution = (DEFAULT_TIERS || []).map(t => ({
     ...t,
-    count: members.filter(m => m.current_tier === t.name).length
+    count: (members || []).filter(m => m?.current_tier === t?.name).length
   }));
 
   if (isLoading || !formData) {
@@ -207,7 +207,7 @@ export default function LoyaltyProgramManager({ restaurantId, restaurantName }) 
         </TabsContent>
 
         <TabsContent value="tiers" className="mt-4 space-y-3">
-          {formData.tiers.map((tier, idx) => (
+          {(formData?.tiers || []).map((tier, idx) => (
             <Card key={idx} className="border-0 shadow-sm">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between mb-3">
@@ -259,7 +259,7 @@ export default function LoyaltyProgramManager({ restaurantId, restaurantName }) 
         </TabsContent>
 
         <TabsContent value="rewards" className="mt-4 space-y-3">
-          {formData.rewards.map((reward, idx) => (
+          {(formData?.rewards || []).map((reward, idx) => (
             <Card key={reward.id} className="border-0 shadow-sm">
               <CardContent className="p-4">
                 <div className="flex items-start gap-3">
@@ -325,7 +325,7 @@ export default function LoyaltyProgramManager({ restaurantId, restaurantName }) 
               <CardTitle className="text-base">Member Distribution</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {tierDistribution.map((tier) => (
+              {(tierDistribution || []).map((tier) => (
                 <div key={tier.name} className="flex items-center gap-3">
                   <span className="w-20 text-sm font-medium">{tier.name}</span>
                   <div className="flex-1 h-6 bg-slate-100 rounded-full overflow-hidden">

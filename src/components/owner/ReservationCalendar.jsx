@@ -66,7 +66,7 @@ export default function ReservationCalendar({ restaurantId, restaurantName }) {
   });
 
   const dayReservations = useMemo(() => {
-    let filtered = reservations.filter(r => 
+    let filtered = (reservations || []).filter(r => 
       moment(r.reservation_date).format('YYYY-MM-DD') === moment(currentDate).format('YYYY-MM-DD')
     );
     
@@ -74,23 +74,23 @@ export default function ReservationCalendar({ restaurantId, restaurantName }) {
       filtered = filtered.filter(r => r.status === filters.status);
     }
     if (filters.area !== 'all') {
-      const areaTables = tables.filter(t => t.area_id === filters.area).map(t => t.id);
-      filtered = filtered.filter(r => areaTables.includes(r.table_id));
+      const areaTables = (tables || []).filter(t => t?.area_id === filters.area).map(t => t?.id).filter(Boolean);
+      filtered = (filtered || []).filter(r => areaTables.includes(r?.table_id));
     }
     
     return filtered;
   }, [reservations, currentDate, filters, tables]);
   
   const checkConflict = (date, time, partySize, excludeId = null) => {
-    const timeSlot = reservations.filter(r => 
+    const timeSlot = (reservations || []).filter(r => 
       r.id !== excludeId &&
       r.reservation_date === date &&
       r.reservation_time === time &&
       r.status !== 'cancelled' &&
       r.status !== 'declined'
     );
-    const totalPartySize = timeSlot.reduce((sum, r) => sum + r.party_size, 0) + partySize;
-    const capacity = tables.reduce((sum, t) => sum + t.capacity, 0);
+    const totalPartySize = (timeSlot || []).reduce((sum, r) => sum + (r?.party_size || 0), 0) + partySize;
+    const capacity = (tables || []).reduce((sum, t) => sum + (t?.capacity || 0), 0);
     return totalPartySize > capacity * 0.9; // 90% capacity warning
   };
 
@@ -155,14 +155,14 @@ export default function ReservationCalendar({ restaurantId, restaurantName }) {
                     <SelectItem value="declined">Declined</SelectItem>
                   </SelectContent>
                 </Select>
-                {areas.length > 0 && (
+                {(areas || []).length > 0 && (
                   <Select value={filters.area} onValueChange={(v) => setFilters({ ...filters, area: v })}>
                     <SelectTrigger className="w-32">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Areas</SelectItem>
-                      {areas.map(a => (
+                      {(areas || []).map(a => (
                         <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
                       ))}
                     </SelectContent>
@@ -476,7 +476,7 @@ export default function ReservationCalendar({ restaurantId, restaurantName }) {
                     <SelectValue placeholder="Select table" />
                   </SelectTrigger>
                   <SelectContent>
-                    {tables.map(t => (
+                    {(tables || []).map(t => (
                       <SelectItem key={t.id} value={t.id}>{t.label} ({t.capacity} seats)</SelectItem>
                     ))}
                   </SelectContent>
@@ -509,7 +509,7 @@ export default function ReservationCalendar({ restaurantId, restaurantName }) {
                   <SelectValue placeholder="Select area" />
                 </SelectTrigger>
                 <SelectContent>
-                  {areas.map(a => (
+                  {(areas || []).map(a => (
                     <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
                   ))}
                 </SelectContent>
@@ -553,8 +553,8 @@ export default function ReservationCalendar({ restaurantId, restaurantName }) {
 function DayView({ date, reservations, onSelectReservation, onClickTimeSlot, getStatusColor }) {
   return (
     <div className="space-y-2">
-      {HOURS.map(hour => {
-        const hourReservations = reservations.filter(r => {
+      {(HOURS || []).map(hour => {
+        const hourReservations = (reservations || []).filter(r => {
           const resHour = parseInt(r.reservation_time?.split(':')[0] || 0);
           return resHour === hour;
         });
@@ -572,7 +572,7 @@ function DayView({ date, reservations, onSelectReservation, onClickTimeSlot, get
                 }
               }}
             >
-              {hourReservations.map(res => (
+              {(hourReservations || []).map(res => (
                 <button
                   key={res.id}
                   onClick={() => onSelectReservation(res)}
@@ -601,8 +601,8 @@ function WeekView({ date, reservations, onSelectReservation, getStatusColor }) {
 
   return (
     <div className="grid grid-cols-7 gap-2">
-      {weekDays.map(day => {
-        const dayReservations = reservations.filter(r =>
+      {(weekDays || []).map(day => {
+        const dayReservations = (reservations || []).filter(r =>
           moment(r.reservation_date).format('YYYY-MM-DD') === day.format('YYYY-MM-DD')
         );
 
@@ -610,7 +610,7 @@ function WeekView({ date, reservations, onSelectReservation, getStatusColor }) {
           <div key={day.format('YYYY-MM-DD')} className="border rounded-lg p-3">
             <p className="font-semibold text-sm mb-2">{day.format('ddd D')}</p>
             <div className="space-y-1">
-              {dayReservations.slice(0, 5).map(res => (
+              {(dayReservations || []).slice(0, 5).map(res => (
                 <button
                   key={res.id}
                   onClick={() => onSelectReservation(res)}
@@ -648,13 +648,13 @@ function MonthView({ date, reservations, onSelectDate }) {
 
   return (
     <div className="grid grid-cols-7 gap-2">
-      {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+      {(['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] || []).map(day => (
         <div key={day} className="text-center text-sm font-medium text-slate-600 p-2">
           {day}
         </div>
       ))}
-      {days.map(day => {
-        const dayReservations = reservations.filter(r =>
+      {(days || []).map(day => {
+        const dayReservations = (reservations || []).filter(r =>
           moment(r.reservation_date).format('YYYY-MM-DD') === day.format('YYYY-MM-DD')
         );
         const isCurrentMonth = day.month() === monthStart.month();

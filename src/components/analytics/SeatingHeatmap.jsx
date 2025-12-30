@@ -32,13 +32,13 @@ export default function SeatingHeatmap({ restaurantId, floorPlanData }) {
     '90_days': moment().subtract(90, 'days'),
   }[timeRange];
 
-  const filteredHistory = seatingHistory.filter(s => 
-    moment(s.recorded_at).isAfter(cutoffDate)
+  const filteredHistory = (seatingHistory || []).filter(s => 
+    moment(s?.recorded_at).isAfter(cutoffDate)
   );
 
   // Calculate occupancy by hour of day
   const hourlyOccupancy = {};
-  filteredHistory.forEach(entry => {
+  (filteredHistory || []).forEach(entry => {
     const hour = moment(entry.recorded_at).hour();
     if (!hourlyOccupancy[hour]) {
       hourlyOccupancy[hour] = { sum: 0, count: 0 };
@@ -54,12 +54,12 @@ export default function SeatingHeatmap({ restaurantId, floorPlanData }) {
 
   // Calculate table-level occupancy (if we have table data)
   const tableOccupancy = {};
-  tables.forEach(table => {
+  (tables || []).forEach(table => {
     // This would need more detailed table-level tracking
     // For now, estimate based on capacity and overall occupancy
     const tableId = table.id;
-    const capacity = table.capacity || 4;
-    const relativeLoad = capacity / tables.reduce((sum, t) => sum + (t.capacity || 4), 0);
+    const capacity = table?.capacity || 4;
+    const relativeLoad = capacity / (tables || []).reduce((sum, t) => sum + (t?.capacity || 4), 0);
     const avgOccupancy = filteredHistory.length > 0
       ? filteredHistory.reduce((sum, s) => sum + (s.occupancy_percent || 0), 0) / filteredHistory.length
       : 0;
@@ -126,7 +126,7 @@ export default function SeatingHeatmap({ restaurantId, floorPlanData }) {
         <div>
           <h3 className="font-semibold text-sm text-slate-700 mb-3">Peak Hours</h3>
           <div className="grid grid-cols-12 gap-1">
-            {avgByHour.map(({ hour, avg }) => (
+            {(avgByHour || []).map(({ hour, avg }) => (
               <div key={hour} className="flex flex-col items-center">
                 <div
                   className={cn(
@@ -150,7 +150,7 @@ export default function SeatingHeatmap({ restaurantId, floorPlanData }) {
             <h3 className="font-semibold text-sm text-slate-700 mb-3">Table Utilization</h3>
             <div className="relative bg-slate-50 rounded-xl p-6 border border-slate-200" style={{ minHeight: '300px' }}>
               {/* Areas */}
-              {floorPlanData.areas.map((area) => (
+              {(floorPlanData?.areas || []).map((area) => (
                 <div
                   key={area.id}
                   className="absolute border-2 border-slate-300 rounded-lg bg-white/50"
@@ -168,7 +168,7 @@ export default function SeatingHeatmap({ restaurantId, floorPlanData }) {
               ))}
 
               {/* Tables */}
-              {tables.map((table) => {
+              {(tables || []).map((table) => {
                 const occupancy = tableOccupancy[table.id] || 0;
                 return (
                   <div
