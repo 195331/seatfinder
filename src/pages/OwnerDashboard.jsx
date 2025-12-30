@@ -37,6 +37,7 @@ import AIReservationManager from "@/components/ai/AIReservationManager";
 import AIFloorPlanOptimizer from "@/components/ai/AIFloorPlanOptimizer";
 
 import AutoReservationRules from "@/components/owner/AutoReservationRules";
+import AdvancedReservationRules from "@/components/owner/AdvancedReservationRules";
 import ReservationCalendar from "@/components/owner/ReservationCalendar";
 import WaitlistSMSManager from "@/components/owner/WaitlistSMSManager";
 
