@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Sparkles, Loader2, DollarSign, Calendar, Star } from 'lucide-react';
 import { toast } from "sonner";
@@ -74,6 +75,8 @@ Return just the persona text.`;
     }
   });
 
+  const queryClient = useQueryClient();
+  
   const addNoteMutation = useMutation({
     mutationFn: async () => {
       const user = await base44.auth.me();
