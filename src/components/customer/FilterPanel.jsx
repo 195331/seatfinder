@@ -41,26 +41,140 @@ export default function FilterPanel({ filters, onFiltersChange, presets, activeP
   }).length;
 
   return (
-    <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-hide">
-      {/* Filter Button */}
-      <Sheet open={open} onOpenChange={setOpen}>
-        <SheetTrigger asChild>
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild>
+        <button
+          className="px-4 py-2 rounded-full border text-sm font-medium whitespace-nowrap bg-white text-slate-600 border-slate-200 hover:border-purple-300 hover:shadow-md transition-all shrink-0 gap-2 flex items-center"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+          </svg>
+          Filters
+          {activeFilterCount > 0 && (
+            <Badge className="bg-purple-600 text-white h-5 w-5 p-0 flex items-center justify-center">
+              {activeFilterCount}
+            </Badge>
+          )}
+        </button>
+      </SheetTrigger>
+      <SheetContent side="bottom" className="h-[80vh] rounded-t-3xl">
+        <SheetHeader className="pb-4 border-b">
+          <div className="flex items-center justify-between">
+            <SheetTitle className="text-xl">Filters</SheetTitle>
+            <Button variant="ghost" size="sm" onClick={clearFilters}>
+              Clear all
+            </Button>
+          </div>
+        </SheetHeader>
+        
+        <div className="py-6 space-y-8 overflow-y-auto h-[calc(100%-8rem)]">
+          {/* Price Level */}
+          <div>
+            <h3 className="font-medium text-slate-900 mb-3">Price</h3>
+            <div className="flex gap-2">
+              {[1, 2, 3, 4].map((level) => (
+                <button
+                  key={level}
+                  onClick={() => updateFilter('priceLevel', filters.priceLevel === level ? null : level)}
+                  className={cn(
+                    "px-4 py-2 rounded-full border transition-all",
+                    filters.priceLevel === level
+                      ? "bg-slate-900 text-white border-slate-900"
+                      : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
+                  )}
+                >
+                  {'$'.repeat(level)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Seating Level */}
+          <div>
+            <h3 className="font-medium text-slate-900 mb-3">Seating Availability</h3>
+            <div className="flex flex-wrap gap-2">
+              {SEATING_LEVELS.map((level) => (
+                <button
+                  key={level.value}
+                  onClick={() => updateFilter('seatingLevel', filters.seatingLevel === level.value ? null : level.value)}
+                  className={cn(
+                    "px-4 py-2 rounded-full border transition-all",
+                    filters.seatingLevel === level.value
+                      ? "bg-slate-900 text-white border-slate-900"
+                      : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
+                  )}
+                >
+                  {level.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Cuisine */}
+          <div>
+            <h3 className="font-medium text-slate-900 mb-3">Cuisine</h3>
+            <div className="flex flex-wrap gap-2">
+              {CUISINES.map((cuisine) => (
+                <button
+                  key={cuisine}
+                  onClick={() => toggleArrayFilter('cuisines', cuisine)}
+                  className={cn(
+                    "px-4 py-2 rounded-full border transition-all",
+                    (filters.cuisines || []).includes(cuisine)
+                      ? "bg-slate-900 text-white border-slate-900"
+                      : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
+                  )}
+                >
+                  {cuisine}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Features */}
+          <div>
+            <h3 className="font-medium text-slate-900 mb-3">Vibe & Features</h3>
+            <div className="space-y-3">
+              {[
+                { key: 'isKidFriendly', label: 'Kid-friendly' },
+                { key: 'hasOutdoor', label: 'Outdoor seating' },
+                { key: 'hasBarSeating', label: 'Good for groups' },
+                { key: 'openNow', label: 'Open now' }
+              ].map((feature) => (
+                <label 
+                  key={feature.key}
+                  className="flex items-center gap-3 cursor-pointer"
+                >
+                  <div 
+                    onClick={() => updateFilter(feature.key, !filters[feature.key])}
+                    className={cn(
+                      "w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all",
+                      filters[feature.key]
+                        ? "bg-slate-900 border-slate-900"
+                        : "bg-white border-slate-300"
+                    )}
+                  >
+                    {filters[feature.key] && <Check className="w-4 h-4 text-white" />}
+                  </div>
+                  <span className="text-slate-700">{feature.label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="absolute bottom-0 left-0 right-0 p-4 bg-white border-t">
           <Button 
-            variant="outline" 
-            className={cn(
-              "rounded-full gap-2 shrink-0",
-              activeFilterCount > 0 && "bg-slate-900 text-white hover:bg-slate-800"
-            )}
+            className="w-full rounded-full h-12 text-base"
+            onClick={() => setOpen(false)}
           >
-            <SlidersHorizontal className="w-4 h-4" />
-            Filters
-            {activeFilterCount > 0 && (
-              <Badge className="bg-white text-slate-900 h-5 w-5 p-0 flex items-center justify-center">
-                {activeFilterCount}
-              </Badge>
-            )}
+            Show Results
           </Button>
-        </SheetTrigger>
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+}
         <SheetContent side="bottom" className="h-[80vh] rounded-t-3xl">
           <SheetHeader className="pb-4 border-b">
             <div className="flex items-center justify-between">
