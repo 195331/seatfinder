@@ -37,13 +37,13 @@ export default function PredictiveAnalytics({ restaurantId }) {
 
   // Calculate 30-day trends
   const last30Days = moment().subtract(30, 'days');
-  const recentSeating = seatingHistory.filter(s => moment(s.recorded_at).isAfter(last30Days));
-  const recentReservations = reservations.filter(r => moment(r.created_date).isAfter(last30Days));
-  const recentWaitlist = waitlist.filter(w => moment(w.created_date).isAfter(last30Days));
+  const recentSeating = (seatingHistory || []).filter(s => moment(s?.recorded_at).isAfter(last30Days));
+  const recentReservations = (reservations || []).filter(r => moment(r?.created_date).isAfter(last30Days));
+  const recentWaitlist = (waitlist || []).filter(w => moment(w?.created_date).isAfter(last30Days));
 
   // Predict next 7 days demand
   const dayOfWeekDemand = {};
-  recentSeating.forEach(entry => {
+  (recentSeating || []).forEach(entry => {
     const day = moment(entry.recorded_at).day();
     if (!dayOfWeekDemand[day]) dayOfWeekDemand[day] = { sum: 0, count: 0 };
     dayOfWeekDemand[day].sum += entry.occupancy_percent || 0;
@@ -66,7 +66,7 @@ export default function PredictiveAnalytics({ restaurantId }) {
 
   // Waitlist conversion rate trend
   const waitlistByWeek = {};
-  recentWaitlist.forEach(entry => {
+  (recentWaitlist || []).forEach(entry => {
     const week = moment(entry.created_date).week();
     if (!waitlistByWeek[week]) {
       waitlistByWeek[week] = { total: 0, seated: 0 };
@@ -82,7 +82,7 @@ export default function PredictiveAnalytics({ restaurantId }) {
 
   // Table turnover analysis
   const turnoverByHour = {};
-  recentSeating.forEach(entry => {
+  (recentSeating || []).forEach(entry => {
     const hour = moment(entry.recorded_at).hour();
     if (!turnoverByHour[hour]) turnoverByHour[hour] = [];
     turnoverByHour[hour].push(entry.occupancy_percent || 0);
@@ -137,7 +137,7 @@ export default function PredictiveAnalytics({ restaurantId }) {
             </BarChart>
           </ResponsiveContainer>
           <div className="flex items-center justify-center gap-4 mt-4">
-            {next7Days.map((day, i) => (
+            {(next7Days || []).map((day, i) => (
               <div key={i} className="text-center">
                 <Badge variant={day.confidence === 'High' ? 'default' : 'secondary'} className="text-xs">
                   {day.confidence}
@@ -183,7 +183,7 @@ export default function PredictiveAnalytics({ restaurantId }) {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {optimalTurnoverHours.map((entry, i) => (
+            {(optimalTurnoverHours || []).map((entry, i) => (
               <div key={i} className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center font-bold text-sm">

@@ -13,7 +13,7 @@ export default function LiveSeatingWaitlist({
   onSelectEntry,
   selectedEntry 
 }) {
-  const arrivingSoon = reservations.filter(r => {
+  const arrivingSoon = (reservations || []).filter(r => {
     const resTime = moment(`${r.reservation_date} ${r.reservation_time}`);
     const diff = resTime.diff(moment(), 'minutes');
     return diff > 0 && diff <= 30;
@@ -39,13 +39,13 @@ export default function LiveSeatingWaitlist({
           </div>
         </CardHeader>
         <CardContent className="p-2 max-h-80 overflow-y-auto">
-          {waitlist.length === 0 ? (
+          {(waitlist || []).length === 0 ? (
             <div className="text-center py-8 text-slate-400 text-sm">
               No one waiting
             </div>
           ) : (
             <div className="space-y-1">
-              {waitlist.map((entry, index) => {
+              {(waitlist || []).map((entry, index) => {
                 const waitTime = moment().diff(moment(entry.created_date), 'minutes');
                 const isSelected = selectedEntry?.id === entry.id;
                 
@@ -85,7 +85,7 @@ export default function LiveSeatingWaitlist({
       </Card>
 
       {/* Arriving Soon */}
-      {arrivingSoon.length > 0 && (
+      {(arrivingSoon || []).length > 0 && (
         <Card className="border-0 shadow-lg border-l-4 border-l-blue-500">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
@@ -96,7 +96,7 @@ export default function LiveSeatingWaitlist({
           </CardHeader>
           <CardContent className="p-2">
             <div className="space-y-1">
-              {arrivingSoon.map(res => {
+              {(arrivingSoon || []).map(res => {
                 const resTime = moment(`${res.reservation_date} ${res.reservation_time}`);
                 const minsUntil = resTime.diff(moment(), 'minutes');
                 

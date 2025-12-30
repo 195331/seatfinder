@@ -108,8 +108,8 @@ export default function AutoReservationRules({ restaurantId }) {
   const testResult = showTest ? testRule() : null;
 
   // Validation warnings
-  const allDecline = rules.filter(r => r.is_active).every(r => r.action === 'auto_decline');
-  const noActiveRules = rules.filter(r => r.is_active).length === 0;
+  const allDecline = (rules || []).filter(r => r?.is_active).every(r => r?.action === 'auto_decline');
+  const noActiveRules = (rules || []).filter(r => r?.is_active).length === 0;
 
   return (
     <div className="space-y-6">
@@ -172,7 +172,7 @@ export default function AutoReservationRules({ restaurantId }) {
 
           {/* Rules List */}
           <div className="space-y-3">
-            {rules.map((rule, index) => (
+            {(rules || []).map((rule, index) => (
               <div
                 key={rule.id}
                 className={cn(
@@ -202,11 +202,11 @@ export default function AutoReservationRules({ restaurantId }) {
                       <div className="space-y-1 text-sm text-slate-600">
                         {rule.conditions?.days_of_week && (
                           <p>
-                            Days: {rule.conditions.days_of_week.map(d => DAYS[d].slice(0, 3)).join(', ')}
+                            Days: {(rule.conditions.days_of_week || []).map(d => DAYS[d]?.slice(0, 3)).filter(Boolean).join(', ')}
                           </p>
                         )}
                         {rule.conditions?.time_slots && (
-                          <p>Times: {rule.conditions.time_slots.join(', ')}</p>
+                          <p>Times: {(rule.conditions.time_slots || []).join(', ')}</p>
                         )}
                         {rule.conditions?.min_party_size || rule.conditions?.max_party_size ? (
                           <p>
@@ -271,7 +271,7 @@ export default function AutoReservationRules({ restaurantId }) {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {DAYS.map((day, i) => (
+                    {(DAYS || []).map((day, i) => (
                       <SelectItem key={i} value={i.toString()}>{day}</SelectItem>
                     ))}
                   </SelectContent>
@@ -385,7 +385,7 @@ function RuleEditor({ rule, onSave, onCancel }) {
       <div>
         <Label>Days of Week</Label>
         <div className="flex flex-wrap gap-2 mt-1.5">
-          {DAYS.map((day, i) => (
+          {(DAYS || []).map((day, i) => (
             <button
               key={i}
               type="button"
@@ -406,7 +406,7 @@ function RuleEditor({ rule, onSave, onCancel }) {
       <div>
         <Label>Time Slots</Label>
         <div className="space-y-2 mt-1.5">
-          {formData.conditions.time_slots.map((slot, i) => (
+          {(formData?.conditions?.time_slots || []).map((slot, i) => (
             <div key={i} className="flex gap-2">
               <Input
                 placeholder="17:00-19:00"
