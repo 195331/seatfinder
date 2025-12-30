@@ -14,6 +14,7 @@ import {
   Heart,
   MousePointerClick,
   LayoutGrid,
+  ChefHat,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -592,6 +593,11 @@ export default function OwnerDashboard() {
                   Menu
                 </TabsTrigger>
 
+                <TabsTrigger value="kitchen" className="rounded-full gap-1.5">
+                  <ChefHat className="w-4 h-4" />
+                  Kitchen
+                </TabsTrigger>
+
                 <TabsTrigger value="offers" className="rounded-full gap-1.5">
                   <svg
                     className="w-4 h-4"
@@ -753,6 +759,20 @@ export default function OwnerDashboard() {
                 >
                   <MenuBuilder restaurantId={selectedRestaurantId} />
                 </FeatureGate>
+              </TabsContent>
+
+              <TabsContent value="kitchen">
+                <div className="text-center py-8">
+                  <Link to={createPageUrl('KitchenView') + `?restaurant_id=${selectedRestaurantId}`}>
+                    <Button className="gap-2 bg-emerald-600 hover:bg-emerald-700">
+                      <ChefHat className="w-5 h-5" />
+                      Open Kitchen View
+                    </Button>
+                  </Link>
+                  <p className="text-sm text-slate-500 mt-3">
+                    View and manage pre-orders for reservations
+                  </p>
+                </div>
               </TabsContent>
 
               <TabsContent value="offers">
