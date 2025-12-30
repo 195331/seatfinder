@@ -58,6 +58,11 @@ import ShiftModePanel from "@/components/owner/ShiftModePanel";
 import OwnerAI from "@/components/ai/OwnerAI";
 import NotificationBell from "@/components/notifications/NotificationBell";
 
+import AIStaffScheduler from "@/components/ai/AIStaffScheduler";
+import InventoryManager from "@/components/owner/InventoryManager";
+import AIInventoryInsights from "@/components/ai/AIInventoryInsights";
+import CustomerProfileManager from "@/components/owner/CustomerProfileManager";
+
 /**
  * Normalize anything into an array (prevents undefined.map crashes)
  */
@@ -611,6 +616,40 @@ export default function OwnerDashboard() {
                   </svg>
                   Offers & Pricing
                 </TabsTrigger>
+
+                <TabsTrigger value="staff" className="rounded-full gap-1.5">
+                  <Users className="w-4 h-4" />
+                  Staff
+                </TabsTrigger>
+
+                <TabsTrigger value="inventory" className="rounded-full gap-1.5">
+                  <svg
+                    className="w-4 h-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                    <path d="M3 9h18M9 21V9" />
+                  </svg>
+                  Inventory
+                </TabsTrigger>
+
+                <TabsTrigger value="customers" className="rounded-full gap-1.5">
+                  <svg
+                    className="w-4 h-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+                  </svg>
+                  Customers
+                </TabsTrigger>
               </TabsList>
 
               <TabsContent value="seating">
@@ -788,6 +827,21 @@ export default function OwnerDashboard() {
                   </div>
                   <AIDynamicPricing restaurantId={selectedRestaurantId} />
                 </div>
+              </TabsContent>
+
+              <TabsContent value="staff">
+                <AIStaffScheduler restaurantId={selectedRestaurantId} />
+              </TabsContent>
+
+              <TabsContent value="inventory">
+                <div className="grid lg:grid-cols-2 gap-6">
+                  <InventoryManager restaurantId={selectedRestaurantId} />
+                  <AIInventoryInsights restaurantId={selectedRestaurantId} />
+                </div>
+              </TabsContent>
+
+              <TabsContent value="customers">
+                <CustomerProfileManager restaurantId={selectedRestaurantId} />
               </TabsContent>
             </Tabs>
           </>
