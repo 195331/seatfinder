@@ -27,6 +27,11 @@ export default function VibeBar({ reviews = [], className = '' }) {
   const [isVisible, setIsVisible] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
+  // Early return if no reviews
+  if (!reviews || reviews.length === 0) return null;
+
+  const restaurantId = reviews[0]?.restaurant_id || 'unknown';
+
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -37,17 +42,17 @@ export default function VibeBar({ reviews = [], className = '' }) {
       { threshold: 0.1 }
     );
 
-    const element = document.getElementById(`vibe-bar-${reviews[0]?.restaurant_id}`);
+    const element = document.getElementById(`vibe-bar-${restaurantId}`);
     if (element) observer.observe(element);
 
     return () => observer.disconnect();
-  }, [reviews]);
+  }, [restaurantId]);
 
-  const vibeReviews = reviews.filter(r => r.vibe_rating);
+  const vibeReviews = reviews.filter(r => r && r.vibe_rating);
   
-  // If no vibe ratings, estimate from overall ratings (temporary until real data)
+  // If no vibe ratings, estimate from overall ratings
   const avgVibe = vibeReviews.length > 0
-    ? vibeReviews.reduce((sum, r) => sum + r.vibe_rating, 0) / vibeReviews.length
+    ? vibeReviews.reduce((sum, r) => sum + (r.vibe_rating || 0), 0) / vibeReviews.length
     : reviews.length > 0 
       ? Math.min(5, Math.max(1, reviews.reduce((sum, r) => sum + (r.rating || 3), 0) / reviews.length))
       : 0;
@@ -62,13 +67,11 @@ export default function VibeBar({ reviews = [], className = '' }) {
     }
   };
 
-  if (reviews.length === 0) return null;
-
   return (
     <Popover>
       <PopoverTrigger asChild>
         <div
-          id={`vibe-bar-${reviews[0]?.restaurant_id}`}
+          id={`vibe-bar-${restaurantId}`}
           className={cn("cursor-pointer", className)}
           onClick={handleClick}
           onMouseEnter={() => setIsHovered(true)}
