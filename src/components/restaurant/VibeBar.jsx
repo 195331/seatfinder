@@ -102,7 +102,7 @@ export default function VibeBar({ reviews = [], className = '' }) {
           </div>
 
           <p className="text-xs text-slate-400 mt-1">
-            {vibeReviews.length} reviews
+            Based on {vibeReviews.length > 0 ? vibeReviews.length : reviews.length} reviews
           </p>
         </div>
       </PopoverTrigger>
