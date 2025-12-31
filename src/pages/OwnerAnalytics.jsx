@@ -278,34 +278,13 @@ export default function OwnerAnalytics() {
         </Card>
 
         {/* Financial Performance */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Financial Performance</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <FinancialPerformance restaurantId={restaurantId} />
-          </CardContent>
-        </Card>
+        <FinancialPerformance restaurantId={restaurantId} />
 
         {/* Operational Metrics */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Operational Efficiency</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <OperationalMetrics restaurantId={restaurantId} />
-          </CardContent>
-        </Card>
+        <OperationalMetrics restaurantId={restaurantId} />
 
         {/* Loyalty Analytics */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Loyalty Program Performance</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <LoyaltyAnalytics restaurantId={restaurantId} />
-          </CardContent>
-        </Card>
+        <LoyaltyAnalytics restaurantId={restaurantId} />
 
         {/* AI Customer Insights */}
         <div className="grid lg:grid-cols-2 gap-6">
