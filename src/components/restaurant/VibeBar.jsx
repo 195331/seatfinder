@@ -44,12 +44,16 @@ export default function VibeBar({ reviews = [], className = '' }) {
   }, [reviews]);
 
   const vibeReviews = reviews.filter(r => r.vibe_rating);
+  
+  // If no vibe ratings, estimate from overall ratings (temporary until real data)
   const avgVibe = vibeReviews.length > 0
     ? vibeReviews.reduce((sum, r) => sum + r.vibe_rating, 0) / vibeReviews.length
-    : 0;
+    : reviews.length > 0 
+      ? Math.min(5, Math.max(1, reviews.reduce((sum, r) => sum + (r.rating || 3), 0) / reviews.length))
+      : 0;
 
   const vibeLabel = getVibeLabel(avgVibe);
-  const confidence = getConfidenceLevel(vibeReviews.length);
+  const confidence = getConfidenceLevel(vibeReviews.length > 0 ? vibeReviews.length : reviews.length);
   const percentage = (avgVibe / 5) * 100;
 
   const handleClick = () => {
@@ -58,7 +62,7 @@ export default function VibeBar({ reviews = [], className = '' }) {
     }
   };
 
-  if (vibeReviews.length === 0) return null;
+  if (reviews.length === 0) return null;
 
   return (
     <Popover>
@@ -118,7 +122,7 @@ export default function VibeBar({ reviews = [], className = '' }) {
           </div>
 
           <div className="text-xs text-slate-500 pt-2 border-t">
-            Based on {vibeReviews.length} reviews with vibe ratings
+            Based on {vibeReviews.length > 0 ? `${vibeReviews.length} reviews with vibe ratings` : `${reviews.length} reviews`}
           </div>
         </div>
       </PopoverContent>

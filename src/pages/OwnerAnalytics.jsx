@@ -23,6 +23,7 @@ import OperationalMetrics from '@/components/analytics/OperationalMetrics';
 import LoyaltyAnalytics from '@/components/analytics/LoyaltyAnalytics';
 import AIChurnPredictor from '@/components/ai/AIChurnPredictor';
 import AICustomerSegmentation from '@/components/ai/AICustomerSegmentation';
+import AIMenuInsights from '@/components/analytics/AIMenuInsights';
 
 export default function OwnerAnalytics() {
   const navigate = useNavigate();
@@ -285,6 +286,9 @@ export default function OwnerAnalytics() {
 
         {/* Loyalty Analytics */}
         <LoyaltyAnalytics restaurantId={restaurantId} />
+
+        {/* AI Menu & Operations Insights */}
+        <AIMenuInsights restaurantId={restaurantId} />
 
         {/* AI Customer Insights */}
         <div className="grid lg:grid-cols-2 gap-6">

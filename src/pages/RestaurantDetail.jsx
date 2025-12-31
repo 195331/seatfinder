@@ -35,6 +35,7 @@ import SocialShare from "@/components/customer/SocialShare";
 import RecurringReservationForm from "@/components/customer/RecurringReservationForm";
 import CustomerSupportBot from "@/components/ai/CustomerSupportBot";
 import VibeDial from "@/components/restaurant/VibeDial";
+import AIOrderRecommendations from "@/components/ai/AIOrderRecommendations";
 import moment from 'moment';
 import { cn } from "@/lib/utils";
 
@@ -886,6 +887,15 @@ export default function RestaurantDetail() {
           </TabsContent>
 
           <TabsContent value="menu" className="mt-6 space-y-6">
+            {/* AI Personalized Recommendations */}
+            {currentUser && menuItems.length > 0 && (
+              <AIOrderRecommendations
+                restaurantId={restaurantId}
+                currentUser={currentUser}
+                menuItems={menuItems}
+              />
+            )}
+
             {/* AI-Generated Menu Highlights */}
             {menuItems.length > 0 && (
               <MenuHighlights
