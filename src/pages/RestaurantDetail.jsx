@@ -34,6 +34,7 @@ import PreOrderCart from "@/components/customer/PreOrderCart";
 import SocialShare from "@/components/customer/SocialShare";
 import RecurringReservationForm from "@/components/customer/RecurringReservationForm";
 import CustomerSupportBot from "@/components/ai/CustomerSupportBot";
+import VibeDial from "@/components/restaurant/VibeDial";
 import moment from 'moment';
 import { cn } from "@/lib/utils";
 
@@ -721,15 +722,10 @@ export default function RestaurantDetail() {
             </Card>
 
             {/* Vibe Dial */}
-            {vibeData && (
+            {reviews.length > 0 && (
               <Card className="border-0 shadow-lg">
                 <CardContent className="p-6 flex items-center justify-center">
-                  <VibeDial 
-                    score={vibeData.score}
-                    reviewCount={vibeData.reviewCount}
-                    recentScore={vibeData.recentScore}
-                    recentReviewCount={vibeData.recentReviewCount}
-                  />
+                  <VibeDial reviews={reviews} />
                 </CardContent>
               </Card>
             )}
