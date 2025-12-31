@@ -28,6 +28,7 @@ import DiscoverSection from '@/components/customer/DiscoverSection';
 import PersonalizedRecommendations from '@/components/customer/PersonalizedRecommendations';
 import AIConcierge from '@/components/ai/AIConcierge';
 import AICollections from '@/components/home/AICollections';
+import Leaderboard from '@/components/social/Leaderboard';
 import { getIsVerifiedLive, getIsStale } from '@/components/ui/FreshnessIndicator';
 import { Switch } from "@/components/ui/switch";
 
@@ -700,6 +701,9 @@ export default function Home() {
                   userLocation={userLocation}
                   onRestaurantClick={handleRestaurantClick}
                 />
+                <div className="mt-12">
+                  <Leaderboard currentUser={currentUser} />
+                </div>
                 <div className="mt-12">
                   <DiscoverSection
                     currentUser={currentUser}

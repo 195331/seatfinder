@@ -36,6 +36,7 @@ import RecurringReservationForm from "@/components/customer/RecurringReservation
 import CustomerSupportBot from "@/components/ai/CustomerSupportBot";
 import VibeDial from "@/components/restaurant/VibeDial";
 import AIOrderRecommendations from "@/components/ai/AIOrderRecommendations";
+import ReviewComments from "@/components/social/ReviewComments";
 import moment from 'moment';
 import { cn } from "@/lib/utils";
 
@@ -1164,6 +1165,7 @@ export default function RestaurantDetail() {
                         </div>
                       )}
                       <p className="text-slate-400 text-xs">{moment(review.created_date).fromNow()}</p>
+                      <ReviewComments reviewId={review.id} currentUser={currentUser} />
                     </div>
                   ))
                 )}

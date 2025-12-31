@@ -63,6 +63,7 @@ import AIStaffScheduler from "@/components/ai/AIStaffScheduler";
 import InventoryManager from "@/components/owner/InventoryManager";
 import AIInventoryInsights from "@/components/ai/AIInventoryInsights";
 import CustomerProfileManager from "@/components/owner/CustomerProfileManager";
+import AITableOptimizer from "@/components/ai/AITableOptimizer";
 
 /**
  * Normalize anything into an array (prevents undefined.map crashes)
@@ -748,6 +749,8 @@ export default function OwnerDashboard() {
                 >
                   <div className="space-y-6">
                     <OwnerAI restaurant={currentRestaurant} />
+
+                    <AITableOptimizer restaurantId={selectedRestaurantId} />
 
                     <div className="grid lg:grid-cols-2 gap-6">
                       <OccupancyForecaster restaurantId={selectedRestaurantId} />
