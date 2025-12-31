@@ -1,101 +1,125 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Badge } from "@/components/ui/badge";
+import moment from 'moment';
 
 const getVibeLabel = (score) => {
-  if (score < 2) return 'Cozy';
-  if (score < 3) return 'Chill';
-  if (score < 4) return 'Lively';
-  if (score < 4.5) return 'Energetic';
-  return 'Electric';
+  if (score >= 4.5) return 'Energetic';
+  if (score >= 3.5) return 'Lively';
+  if (score >= 2.5) return 'Balanced';
+  if (score >= 1.5) return 'Chill';
+  return 'Cozy';
 };
 
-const getVibeColor = (score) => {
-  if (score < 2) return '#6366f1'; // Indigo
-  if (score < 3) return '#3b82f6'; // Blue
-  if (score < 4) return '#10b981'; // Green
-  if (score < 4.5) return '#f59e0b'; // Amber
-  return '#ec4899'; // Pink
+const getConfidenceLevel = (reviewCount) => {
+  if (reviewCount >= 25) return { level: 'High', color: 'text-emerald-600' };
+  if (reviewCount >= 10) return { level: 'Medium', color: 'text-amber-600' };
+  return { level: 'Low', color: 'text-slate-600' };
 };
 
-export default function VibeBar({ score = 0, reviewCount = 0, compact = false }) {
-  const [animatedScore, setAnimatedScore] = useState(0);
+export default function VibeBar({ reviews = [], className = '' }) {
+  const [isVisible, setIsVisible] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
-  const vibeLabel = getVibeLabel(score);
-  const vibeColor = getVibeColor(score);
-  const percentage = (score / 5) * 100;
-
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setAnimatedScore(score);
-    }, 100);
-    return () => clearTimeout(timer);
-  }, [score]);
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+        }
+      },
+      { threshold: 0.1 }
+    );
 
-  if (reviewCount === 0) return null;
+    const element = document.getElementById(`vibe-bar-${reviews[0]?.restaurant_id}`);
+    if (element) observer.observe(element);
+
+    return () => observer.disconnect();
+  }, [reviews]);
+
+  const vibeReviews = reviews.filter(r => r.vibe_rating);
+  const avgVibe = vibeReviews.length > 0
+    ? vibeReviews.reduce((sum, r) => sum + r.vibe_rating, 0) / vibeReviews.length
+    : 0;
+
+  const vibeLabel = getVibeLabel(avgVibe);
+  const confidence = getConfidenceLevel(vibeReviews.length);
+  const percentage = (avgVibe / 5) * 100;
+
+  const handleClick = () => {
+    if ('vibrate' in navigator) {
+      navigator.vibrate(10);
+    }
+  };
+
+  if (vibeReviews.length === 0) return null;
 
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <button
+        <div
+          id={`vibe-bar-${reviews[0]?.restaurant_id}`}
+          className={cn("cursor-pointer", className)}
+          onClick={handleClick}
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
-          className={cn(
-            "relative flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-slate-200 hover:border-purple-300 transition-all hover:shadow-md group",
-            compact && "px-2 py-1"
-          )}
         >
-          {/* Glow on hover */}
-          <motion.div
-            animate={{ opacity: isHovered ? 0.3 : 0 }}
-            className="absolute inset-0 rounded-full blur-md"
-            style={{ background: vibeColor }}
-          />
-
-          {/* Mini Bar */}
-          <div className={cn("relative w-16 h-1.5 rounded-full bg-gradient-to-r from-indigo-500 via-green-500 via-amber-500 to-pink-500", compact && "w-12")}>
-            <motion.div
-              initial={{ left: 0 }}
-              animate={{ left: `${(animatedScore / 5) * 100}%` }}
-              transition={{ duration: 0.6, ease: "easeOut" }}
-              className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3 h-3 bg-white rounded-full shadow-lg border-2"
-              style={{ borderColor: vibeColor }}
-            />
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-xs font-medium text-slate-700">{vibeLabel}</span>
+            <span className="text-xs text-slate-500">{avgVibe.toFixed(1)}</span>
           </div>
 
-          {/* Label */}
-          <span className={cn("text-xs font-semibold whitespace-nowrap", compact && "text-[10px]")} style={{ color: vibeColor }}>
-            {vibeLabel} {score.toFixed(1)}
-          </span>
-        </button>
-      </PopoverTrigger>
+          <div className="relative">
+            {/* Glow effect on hover */}
+            {isHovered && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="absolute inset-0 rounded-full blur-md bg-gradient-to-r from-teal-400 via-purple-400 to-orange-400 opacity-30"
+              />
+            )}
 
-      <PopoverContent className="w-64 p-4" align="start">
+            {/* Gradient bar background */}
+            <div className="relative h-2 w-full rounded-full bg-gradient-to-r from-emerald-200 via-purple-200 to-orange-200 overflow-hidden">
+              {/* Position indicator */}
+              <motion.div
+                className="absolute top-0 bottom-0 w-3 rounded-full bg-gradient-to-r from-emerald-600 via-purple-600 to-orange-600 shadow-lg"
+                initial={{ left: '0%' }}
+                animate={{ left: isVisible ? `calc(${percentage}% - 6px)` : '0%' }}
+                transition={{ duration: 0.8, ease: "easeOut", delay: 0.1 }}
+              />
+            </div>
+          </div>
+
+          <p className="text-xs text-slate-400 mt-1">
+            {vibeReviews.length} reviews
+          </p>
+        </div>
+      </PopoverTrigger>
+      <PopoverContent className="w-64" align="start">
         <div className="space-y-3">
           <div>
-            <p className="text-xs text-slate-500 mb-1">Ambience</p>
-            <p className="text-2xl font-bold text-slate-900">{score.toFixed(1)}</p>
-            <p className="text-sm font-semibold" style={{ color: vibeColor }}>
-              {vibeLabel}
-            </p>
+            <h4 className="font-semibold text-slate-900 mb-1">Ambience</h4>
+            <div className="flex items-center justify-between">
+              <span className="text-2xl font-bold text-slate-900">
+                {avgVibe.toFixed(1)} / 5
+              </span>
+              <Badge className={confidence.color}>
+                {confidence.level}
+              </Badge>
+            </div>
+            <p className="text-sm text-slate-600 mt-1">{vibeLabel} atmosphere</p>
           </div>
 
-          <div className="h-2 rounded-full bg-gradient-to-r from-indigo-500 via-green-500 via-amber-500 to-pink-500 relative">
-            <div
-              className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-4 bg-white rounded-full shadow-lg border-2"
-              style={{ left: `${percentage}%`, borderColor: vibeColor }}
-            />
+          <div className="text-xs text-slate-500 pt-2 border-t">
+            Based on {vibeReviews.length} reviews with vibe ratings
           </div>
-
-          <div className="flex justify-between text-xs text-slate-500">
-            <span>Cozy</span>
-            <span>Energetic</span>
-          </div>
-
-          <p className="text-xs text-slate-500">Based on {reviewCount} reviews</p>
         </div>
       </PopoverContent>
     </Popover>

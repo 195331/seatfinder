@@ -126,6 +126,23 @@ export default function Home() {
     refetchInterval: 30000, // Refresh every 30 seconds for live availability
   });
 
+  // Fetch reviews for vibe meter
+  const { data: allReviews = [] } = useQuery({
+    queryKey: ['cityReviews', selectedCity?.id],
+    queryFn: async () => {
+      if (!selectedCity?.id) return [];
+      const cityRestaurants = restaurants.map(r => r.id);
+      if (cityRestaurants.length === 0) return [];
+      // Fetch reviews for visible restaurants
+      const reviewPromises = cityRestaurants.slice(0, 20).map(id =>
+        base44.entities.Review.filter({ restaurant_id: id, is_hidden: false }).catch(() => [])
+      );
+      const reviewArrays = await Promise.all(reviewPromises);
+      return reviewArrays.flat();
+    },
+    enabled: !!selectedCity && restaurants.length > 0,
+  });
+
   // Fetch favorites
   const { data: favorites = [] } = useQuery({
     queryKey: ['favorites', currentUser?.id],
@@ -814,6 +831,7 @@ export default function Home() {
                               onClick={handleRestaurantClick}
                               showBestMatch={isBestMatch}
                               distance={restaurant.distance}
+                              reviews={allReviews.filter(r => r.restaurant_id === restaurant.id)}
                             />
                           </motion.div>
                         );

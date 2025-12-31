@@ -53,6 +53,7 @@ import MenuBuilder from "@/components/owner/MenuBuilder";
 import OfferManager from "@/components/owner/OfferManager";
 import AIPersonalizedOffers from "@/components/ai/AIPersonalizedOffers";
 import AIDynamicPricing from "@/components/ai/AIDynamicPricing";
+import AIMenuOptimizer from "@/components/ai/AIMenuOptimizer";
 
 import ShiftModePanel from "@/components/owner/ShiftModePanel";
 import OwnerAI from "@/components/ai/OwnerAI";
@@ -817,6 +818,7 @@ export default function OwnerDashboard() {
 
               <TabsContent value="offers">
                 <div className="space-y-6">
+                  <AIMenuOptimizer restaurantId={selectedRestaurantId} />
                   <div className="grid lg:grid-cols-2 gap-6">
                     <OfferManager restaurantId={selectedRestaurantId} />
                     <AIPersonalizedOffers
