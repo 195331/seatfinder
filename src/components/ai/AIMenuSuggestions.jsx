@@ -12,29 +12,33 @@ export default function AIMenuSuggestions({ restaurantId, cuisine, onAddItem }) 
 
   const generateSuggestionsMutation = useMutation({
     mutationFn: async () => {
-      const prompt = `You are a culinary expert. Suggest 5 popular or trending ${cuisine} dishes that would be excellent additions to a restaurant menu.
+      const prompt = `You are a culinary expert specializing in ${cuisine || 'diverse international'} cuisine. 
+
+CRITICAL: Only suggest dishes that are authentic to ${cuisine || 'the restaurant\'s'} cuisine. Do NOT suggest dishes from other cuisines.
+
+Suggest 5 popular or trending ${cuisine || 'restaurant'} dishes that would be excellent additions to a ${cuisine || 'restaurant'} menu.
 
 For each dish, provide:
-- Name
-- Brief description (1-2 sentences, make it appetizing)
-- Estimated price range
+- Name (authentic ${cuisine} dish name)
+- Brief description (1-2 sentences, make it appetizing and culturally accurate)
+- Estimated price range (appropriate for ${cuisine} cuisine)
 - Category (Appetizers, Mains, Desserts, Drinks)
+
+IMPORTANT: 
+- All dishes MUST be from ${cuisine} cuisine
+- Use authentic ingredient combinations
+- Reflect traditional or modern ${cuisine} cooking styles
+- Consider seasonal and popular ${cuisine} dishes
 
 Format as JSON array with structure:
 [
   {
-    "name": "Dish Name",
-    "description": "Appetizing description",
+    "name": "Authentic Dish Name",
+    "description": "Appetizing culturally-accurate description",
     "price": 18.99,
     "category": "Mains"
   }
-]
-
-Focus on dishes that are:
-- Popular and trendy
-- Well-suited to ${cuisine} cuisine
-- Appealing to a broad audience
-- Realistic for restaurant preparation`;
+]`;
 
       const result = await base44.integrations.Core.InvokeLLM({
         prompt,
