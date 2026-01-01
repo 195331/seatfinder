@@ -64,6 +64,8 @@ import InventoryManager from "@/components/owner/InventoryManager";
 import AIInventoryInsights from "@/components/ai/AIInventoryInsights";
 import CustomerProfileManager from "@/components/owner/CustomerProfileManager";
 import AITableOptimizer from "@/components/ai/AITableOptimizer";
+import AICustomerInsights from "@/components/analytics/AICustomerInsights";
+import AIMenuSuggestions from "@/components/ai/AIMenuSuggestions";
 
 /**
  * Normalize anything into an array (prevents undefined.map crashes)
@@ -752,6 +754,8 @@ export default function OwnerDashboard() {
 
                     <AITableOptimizer restaurantId={selectedRestaurantId} />
 
+                    <AICustomerInsights restaurantId={selectedRestaurantId} />
+
                     <div className="grid lg:grid-cols-2 gap-6">
                       <OccupancyForecaster restaurantId={selectedRestaurantId} />
                       <AIRecommendations restaurantId={selectedRestaurantId} restaurant={currentRestaurant} />
@@ -801,7 +805,17 @@ export default function OwnerDashboard() {
                   title="Menu Management"
                   description="Create and manage your restaurant's menu with categories, items, and dietary info."
                 >
-                  <MenuBuilder restaurantId={selectedRestaurantId} />
+                  <div className="space-y-6">
+                    <AIMenuSuggestions
+                      restaurantId={selectedRestaurantId}
+                      cuisine={currentRestaurant?.cuisine}
+                      onAddItem={(item) => {
+                        // Add via MenuBuilder
+                        queryClient.invalidateQueries(['menuItems']);
+                      }}
+                    />
+                    <MenuBuilder restaurantId={selectedRestaurantId} />
+                  </div>
                 </FeatureGate>
               </TabsContent>
 

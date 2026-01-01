@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import FollowButton from '@/components/social/FollowButton';
+import AchievementBadges from '@/components/social/AchievementBadges';
 import moment from 'moment';
 
 export default function UserProfile() {
@@ -141,6 +142,10 @@ export default function UserProfile() {
                 </div>
               </div>
             )}
+
+            <div className="mt-6">
+              <AchievementBadges userId={userId} variant="full" />
+            </div>
           </CardContent>
         </Card>
 

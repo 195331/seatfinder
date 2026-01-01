@@ -29,6 +29,7 @@ import PersonalizedRecommendations from '@/components/customer/PersonalizedRecom
 import AIConcierge from '@/components/ai/AIConcierge';
 import AICollections from '@/components/home/AICollections';
 import Leaderboard from '@/components/social/Leaderboard';
+import MoodBoardCreator from '@/components/social/MoodBoardCreator';
 import { getIsVerifiedLive, getIsStale } from '@/components/ui/FreshnessIndicator';
 import { Switch } from "@/components/ui/switch";
 
@@ -706,7 +707,13 @@ export default function Home() {
                   userLocation={userLocation}
                   onRestaurantClick={handleRestaurantClick}
                 />
-                <div className="mt-12">
+                <div className="mt-12 flex justify-end">
+                  <MoodBoardCreator
+                    currentUser={currentUser}
+                    allRestaurants={restaurants}
+                  />
+                </div>
+                <div className="mt-6">
                   <Leaderboard currentUser={currentUser} />
                 </div>
                 <div className="mt-12">

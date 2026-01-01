@@ -8,6 +8,7 @@ import { Trophy, Star, Calendar, TrendingUp } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
+import AchievementBadges from '@/components/social/AchievementBadges';
 
 export default function Leaderboard({ currentUser }) {
   const navigate = useNavigate();
@@ -152,6 +153,7 @@ export default function Leaderboard({ currentUser }) {
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
+                    <AchievementBadges userId={reviewer.userId} variant="compact" />
                     <div className="text-right">
                       <p className="font-bold text-slate-900">{reviewer.count}</p>
                       <p className="text-xs text-slate-500">reviews</p>
@@ -187,9 +189,12 @@ export default function Leaderboard({ currentUser }) {
                       )}
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-bold text-slate-900">{diner.count}</p>
-                    <p className="text-xs text-slate-500">reservations</p>
+                  <div className="flex items-center gap-3">
+                    <AchievementBadges userId={diner.userId} variant="compact" />
+                    <div className="text-right">
+                      <p className="font-bold text-slate-900">{diner.count}</p>
+                      <p className="text-xs text-slate-500">reservations</p>
+                    </div>
                   </div>
                 </div>
               ))}
