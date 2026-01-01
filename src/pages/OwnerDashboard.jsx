@@ -66,6 +66,7 @@ import CustomerProfileManager from "@/components/owner/CustomerProfileManager";
 import AITableOptimizer from "@/components/ai/AITableOptimizer";
 import AICustomerInsights from "@/components/analytics/AICustomerInsights";
 import AIMenuSuggestions from "@/components/ai/AIMenuSuggestions";
+import OwnerMessages from "@/components/messaging/OwnerMessages";
 
 /**
  * Normalize anything into an array (prevents undefined.map crashes)
@@ -654,6 +655,13 @@ export default function OwnerDashboard() {
                   </svg>
                   Customers
                 </TabsTrigger>
+
+                <TabsTrigger value="messages" className="rounded-full gap-1.5">
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                  </svg>
+                  Messages
+                </TabsTrigger>
               </TabsList>
 
               <TabsContent value="seating">
@@ -861,6 +869,10 @@ export default function OwnerDashboard() {
 
               <TabsContent value="customers">
                 <CustomerProfileManager restaurantId={selectedRestaurantId} />
+              </TabsContent>
+
+              <TabsContent value="messages">
+                <OwnerMessages restaurantId={selectedRestaurantId} />
               </TabsContent>
             </Tabs>
           </>

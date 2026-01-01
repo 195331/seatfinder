@@ -30,6 +30,7 @@ import AIConcierge from '@/components/ai/AIConcierge';
 import AICollections from '@/components/home/AICollections';
 import Leaderboard from '@/components/social/Leaderboard';
 import MoodBoardCreator from '@/components/social/MoodBoardCreator';
+import SmartFilters from '@/components/customer/SmartFilters';
 import { getIsVerifiedLive, getIsStale } from '@/components/ui/FreshnessIndicator';
 import { Switch } from "@/components/ui/switch";
 
@@ -731,6 +732,15 @@ export default function Home() {
             {/* All Restaurants View */}
             {exploreView === 'all' && (
               <>
+                {/* Smart Filters */}
+                <SmartFilters
+                  restaurants={restaurants}
+                  onFilteredResults={(filtered) => {
+                    // You can set filtered results to state if needed
+                  }}
+                  currentUser={currentUser}
+                />
+
                 {/* Premium AI Card */}
                 {currentUser && (
                   <motion.div

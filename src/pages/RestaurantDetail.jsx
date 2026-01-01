@@ -37,6 +37,8 @@ import CustomerSupportBot from "@/components/ai/CustomerSupportBot";
 import VibeDial from "@/components/restaurant/VibeDial";
 import AIOrderRecommendations from "@/components/ai/AIOrderRecommendations";
 import ReviewComments from "@/components/social/ReviewComments";
+import AIReviewSummary from "@/components/restaurant/AIReviewSummary";
+import RestaurantChat from "@/components/messaging/RestaurantChat";
 import moment from 'moment';
 import { cn } from "@/lib/utils";
 
@@ -732,6 +734,16 @@ export default function RestaurantDetail() {
               </Card>
             )}
 
+            {/* Message Restaurant */}
+            <Card className="border-0 shadow-lg">
+              <CardContent className="p-6">
+                <RestaurantChat 
+                  restaurant={restaurant} 
+                  currentUser={currentUser}
+                />
+              </CardContent>
+            </Card>
+
             {/* Quick Actions */}
             <div className="grid grid-cols-3 gap-3">
               <a 
@@ -990,6 +1002,8 @@ export default function RestaurantDetail() {
 
           <TabsContent value="reviews" className="mt-6 space-y-6">
             {/* AI Review Summary */}
+            <AIReviewSummary restaurantId={restaurantId} />
+            
             <ReviewSummary reviews={reviews} restaurantName={restaurant.name} />
 
             {/* Photo Gallery */}
