@@ -162,10 +162,15 @@ export default function Home() {
       }
       const existingFav = favorites.find(f => f.restaurant_id === restaurant.id);
       if (existingFav) {
-        await base44.entities.Favorite.delete(existingFav.id);
-        await base44.entities.Restaurant.update(restaurant.id, {
-          favorite_count: Math.max(0, (restaurant.favorite_count || 1) - 1)
-        });
+        try {
+          await base44.entities.Favorite.delete(existingFav.id);
+          await base44.entities.Restaurant.update(restaurant.id, {
+            favorite_count: Math.max(0, (restaurant.favorite_count || 1) - 1)
+          });
+        } catch (error) {
+          // Favorite might already be deleted, just refresh the list
+          console.log('Favorite already removed');
+        }
       } else {
         await base44.entities.Favorite.create({
           user_id: currentUser.id,
