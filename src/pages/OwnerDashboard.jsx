@@ -67,6 +67,7 @@ import AITableOptimizer from "@/components/ai/AITableOptimizer";
 import AICustomerInsights from "@/components/analytics/AICustomerInsights";
 import AIMenuSuggestions from "@/components/ai/AIMenuSuggestions";
 import OwnerMessages from "@/components/messaging/OwnerMessages";
+import MenuOptimizationEngine from "@/components/ai/MenuOptimizationEngine";
 
 /**
  * Normalize anything into an array (prevents undefined.map crashes)
@@ -814,6 +815,10 @@ export default function OwnerDashboard() {
                   description="Create and manage your restaurant's menu with categories, items, and dietary info."
                 >
                   <div className="space-y-6">
+                    <MenuOptimizationEngine
+                      restaurantId={selectedRestaurantId}
+                      cuisine={currentRestaurant?.cuisine}
+                    />
                     <AIMenuSuggestions
                       restaurantId={selectedRestaurantId}
                       cuisine={currentRestaurant?.cuisine}
