@@ -6,11 +6,11 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import {
   MousePointer2, Square, Circle as CircleIcon, Type, Pencil, 
   ZoomIn, ZoomOut, Maximize2, Sparkles, Trash2, Copy, Lock, 
-  Unlock, Eye, EyeOff, Layers, Grid3x3, AlertTriangle, CheckCircle,
+  Unlock, Eye, EyeOff, Layers, AlertTriangle, CheckCircle,
   Loader2, Undo, Redo, RotateCw, Home
 } from 'lucide-react';
 import { toast } from 'sonner';
