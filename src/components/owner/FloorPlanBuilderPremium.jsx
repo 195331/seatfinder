@@ -203,18 +203,18 @@ export default function FloorPlanBuilderPremium({ restaurant, onPublish }) {
   );
 
   // Fetch real-time table status
-  const { data: liveTablesRaw } = useQuery({
+  const { data: liveTables = [] } = useQuery({
     queryKey: ['liveTables', restaurant?.id],
     queryFn: () => base44.entities.Table.filter({ restaurant_id: restaurant.id }),
     enabled: !!restaurant?.id && showTableStatus,
     refetchInterval: 15000 // Refresh every 15 seconds
   });
-  const liveTables = useMemo(() => norm(liveTablesRaw), [liveTablesRaw]);
   
   // Build status map by floorplan_item_id
   const tableStatusMap = useMemo(() => {
     const map = {};
-    for (const t of liveTables) {
+    const tables = Array.isArray(liveTables) ? liveTables : [];
+    for (const t of tables) {
       if (t?.floorplan_item_id) {
         map[t.floorplan_item_id] = t.status;
       }
