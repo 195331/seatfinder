@@ -595,10 +595,18 @@ Provide JSON with these suggestions:
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    const prevent = (e) => e.preventDefault();
+    const prevent = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      return false;
+    };
     // prevent browser context menu within this component
-    el.addEventListener("contextmenu", prevent);
-    return () => el.removeEventListener("contextmenu", prevent);
+    el.addEventListener("contextmenu", prevent, { capture: true });
+    document.addEventListener("contextmenu", prevent, { capture: true });
+    return () => {
+      el.removeEventListener("contextmenu", prevent, { capture: true });
+      document.removeEventListener("contextmenu", prevent, { capture: true });
+    };
   }, []);
 
   function openContextMenuAt(stagePos, targetId = null) {
@@ -609,7 +617,10 @@ Provide JSON with these suggestions:
   }
 
   function openContextMenuFromEvent(e, targetId = null) {
-    e?.evt?.preventDefault?.();
+    if (e?.evt) {
+      e.evt.preventDefault();
+      e.evt.stopPropagation();
+    }
     const st = stageRef.current;
     const pos = st?.getPointerPosition();
     if (!pos) return;
@@ -1224,8 +1235,11 @@ Provide JSON with these suggestions:
             onMouseDown={onStageMouseDown}
             onMouseMove={onStageMouseMove}
             onMouseUp={onStageMouseUp}
-            // IMPORTANT: this is what makes your menu work instead of browser menu
-            onContextMenu={(e) => openContextMenuFromEvent(e, null)}
+            onContextMenu={(e) => {
+              e.evt.preventDefault();
+              e.evt.stopPropagation();
+              openContextMenuFromEvent(e, null);
+            }}
           >
             <Layer>
               {/* Grid */}

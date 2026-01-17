@@ -40,6 +40,8 @@ export default function FloorPlanViewPremium({
 
   // Handle new floor plan structure with rooms
   const rooms = floorPlanData?.rooms || {};
+  const hasFloorPlan = Object.keys(rooms).length > 0 && floorPlanData?.publishedAt;
+  
   const allTables = Object.values(rooms).flatMap(room => 
     (room.items || []).filter(it => it.type === 'table')
   );
@@ -111,6 +113,20 @@ export default function FloorPlanViewPremium({
   const availableCount = floorPlanTables.filter(t => t.status === 'free').length;
   const reservedCount = floorPlanTables.filter(t => t.status === 'reserved').length;
   const occupiedCount = floorPlanTables.filter(t => t.status === 'occupied').length;
+
+  if (!hasFloorPlan) {
+    return (
+      <div className="text-center py-16">
+        <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg className="w-8 h-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1v-3zM14 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1h-4a1 1 0 01-1-1v-3z" />
+          </svg>
+        </div>
+        <h3 className="text-lg font-semibold text-slate-900 mb-2">This restaurant hasn't set up their floor plan yet</h3>
+        <p className="text-slate-600">Try joining the waitlist instead</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
