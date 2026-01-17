@@ -1,936 +1,1095 @@
-import React, { useRef, useState, useEffect, useMemo } from 'react';
-import { Stage, Layer, Rect, Circle, Text, Line, Group, Transformer } from 'react-konva';
-import { base44 } from '@/api/base44Client';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Stage, Layer, Rect, Circle, Line, Group, Text, Transformer } from "react-konva";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-
-import {
-  MousePointer2, Square, Circle as CircleIcon, Type, Pencil, 
-  ZoomIn, ZoomOut, Maximize2, Sparkles, Trash2, Copy, Lock, 
-  Unlock, Eye, EyeOff, Layers, AlertTriangle, CheckCircle,
-  Loader2, Undo, Redo, RotateCw, Home
-} from 'lucide-react';
-import { toast } from 'sonner';
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
-const CANVAS_W = 2000;
-const CANVAS_H = 1400;
-const GRID_SIZE = 40;
+const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+const uid = () => `${Date.now()}_${Math.random().toString(16).slice(2)}`;
 
-const LAYERS_CONFIG = [
-  { id: 'main', name: 'Main Dining', color: '#3b82f6' },
-  { id: 'roof', name: 'Rooftop', color: '#10b981' },
-  { id: 'lounge', name: 'Lounge', color: '#f59e0b' }
+// Mild futuristic palette
+const COLORS = {
+  bg: "#0B1220",
+  panel: "rgba(255,255,255,0.06)",
+  panelBorder: "rgba(255,255,255,0.10)",
+  grid: "rgba(255,255,255,0.06)",
+  outline: "rgba(168, 85, 247, 0.55)",
+  outlineFill: "rgba(168, 85, 247, 0.08)",
+  wall: "rgba(255,255,255,0.55)",
+  wallGlow: "rgba(34,211,238,0.35)",
+  selected: "#22D3EE",
+  tableFree: "#111827",
+  tableStroke: "rgba(255,255,255,0.22)",
+  tableText: "rgba(255,255,255,0.92)",
+  seatChip: "rgba(34,211,238,0.12)",
+  seatChipStroke: "rgba(34,211,238,0.45)",
+};
+
+const DEFAULT_TABLE_SIZES = [
+  { seats: 2, w: 64, h: 64, shape: "round" },
+  { seats: 4, w: 76, h: 76, shape: "round" },
+  { seats: 6, w: 92, h: 72, shape: "rect" },
+  { seats: 8, w: 110, h: 76, shape: "rect" },
+  { seats: 10, w: 130, h: 80, shape: "rect" },
 ];
 
-const TABLE_SHAPES = [
-  { id: 'round', label: 'Round', icon: CircleIcon, seats: 4 },
-  { id: 'square', label: 'Square', icon: Square, seats: 4 },
-  { id: 'rectangle', label: 'Rectangle', icon: Square, seats: 6 },
-  { id: 'booth', label: 'Booth', icon: Square, seats: 6 }
-];
-
-export default function FloorPlanBuilderPremium({ restaurant, onPublish }) {
-  const stageRef = useRef(null);
-  const transformerRef = useRef(null);
-  const layerRefs = useRef({});
-
-  const [tool, setTool] = useState('select');
-  const [activeLayer, setActiveLayer] = useState('main');
-  const [layerVisibility, setLayerVisibility] = useState({ main: true, roof: true, lounge: true });
-  
-  const [objects, setObjects] = useState([]);
-  const [selectedIds, setSelectedIds] = useState([]);
-  const [history, setHistory] = useState([]);
-  const [historyIndex, setHistoryIndex] = useState(-1);
-  
-  const [zoom, setZoom] = useState(0.5);
-  const [stagePos, setStagePos] = useState({ x: 20, y: 20 });
-  const [showGrid, setShowGrid] = useState(true);
-  const [snapToGrid, setSnapToGrid] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
-  
-  const [drawingWall, setDrawingWall] = useState(null);
-  const [aiModal, setAiModal] = useState({ open: false, prompt: '', targetIds: [] });
-  const [contextMenu, setContextMenu] = useState({ show: false, x: 0, y: 0, targetId: null });
-  const [isSaving, setIsSaving] = useState(false);
-  const [overlaps, setOverlaps] = useState([]);
-
-  // Load existing floor plan
-  useEffect(() => {
-    if (!restaurant?.floor_plan_data?.objects) return;
-    const loaded = restaurant.floor_plan_data.objects || [];
-    setObjects(loaded);
-    pushToHistory(loaded);
-  }, [restaurant?.id]);
-
-  // Fit to content on load
-  useEffect(() => {
-    if (objects.length > 0 && stageRef.current) {
-      fitToContent();
-    }
-  }, [objects.length > 0]);
-
-  const pushToHistory = (newObjects) => {
-    setHistory(prev => {
-      const trimmed = prev.slice(0, historyIndex + 1);
-      return [...trimmed, JSON.parse(JSON.stringify(newObjects))];
-    });
-    setHistoryIndex(prev => prev + 1);
-  };
-
-  const undo = () => {
-    if (historyIndex <= 0) return;
-    setObjects(history[historyIndex - 1]);
-    setHistoryIndex(prev => prev - 1);
-    setSelectedIds([]);
-  };
-
-  const redo = () => {
-    if (historyIndex >= history.length - 1) return;
-    setObjects(history[historyIndex + 1]);
-    setHistoryIndex(prev => prev + 1);
-    setSelectedIds([]);
-  };
-
-  const fitToContent = () => {
-    if (!stageRef.current || objects.length === 0) {
-      setZoom(0.5);
-      setStagePos({ x: 20, y: 20 });
-      return;
-    }
-
-    const tables = objects.filter(o => o.type === 'table');
-    if (tables.length === 0) return;
-
-    const xs = tables.map(t => t.x);
-    const ys = tables.map(t => t.y);
-    const minX = Math.min(...xs) - 100;
-    const minY = Math.min(...ys) - 100;
-    const maxX = Math.max(...xs.map((x, i) => x + (tables[i].width || 80))) + 100;
-    const maxY = Math.max(...ys.map((y, i) => y + (tables[i].height || 80))) + 100;
-
-    const contentW = maxX - minX;
-    const contentH = maxY - minY;
-    const stage = stageRef.current;
-    const containerW = stage.width();
-    const containerH = stage.height();
-
-    const scaleX = containerW / contentW;
-    const scaleY = containerH / contentH;
-    const newZoom = Math.min(scaleX, scaleY, 1) * 0.9;
-
-    setZoom(newZoom);
-    setStagePos({
-      x: (containerW - contentW * newZoom) / 2 - minX * newZoom,
-      y: (containerH - contentH * newZoom) / 2 - minY * newZoom
-    });
-  };
-
-  const handleWheel = (e) => {
-    e.evt.preventDefault();
-    const stage = stageRef.current;
-    const oldScale = zoom;
-    const pointer = stage.getPointerPosition();
-    
-    const mousePointTo = {
-      x: (pointer.x - stagePos.x) / oldScale,
-      y: (pointer.y - stagePos.y) / oldScale
-    };
-
-    const newScale = e.evt.deltaY > 0 ? oldScale * 0.9 : oldScale * 1.1;
-    const clampedScale = Math.max(0.1, Math.min(3, newScale));
-
-    setZoom(clampedScale);
-    setStagePos({
-      x: pointer.x - mousePointTo.x * clampedScale,
-      y: pointer.y - mousePointTo.y * clampedScale
-    });
-  };
-
-  const snapToGridValue = (value) => {
-    if (!snapToGrid) return value;
-    return Math.round(value / GRID_SIZE) * GRID_SIZE;
-  };
-
-  const addTable = (shape) => {
-    const newTable = {
-      id: `table_${Date.now()}`,
-      type: 'table',
-      layer: activeLayer,
-      shape,
-      x: snapToGridValue(400),
-      y: snapToGridValue(300),
-      width: shape === 'rectangle' || shape === 'booth' ? 120 : 80,
-      height: shape === 'booth' ? 100 : 80,
-      rotation: 0,
-      seats: shape === 'round' || shape === 'square' ? 4 : 6,
-      label: `T${objects.filter(o => o.type === 'table').length + 1}`,
-      locked: false,
-      fill: '#ffffff',
-      stroke: '#cbd5e1'
-    };
-    const updated = [...objects, newTable];
-    setObjects(updated);
-    pushToHistory(updated);
-    setSelectedIds([newTable.id]);
-  };
-
-  const addText = () => {
-    const newText = {
-      id: `text_${Date.now()}`,
-      type: 'text',
-      layer: activeLayer,
-      x: snapToGridValue(400),
-      y: snapToGridValue(300),
-      text: 'Label',
-      fontSize: 18,
-      fill: '#111827',
-      locked: false,
-      pointerEvents: false
-    };
-    const updated = [...objects, newText];
-    setObjects(updated);
-    pushToHistory(updated);
-    setSelectedIds([newText.id]);
-  };
-
-  const handleStageClick = (e) => {
-    if (e.target === e.target.getStage()) {
-      setSelectedIds([]);
-      setContextMenu({ show: false, x: 0, y: 0, targetId: null });
-    }
-  };
-
-  const handleObjectClick = (e, id) => {
-    if (tool !== 'select') return;
-    
-    const isMultiSelect = e.evt.shiftKey || e.evt.ctrlKey || e.evt.metaKey;
-    if (isMultiSelect) {
-      setSelectedIds(prev => 
-        prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
-      );
-    } else {
-      setSelectedIds([id]);
-    }
-  };
-
-  const handleDragEnd = (id) => {
-    const obj = objects.find(o => o.id === id);
-    if (obj && snapToGrid) {
-      const updated = objects.map(o => 
-        o.id === id ? { ...o, x: snapToGridValue(o.x), y: snapToGridValue(o.y) } : o
-      );
-      setObjects(updated);
-    }
-    pushToHistory(objects);
-  };
-
-  const handleTransformEnd = (id) => {
-    const node = layerRefs.current[id];
-    if (!node) return;
-
-    const scaleX = node.scaleX();
-    const scaleY = node.scaleY();
-
-    const updated = objects.map(obj => {
-      if (obj.id !== id) return obj;
-      return {
-        ...obj,
-        x: node.x(),
-        y: node.y(),
-        rotation: node.rotation(),
-        width: obj.type === 'table' ? Math.max(60, obj.width * scaleX) : obj.width,
-        height: obj.type === 'table' ? Math.max(60, obj.height * scaleY) : obj.height
-      };
-    });
-
-    setObjects(updated);
-    node.scaleX(1);
-    node.scaleY(1);
-    pushToHistory(updated);
-  };
-
-  const updateTransformer = () => {
-    if (!transformerRef.current) return;
-    const nodes = selectedIds
-      .map(id => layerRefs.current[id])
-      .filter(Boolean)
-      .filter(node => !objects.find(o => o.id === node.attrs.id && o.locked));
-    
-    transformerRef.current.nodes(nodes);
-    transformerRef.current.getLayer()?.batchDraw();
-  };
-
-  useEffect(() => {
-    updateTransformer();
-  }, [selectedIds, objects]);
-
-  const deleteSelected = () => {
-    const updated = objects.filter(o => !selectedIds.includes(o.id));
-    setObjects(updated);
-    pushToHistory(updated);
-    setSelectedIds([]);
-  };
-
-  const duplicateSelected = () => {
-    const toDuplicate = objects.filter(o => selectedIds.includes(o.id));
-    const duplicated = toDuplicate.map(obj => ({
-      ...obj,
-      id: `${obj.type}_${Date.now()}_${Math.random()}`,
-      x: obj.x + 40,
-      y: obj.y + 40,
-      label: obj.type === 'table' ? `${obj.label}-copy` : obj.label
-    }));
-    const updated = [...objects, ...duplicated];
-    setObjects(updated);
-    pushToHistory(updated);
-    setSelectedIds(duplicated.map(d => d.id));
-  };
-
-  const toggleLock = () => {
-    const updated = objects.map(o => 
-      selectedIds.includes(o.id) ? { ...o, locked: !o.locked } : o
-    );
-    setObjects(updated);
-    pushToHistory(updated);
-  };
-
-  const bringToFront = () => {
-    const selected = objects.filter(o => selectedIds.includes(o.id));
-    const rest = objects.filter(o => !selectedIds.includes(o.id));
-    const updated = [...rest, ...selected];
-    setObjects(updated);
-    pushToHistory(updated);
-  };
-
-  const sendToBack = () => {
-    const selected = objects.filter(o => selectedIds.includes(o.id));
-    const rest = objects.filter(o => !selectedIds.includes(o.id));
-    const updated = [...selected, ...rest];
-    setObjects(updated);
-    pushToHistory(updated);
-  };
-
-  const handleContextMenu = (e) => {
-    e.evt.preventDefault();
-    const stage = stageRef.current;
-    const pos = stage.getPointerPosition();
-    
-    setContextMenu({
-      show: true,
-      x: e.evt.clientX,
-      y: e.evt.clientY,
-      targetId: e.target.attrs.id || null
-    });
-  };
-
-  const checkOverlaps = () => {
-    const tables = objects.filter(o => o.type === 'table' && layerVisibility[o.layer]);
-    const found = [];
-    
-    for (let i = 0; i < tables.length; i++) {
-      for (let j = i + 1; j < tables.length; j++) {
-        const a = tables[i];
-        const b = tables[j];
-        if (a.layer !== b.layer) continue;
-        
-        const aBox = { x: a.x, y: a.y, w: a.width || 80, h: a.height || 80 };
-        const bBox = { x: b.x, y: b.y, w: b.width || 80, h: b.height || 80 };
-        
-        if (!(aBox.x + aBox.w < bBox.x || aBox.x > bBox.x + bBox.w ||
-              aBox.y + aBox.h < bBox.y || aBox.y > bBox.y + bBox.h)) {
-          found.push([a.id, b.id]);
-        }
-      }
-    }
-    setOverlaps(found);
-    return found;
-  };
-
-  const autoFixOverlaps = () => {
-    const found = checkOverlaps();
-    if (found.length === 0) {
-      toast.success('No overlaps to fix');
-      return;
-    }
-
-    const updated = [...objects];
-    found.forEach(([aId, bId]) => {
-      const bIndex = updated.findIndex(o => o.id === bId);
-      if (bIndex !== -1) {
-        updated[bIndex] = { ...updated[bIndex], y: updated[bIndex].y + 100 };
-      }
-    });
-
-    setObjects(updated);
-    pushToHistory(updated);
-    toast.success(`Fixed ${found.length} overlap(s)`);
-    setOverlaps([]);
-  };
-
-  useEffect(() => {
-    checkOverlaps();
-  }, [objects, layerVisibility]);
-
-  const runAI = async () => {
-    if (!aiModal.prompt.trim()) return;
-    
-    try {
-      const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are a restaurant floor plan assistant. The user says: "${aiModal.prompt}"
-        
-Current objects: ${JSON.stringify(objects.filter(o => aiModal.targetIds.includes(o.id)))}
-
-Return a JSON object with modifications:
-{
-  "action": "align" | "distribute" | "rotate" | "resize",
-  "changes": [{ "id": "...", "x": 0, "y": 0, "rotation": 0, "width": 80, "height": 80 }]
+function snapAngle(dx, dy) {
+  // snap to 0/45/90 degrees
+  const angle = Math.atan2(dy, dx);
+  const step = Math.PI / 4;
+  const snapped = Math.round(angle / step) * step;
+  const len = Math.sqrt(dx * dx + dy * dy);
+  return { dx: Math.cos(snapped) * len, dy: Math.sin(snapped) * len };
 }
 
-Common actions:
-- "align left/right/top/bottom" - align all objects
-- "distribute horizontally/vertically" - space evenly
-- "rotate 45/90 degrees" - rotate objects
-- "make bigger/smaller" - resize objects`,
-        response_json_schema: {
-          type: "object",
-          properties: {
-            action: { type: "string" },
-            changes: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  id: { type: "string" },
-                  x: { type: "number" },
-                  y: { type: "number" },
-                  rotation: { type: "number" },
-                  width: { type: "number" },
-                  height: { type: "number" }
-                }
-              }
-            }
-          }
-        }
-      });
+function getNodeClientRectSafe(node) {
+  try {
+    return node.getClientRect({ skipShadow: true, skipStroke: false });
+  } catch {
+    return null;
+  }
+}
 
-      if (result?.changes) {
-        const updated = objects.map(obj => {
-          const change = result.changes.find(c => c.id === obj.id);
-          return change ? { ...obj, ...change } : obj;
-        });
-        setObjects(updated);
-        pushToHistory(updated);
-        toast.success('AI changes applied');
-      }
-    } catch (err) {
-      toast.error('AI failed');
-    } finally {
-      setAiModal({ open: false, prompt: '', targetIds: [] });
+function intersects(a, b) {
+  if (!a || !b) return false;
+  return !(
+    a.x + a.width < b.x ||
+    a.x > b.x + b.width ||
+    a.y + a.height < b.y ||
+    a.y > b.y + b.height
+  );
+}
+
+export default function FloorPlanBuilderKonvaPremium({
+  restaurant,
+  onPublish,
+}) {
+  // ---------- Canvas sizing ----------
+  const containerRef = useRef(null);
+  const stageRef = useRef(null);
+
+  const [stageSize, setStageSize] = useState({ width: 1200, height: 640 });
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const ro = new ResizeObserver(() => {
+      const r = el.getBoundingClientRect();
+      setStageSize({ width: Math.max(900, r.width), height: Math.max(560, r.height) });
+    });
+
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  // ---------- Viewport / camera ----------
+  const [scale, setScale] = useState(1);
+  const [cam, setCam] = useState({ x: 0, y: 0 });
+  const [showGrid, setShowGrid] = useState(true);
+
+  // ---------- Modes ----------
+  // select | add-table | draw-outline | draw-wall | add-text
+  const [mode, setMode] = useState("select");
+  const [activeSeats, setActiveSeats] = useState(4); // quick add size
+  const [activeShape, setActiveShape] = useState("round");
+
+  // ---------- Floor plan data ----------
+  // We keep everything as "items". Only tables are reservable by diners.
+  const [outline, setOutline] = useState(null); // {x,y,w,h,rotation?} optional
+  const [walls, setWalls] = useState([]); // [{id, points:[x1,y1,x2,y2], locked}]
+  const [tables, setTables] = useState([]); // [{id,x,y,w,h,shape,seats,label,rotation,locked,groupId}]
+  const [notes, setNotes] = useState([]); // background-only text notes (NOT reservable)
+
+  // ---------- Selection / multi-select ----------
+  const [selectedIds, setSelectedIds] = useState([]); // can include table/wall/note ids
+  const [lastPointer, setLastPointer] = useState({ x: 0, y: 0 });
+
+  const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
+
+  const clearSelection = () => setSelectedIds([]);
+  const toggleSelect = (id, additive) => {
+    setSelectedIds((prev) => {
+      const s = new Set(prev);
+      if (!additive) s.clear();
+      if (s.has(id)) s.delete(id);
+      else s.add(id);
+      return Array.from(s);
+    });
+  };
+
+  // ---------- Context menu ----------
+  const [ctxMenu, setCtxMenu] = useState(null);
+  // {x,y,target:{type,id}} relative to container
+
+  const closeCtx = () => setCtxMenu(null);
+
+  // ---------- Transformer ----------
+  const trRef = useRef(null);
+
+  const allSelectableNodes = useRef({}); // id -> konva node
+  const registerNode = (id, node) => {
+    if (!node) return;
+    allSelectableNodes.current[id] = node;
+  };
+
+  useEffect(() => {
+    const tr = trRef.current;
+    const stage = stageRef.current;
+    if (!tr || !stage) return;
+
+    const nodes = selectedIds
+      .map((id) => allSelectableNodes.current[id])
+      .filter(Boolean);
+
+    tr.nodes(nodes);
+    tr.getLayer()?.batchDraw();
+  }, [selectedIds, tables, walls, notes]);
+
+  // ---------- Load existing (optional) ----------
+  useEffect(() => {
+    const fp = restaurant?.floor_plan_data;
+    if (!fp) return;
+
+    // Defensive parsing
+    setOutline(fp.outline || null);
+    setWalls(Array.isArray(fp.walls) ? fp.walls : []);
+    setTables(Array.isArray(fp.tables) ? fp.tables : []);
+    setNotes(Array.isArray(fp.notes) ? fp.notes : []);
+
+    // Try to "fit" once loaded
+    setTimeout(() => fitToContent(), 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [restaurant?.id]);
+
+  // ---------- Helpers ----------
+  const worldPosFromEvent = useCallback((e) => {
+    const stage = stageRef.current;
+    if (!stage) return { x: 0, y: 0 };
+    const p = stage.getPointerPosition();
+    if (!p) return { x: 0, y: 0 };
+    // Convert screen -> world
+    return {
+      x: (p.x - cam.x) / scale,
+      y: (p.y - cam.y) / scale,
+    };
+  }, [cam.x, cam.y, scale]);
+
+  const fitToContent = useCallback(() => {
+    // Fit outline if present, otherwise fit tables
+    const pad = 40;
+    const contentRect = (() => {
+      if (outline) return { x: outline.x, y: outline.y, w: outline.w, h: outline.h };
+      if (tables.length === 0) return { x: 0, y: 0, w: 900, h: 600 };
+      const xs = tables.map(t => t.x);
+      const ys = tables.map(t => t.y);
+      const xe = tables.map(t => t.x + t.w);
+      const ye = tables.map(t => t.y + t.h);
+      return {
+        x: Math.min(...xs),
+        y: Math.min(...ys),
+        w: Math.max(...xe) - Math.min(...xs),
+        h: Math.max(...ye) - Math.min(...ys),
+      };
+    })();
+
+    const vw = stageSize.width;
+    const vh = stageSize.height;
+    const s = clamp(Math.min((vw - pad * 2) / contentRect.w, (vh - pad * 2) / contentRect.h), 0.4, 2.0);
+
+    setScale(s);
+    setCam({
+      x: (vw / 2) - (contentRect.x + contentRect.w / 2) * s,
+      y: (vh / 2) - (contentRect.y + contentRect.h / 2) * s,
+    });
+  }, [outline, tables, stageSize.width, stageSize.height]);
+
+  // ---------- Grid rendering ----------
+  const gridLines = useMemo(() => {
+    if (!showGrid) return [];
+    const spacing = 40;
+    const lines = [];
+    const w = 4000;
+    const h = 2500;
+
+    for (let x = -w; x <= w; x += spacing) {
+      lines.push({ points: [x, -h, x, h], key: `vx_${x}` });
+    }
+    for (let y = -h; y <= h; y += spacing) {
+      lines.push({ points: [-w, y, w, y], key: `hy_${y}` });
+    }
+    return lines;
+  }, [showGrid]);
+
+  // ---------- Drawing (outline / wall) ----------
+  const [drawing, setDrawing] = useState(null);
+  // outline drawing: {type:'outline', start:{x,y}, curr:{x,y}}
+  // wall drawing: {type:'wall', start:{x,y}, curr:{x,y}}
+
+  // ---------- Collision check for tables ----------
+  const tableRects = useMemo(() => {
+    return tables.map(t => ({
+      id: t.id,
+      x: t.x,
+      y: t.y,
+      width: t.w,
+      height: t.h,
+    }));
+  }, [tables]);
+
+  const wouldCollide = useCallback((id, rect) => {
+    for (const r of tableRects) {
+      if (r.id === id) continue;
+      if (intersects(r, rect)) return true;
+    }
+    return false;
+  }, [tableRects]);
+
+  // ---------- Add table ----------
+  const addTableAt = useCallback((x, y) => {
+    const base = DEFAULT_TABLE_SIZES.find(s => s.seats === activeSeats && s.shape === activeShape)
+      || DEFAULT_TABLE_SIZES.find(s => s.seats === activeSeats)
+      || DEFAULT_TABLE_SIZES[1];
+
+    const t = {
+      id: uid(),
+      x: x - base.w / 2,
+      y: y - base.h / 2,
+      w: base.w,
+      h: base.h,
+      seats: activeSeats,
+      shape: activeShape,
+      label: `T${tables.length + 1}`,
+      rotation: 0,
+      locked: false,
+      groupId: null,
+      type: "table",
+      reservable: true, // IMPORTANT: diners only reserve tables
+    };
+
+    // slight auto-space if colliding
+    let rect = { x: t.x, y: t.y, width: t.w, height: t.h };
+    if (wouldCollide(t.id, rect)) {
+      t.x += 28;
+      t.y += 28;
+    }
+
+    setTables(prev => [...prev, t]);
+    setSelectedIds([t.id]);
+  }, [activeSeats, activeShape, tables.length, wouldCollide]);
+
+  // ---------- Add note ----------
+  const addNoteAt = useCallback((x, y) => {
+    const n = {
+      id: uid(),
+      x,
+      y,
+      text: "Note",
+      fontSize: 16,
+      color: "rgba(255,255,255,0.75)",
+      locked: false,
+      type: "note",
+      reservable: false, // NEVER reservable
+    };
+    setNotes(prev => [...prev, n]);
+    setSelectedIds([n.id]);
+  }, []);
+
+  // ---------- Group / lock ----------
+  const lockSelected = (locked) => {
+    const ids = new Set(selectedIds);
+    setTables(prev => prev.map(t => ids.has(t.id) ? { ...t, locked } : t));
+    setWalls(prev => prev.map(w => ids.has(w.id) ? { ...w, locked } : w));
+    setNotes(prev => prev.map(n => ids.has(n.id) ? { ...n, locked } : n));
+  };
+
+  const groupSelectedTables = () => {
+    const ids = selectedIds.filter(id => tables.some(t => t.id === id));
+    if (ids.length < 2) return;
+    const gid = uid();
+    setTables(prev => prev.map(t => ids.includes(t.id) ? { ...t, groupId: gid } : t));
+  };
+
+  const ungroupSelectedTables = () => {
+    const ids = new Set(selectedIds);
+    setTables(prev => prev.map(t => ids.has(t.id) ? { ...t, groupId: null } : t));
+  };
+
+  // ---------- Delete ----------
+  const deleteSelected = () => {
+    const ids = new Set(selectedIds);
+    setTables(prev => prev.filter(t => !ids.has(t.id)));
+    setWalls(prev => prev.filter(w => !ids.has(w.id)));
+    setNotes(prev => prev.filter(n => !ids.has(n.id)));
+    clearSelection();
+  };
+
+  // ---------- Duplicate table ----------
+  const duplicateSelectedTables = () => {
+    const ids = new Set(selectedIds);
+    const toDup = tables.filter(t => ids.has(t.id));
+    if (toDup.length === 0) return;
+    const copies = toDup.map(t => ({
+      ...t,
+      id: uid(),
+      x: t.x + 24,
+      y: t.y + 24,
+      label: `${t.label}`,
+      locked: false,
+    }));
+    setTables(prev => [...prev, ...copies]);
+    setSelectedIds(copies.map(c => c.id));
+  };
+
+  // ---------- Right click menu actions ----------
+  const askAIForTarget = (target) => {
+    // Placeholder: you can wire to your AI endpoint later.
+    // For now, it just suggests helpful actions.
+    alert(
+      `Ask AI (placeholder)\n\nTarget: ${target.type}\n\nExamples:\n- “Make a booth wall around this area”\n- “Align these tables evenly”\n- “Optimize spacing for 2 servers”\n- “Suggest layout for 40 seats + walkway”`
+    );
+  };
+
+  // ---------- Stage events ----------
+  const onWheel = (e) => {
+    e.evt.preventDefault();
+    const stage = stageRef.current;
+    if (!stage) return;
+
+    const pointer = stage.getPointerPosition();
+    if (!pointer) return;
+
+    const oldScale = scale;
+    const dir = e.evt.deltaY > 0 ? -1 : 1;
+    const factor = 1.06;
+    const newScale = clamp(dir > 0 ? oldScale * factor : oldScale / factor, 0.35, 2.5);
+
+    // zoom around pointer
+    const mousePointTo = {
+      x: (pointer.x - cam.x) / oldScale,
+      y: (pointer.y - cam.y) / oldScale,
+    };
+
+    setScale(newScale);
+    setCam({
+      x: pointer.x - mousePointTo.x * newScale,
+      y: pointer.y - mousePointTo.y * newScale,
+    });
+  };
+
+  const onStageMouseDown = (e) => {
+    closeCtx();
+
+    const isEmpty = e.target === e.target.getStage();
+    const additive = e.evt.shiftKey || e.evt.metaKey;
+
+    const p = worldPosFromEvent(e);
+    setLastPointer(p);
+
+    if (mode === "add-table" && isEmpty) {
+      addTableAt(p.x, p.y);
+      return;
+    }
+
+    if (mode === "add-text" && isEmpty) {
+      addNoteAt(p.x, p.y);
+      setMode("select");
+      return;
+    }
+
+    if (mode === "draw-outline" && isEmpty) {
+      setDrawing({ type: "outline", start: p, curr: p });
+      return;
+    }
+
+    if (mode === "draw-wall" && isEmpty) {
+      setDrawing({ type: "wall", start: p, curr: p });
+      return;
+    }
+
+    if (isEmpty && mode === "select") {
+      if (!additive) clearSelection();
     }
   };
 
+  const onStageMouseMove = (e) => {
+    if (!drawing) return;
+    const p = worldPosFromEvent(e);
+    setDrawing(prev => prev ? { ...prev, curr: p } : prev);
+  };
+
+  const onStageMouseUp = () => {
+    if (!drawing) return;
+
+    if (drawing.type === "outline") {
+      const x = Math.min(drawing.start.x, drawing.curr.x);
+      const y = Math.min(drawing.start.y, drawing.curr.y);
+      const w = Math.abs(drawing.curr.x - drawing.start.x);
+      const h = Math.abs(drawing.curr.y - drawing.start.y);
+
+      // auto “clean” outline
+      if (w > 60 && h > 60) {
+        setOutline({ x, y, w, h });
+        fitToContent();
+      }
+      setDrawing(null);
+      setMode("select");
+      return;
+    }
+
+    if (drawing.type === "wall") {
+      const dx = drawing.curr.x - drawing.start.x;
+      const dy = drawing.curr.y - drawing.start.y;
+      const snapped = snapAngle(dx, dy);
+
+      // Minimum length
+      const len = Math.sqrt(snapped.dx * snapped.dx + snapped.dy * snapped.dy);
+      if (len > 40) {
+        const wall = {
+          id: uid(),
+          points: [drawing.start.x, drawing.start.y, drawing.start.x + snapped.dx, drawing.start.y + snapped.dy],
+          locked: false,
+          type: "wall",
+          reservable: false,
+        };
+        setWalls(prev => [...prev, wall]);
+        setSelectedIds([wall.id]);
+      }
+
+      setDrawing(null);
+      setMode("select");
+      return;
+    }
+  };
+
+  // ---------- Right click ----------
+  const onContextMenu = (e, target) => {
+    e.evt.preventDefault();
+    const container = containerRef.current;
+    if (!container) return;
+
+    const r = container.getBoundingClientRect();
+    const px = e.evt.clientX - r.left;
+    const py = e.evt.clientY - r.top;
+
+    setCtxMenu({ x: px, y: py, target });
+  };
+
+  // ---------- Drag table / group ----------
+  const moveGroup = (groupId, dx, dy) => {
+    setTables(prev => prev.map(t => t.groupId === groupId ? ({ ...t, x: t.x + dx, y: t.y + dy }) : t));
+  };
+
+  const onTableDragMove = (id, e) => {
+    const node = e.target;
+    const t = tables.find(x => x.id === id);
+    if (!t) return;
+
+    const x = node.x();
+    const y = node.y();
+
+    // If table is grouped, move the group (but only when dragging a member)
+    if (t.groupId) {
+      const dx = x - t.x;
+      const dy = y - t.y;
+      moveGroup(t.groupId, dx, dy);
+      // keep dragged node visually in sync
+      node.position({ x: t.x + dx, y: t.y + dy });
+      return;
+    }
+
+    // Keep free placement. Only soft collision prevention:
+    const rect = { x, y, width: t.w, height: t.h };
+    const coll = wouldCollide(id, rect);
+
+    // Outline is optional: no “restriction”, but we can gently highlight if outside
+    node.opacity(coll ? 0.55 : 1.0);
+  };
+
+  const onTableDragEnd = (id, e) => {
+    const node = e.target;
+    const t = tables.find(x => x.id === id);
+    if (!t) return;
+
+    const x = node.x();
+    const y = node.y();
+
+    // grouped handled in moveGroup already
+    if (t.groupId) return;
+
+    const rect = { x, y, width: t.w, height: t.h };
+    const coll = wouldCollide(id, rect);
+
+    if (coll) {
+      // revert
+      node.position({ x: t.x, y: t.y });
+      node.opacity(1);
+      return;
+    }
+
+    setTables(prev => prev.map(tt => tt.id === id ? { ...tt, x, y } : tt));
+    node.opacity(1);
+  };
+
+  // ---------- Transformer config ----------
+  const transformerEnabled = useMemo(() => {
+    // only tables + notes can transform, walls shouldn’t scale
+    const ids = new Set(selectedIds);
+    const hasWallOnly = walls.some(w => ids.has(w.id)) && !tables.some(t => ids.has(t.id)) && !notes.some(n => ids.has(n.id));
+    return !hasWallOnly;
+  }, [selectedIds, walls, tables, notes]);
+
+  const totalSeats = useMemo(() => tables.reduce((s, t) => s + (t.seats || 0), 0), [tables]);
+
+  // ---------- Publish ----------
   const handlePublish = async () => {
-    const tables = objects.filter(o => o.type === 'table');
-    if (tables.length === 0) {
-      toast.error('Add at least one table before publishing');
-      return;
-    }
+    // IMPORTANT: diners can only reserve tables; notes/walls are background only.
+    const floorPlanData = {
+      version: 2,
+      outline,
+      walls,
+      tables: tables.map(t => ({ ...t, reservable: true, type: "table" })),
+      notes: notes.map(n => ({ ...n, reservable: false, type: "note" })),
+      publishedAt: new Date().toISOString(),
+    };
 
-    const found = checkOverlaps();
-    if (found.length > 0) {
-      toast.error(`${found.length} overlap(s) detected. Fix or use Auto-Fix button.`);
-      return;
-    }
-
-    setIsSaving(true);
-    try {
-      const totalSeats = tables.reduce((sum, t) => sum + (t.seats || 0), 0);
-      
-      await base44.entities.Restaurant.update(restaurant.id, {
-        floor_plan_data: { objects, settings: { zoom, stagePos } },
-        total_seats: totalSeats,
-        available_seats: totalSeats
-      });
-
-      // Sync Table entities
-      const existing = await base44.entities.Table.filter({ restaurant_id: restaurant.id });
-      await Promise.all(existing.map(t => base44.entities.Table.delete(t.id)));
-
-      for (const table of tables) {
-        await base44.entities.Table.create({
-          restaurant_id: restaurant.id,
-          label: table.label,
-          capacity: table.seats,
-          status: 'free',
-          position_x: table.x,
-          position_y: table.y,
-          shape: table.shape,
-          rotation: table.rotation || 0,
-          width: table.width || 80,
-          height: table.height || 80,
-          layer: table.layer || 'main'
-        });
-      }
-
-      toast.success('Floor plan published!');
-      onPublish?.();
-    } catch (err) {
-      toast.error('Failed to publish');
-    } finally {
-      setIsSaving(false);
-    }
+    // If you're already saving via base44 elsewhere, keep it there.
+    // This function just hands back the data if you want.
+    onPublish?.(floorPlanData);
+    alert("Published (demo). Wire this to base44 update if you want.");
   };
 
-  const visibleObjects = objects.filter(o => layerVisibility[o.layer]);
+  // ---------- UI helpers ----------
+  const selectedTable = useMemo(() => {
+    if (selectedIds.length !== 1) return null;
+    return tables.find(t => t.id === selectedIds[0]) || null;
+  }, [selectedIds, tables]);
 
+  // ---------- Render ----------
   return (
-    <div className="space-y-3">
-      {/* Top Bar */}
-      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl p-4 text-white shadow-lg">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center font-black">
-              <Home className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="font-bold text-lg">Floor Plan Studio</div>
-              <div className="text-sm opacity-90">
-                {objects.filter(o => o.type === 'table').length} tables • {objects.filter(o => o.type === 'table').reduce((s, t) => s + (t.seats || 0), 0)} seats
-              </div>
-            </div>
-          </div>
+    <div className="space-y-4">
+      {/* Futuristic Toolbar */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant={mode === "select" ? "default" : "outline"}
+            onClick={() => setMode("select")}
+            className="rounded-full"
+          >
+            Select
+          </Button>
 
-          <div className="flex items-center gap-2">
-            <Button size="sm" variant="secondary" onClick={undo} disabled={historyIndex <= 0}>
-              <Undo className="w-4 h-4" />
-            </Button>
-            <Button size="sm" variant="secondary" onClick={redo} disabled={historyIndex >= history.length - 1}>
-              <Redo className="w-4 h-4" />
-            </Button>
-            <div className="w-px h-6 bg-white/20 mx-1" />
-            <Button size="sm" variant="secondary" onClick={() => setZoom(z => Math.max(0.1, z - 0.1))}>
-              <ZoomOut className="w-4 h-4" />
-            </Button>
-            <span className="text-sm font-bold px-2">{Math.round(zoom * 100)}%</span>
-            <Button size="sm" variant="secondary" onClick={() => setZoom(z => Math.min(3, z + 0.1))}>
-              <ZoomIn className="w-4 h-4" />
-            </Button>
-            <Button size="sm" variant="secondary" onClick={fitToContent}>
-              <Maximize2 className="w-4 h-4" />
-            </Button>
-            <div className="w-px h-6 bg-white/20 mx-1" />
-            <Button 
-              size="sm" 
-              className="bg-emerald-500 hover:bg-emerald-600 text-white"
-              onClick={handlePublish}
-              disabled={isSaving}
-            >
-              {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CheckCircle className="w-4 h-4 mr-2" />}
-              Publish
-            </Button>
+          <Button
+            variant={mode === "add-table" ? "default" : "outline"}
+            onClick={() => setMode("add-table")}
+            className="rounded-full"
+          >
+            Add Table
+          </Button>
+
+          <Button
+            variant={mode === "draw-outline" ? "default" : "outline"}
+            onClick={() => setMode("draw-outline")}
+            className="rounded-full"
+          >
+            Draw Outline
+          </Button>
+
+          <Button
+            variant={mode === "draw-wall" ? "default" : "outline"}
+            onClick={() => setMode("draw-wall")}
+            className="rounded-full"
+          >
+            Draw Wall
+          </Button>
+
+          <Button
+            variant={mode === "add-text" ? "default" : "outline"}
+            onClick={() => setMode("add-text")}
+            className="rounded-full"
+          >
+            Add Note
+          </Button>
+
+          <Button variant="outline" className="rounded-full" onClick={fitToContent}>
+            Fit
+          </Button>
+
+          <Button variant="outline" className="rounded-full" onClick={() => setCam({ x: 0, y: 0 })}>
+            Center
+          </Button>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 text-sm text-slate-200">
+            <Switch checked={showGrid} onCheckedChange={setShowGrid} />
+            Grid
           </div>
+          <Button
+            variant="outline"
+            className="rounded-full"
+            onClick={() => lockSelected(true)}
+            disabled={selectedIds.length === 0}
+          >
+            Lock
+          </Button>
+          <Button
+            variant="outline"
+            className="rounded-full"
+            onClick={() => lockSelected(false)}
+            disabled={selectedIds.length === 0}
+          >
+            Unlock
+          </Button>
+          <Button
+            variant="outline"
+            className="rounded-full"
+            onClick={groupSelectedTables}
+            disabled={selectedIds.length < 2}
+          >
+            Group
+          </Button>
+          <Button
+            variant="outline"
+            className="rounded-full"
+            onClick={ungroupSelectedTables}
+            disabled={selectedIds.length === 0}
+          >
+            Ungroup
+          </Button>
+          <Button
+            variant="outline"
+            className="rounded-full"
+            onClick={duplicateSelectedTables}
+            disabled={selectedIds.length === 0}
+          >
+            Duplicate
+          </Button>
+          <Button
+            variant="destructive"
+            className="rounded-full"
+            onClick={deleteSelected}
+            disabled={selectedIds.length === 0}
+          >
+            Delete
+          </Button>
         </div>
       </div>
 
-      {/* Main Grid */}
-      <div className="grid grid-cols-[280px_1fr_280px] gap-3">
-        {/* Left Panel */}
-        <Card className="p-4 h-[700px] overflow-auto">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-bold text-sm">LAYERS</h3>
-              <Layers className="w-4 h-4 text-slate-400" />
+      {/* Table size picker */}
+      <Card className="border-0 rounded-2xl p-3"
+        style={{
+          background: COLORS.panel,
+          border: `1px solid ${COLORS.panelBorder}`,
+        }}
+      >
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="text-sm text-slate-200 mr-2">Quick tables:</div>
+          {DEFAULT_TABLE_SIZES.map((s) => (
+            <button
+              key={`${s.seats}_${s.shape}`}
+              onClick={() => { setActiveSeats(s.seats); setActiveShape(s.shape); setMode("add-table"); }}
+              className={cn(
+                "px-3 py-1.5 rounded-full border text-sm transition-all",
+                activeSeats === s.seats && activeShape === s.shape
+                  ? "bg-white text-black border-white"
+                  : "bg-transparent text-slate-200 border-white/15 hover:border-white/30"
+              )}
+            >
+              {s.seats} seats
+            </button>
+          ))}
+          <div className="ml-auto flex items-center gap-2 text-slate-200 text-sm">
+            Zoom:
+            <button className="px-2 py-1 rounded-lg border border-white/15 hover:border-white/30" onClick={() => setScale(s => clamp(s * 0.92, 0.35, 2.5))}>-</button>
+            <span className="w-14 text-center">{Math.round(scale * 100)}%</span>
+            <button className="px-2 py-1 rounded-lg border border-white/15 hover:border-white/30" onClick={() => setScale(s => clamp(s * 1.08, 0.35, 2.5))}>+</button>
+          </div>
+        </div>
+      </Card>
+
+      {/* Selected table inspector */}
+      {selectedTable && (
+        <Card className="border-0 rounded-2xl p-3"
+          style={{
+            background: COLORS.panel,
+            border: `1px solid ${COLORS.panelBorder}`,
+          }}
+        >
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="text-slate-200 text-sm">Selected: <span className="font-semibold">{selectedTable.label}</span></div>
+
+            <div className="flex items-center gap-2">
+              <div className="text-xs text-slate-300">Label</div>
+              <Input
+                value={selectedTable.label}
+                onChange={(e) => setTables(prev => prev.map(t => t.id === selectedTable.id ? { ...t, label: e.target.value } : t))}
+                className="w-28 bg-white/5 border-white/10 text-slate-100"
+              />
             </div>
 
-            {LAYERS_CONFIG.map(layer => (
-              <div
-                key={layer.id}
-                className={cn(
-                  "p-3 rounded-lg border-2 cursor-pointer transition-all",
-                  activeLayer === layer.id ? "border-indigo-500 bg-indigo-50" : "border-slate-200"
-                )}
-                onClick={() => setActiveLayer(layer.id)}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: layer.color }} />
-                    <span className="font-semibold text-sm">{layer.name}</span>
-                  </div>
-                  <button onClick={(e) => {
-                    e.stopPropagation();
-                    setLayerVisibility(prev => ({ ...prev, [layer.id]: !prev[layer.id] }));
-                  }}>
-                    {layerVisibility[layer.id] ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4 text-slate-400" />}
-                  </button>
-                </div>
-                <div className="text-xs text-slate-500">
-                  {objects.filter(o => o.layer === layer.id && o.type === 'table').length} tables
-                </div>
-              </div>
-            ))}
-
-            <div className="border-t pt-4">
-              <h3 className="font-bold text-sm mb-2">TOOLS</h3>
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  variant={tool === 'select' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setTool('select')}
-                >
-                  <MousePointer2 className="w-4 h-4 mr-1" /> Select
-                </Button>
-                <Button
-                  variant={tool === 'wall' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setTool('wall')}
-                >
-                  <Pencil className="w-4 h-4 mr-1" /> Wall
-                </Button>
-              </div>
+            <div className="flex items-center gap-2">
+              <div className="text-xs text-slate-300">Seats</div>
+              <Input
+                type="number"
+                min={1}
+                max={20}
+                value={selectedTable.seats}
+                onChange={(e) => setTables(prev => prev.map(t => t.id === selectedTable.id ? { ...t, seats: parseInt(e.target.value || "0", 10) } : t))}
+                className="w-20 bg-white/5 border-white/10 text-slate-100"
+              />
             </div>
 
-            <div className="border-t pt-4">
-              <h3 className="font-bold text-sm mb-2">ADD TABLE</h3>
-              <div className="space-y-2">
-                {TABLE_SHAPES.map(shape => (
-                  <Button
-                    key={shape.id}
-                    variant="outline"
-                    className="w-full justify-between"
-                    onClick={() => addTable(shape.id)}
-                  >
-                    <span className="flex items-center gap-2">
-                      <shape.icon className="w-4 h-4" />
-                      {shape.label}
-                    </span>
-                    <Badge variant="secondary">{shape.seats}</Badge>
-                  </Button>
-                ))}
-              </div>
-            </div>
+            <Button
+              variant="outline"
+              className="rounded-full border-white/15 text-slate-100 hover:border-white/30"
+              onClick={() => setTables(prev => prev.map(t => t.id === selectedTable.id ? { ...t, rotation: ((t.rotation || 0) + 15) % 360 } : t))}
+            >
+              Rotate +15°
+            </Button>
 
-            <div className="border-t pt-4">
-              <Button variant="outline" className="w-full" onClick={addText}>
-                <Type className="w-4 h-4 mr-2" /> Add Text Label
-              </Button>
-            </div>
-
-            <div className="border-t pt-4 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-sm">Grid</span>
-                <Switch checked={showGrid} onCheckedChange={setShowGrid} />
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm">Snap</span>
-                <Switch checked={snapToGrid} onCheckedChange={setSnapToGrid} />
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm">Dark</span>
-                <Switch checked={darkMode} onCheckedChange={setDarkMode} />
-              </div>
+            <div className="ml-auto text-slate-300 text-sm">
+              Total seats: <span className="text-white font-semibold">{totalSeats}</span>
             </div>
           </div>
         </Card>
+      )}
 
-        {/* Canvas */}
-        <Card className="relative overflow-hidden">
+      {/* Canvas */}
+      <Card
+        className="border-0 rounded-3xl overflow-hidden"
+        style={{
+          background: COLORS.bg,
+          border: `1px solid ${COLORS.panelBorder}`,
+          boxShadow: "0 20px 60px rgba(0,0,0,0.45)",
+        }}
+      >
+        <div ref={containerRef} className="relative w-full" style={{ height: 640 }} onClick={closeCtx}>
           <Stage
             ref={stageRef}
-            width={1200}
-            height={700}
-            scaleX={zoom}
-            scaleY={zoom}
-            x={stagePos.x}
-            y={stagePos.y}
-            onWheel={handleWheel}
-            onClick={handleStageClick}
-            draggable={tool === 'select'}
-            onDragEnd={(e) => setStagePos({ x: e.target.x(), y: e.target.y() })}
-            className={cn(darkMode && "bg-slate-800")}
+            width={stageSize.width}
+            height={stageSize.height}
+            onWheel={onWheel}
+            onMouseDown={onStageMouseDown}
+            onMouseMove={onStageMouseMove}
+            onMouseUp={onStageMouseUp}
+            draggable={mode === "select"} // pan by dragging empty space (feels like SevenRooms)
+            x={cam.x}
+            y={cam.y}
+            scaleX={scale}
+            scaleY={scale}
+            onDragEnd={(e) => {
+              setCam({ x: e.target.x(), y: e.target.y() });
+            }}
           >
-            {/* Grid */}
             <Layer>
-              {showGrid && (
+              {/* Grid (subtle) */}
+              {gridLines.map((l) => (
+                <Line
+                  key={l.key}
+                  points={l.points}
+                  stroke={COLORS.grid}
+                  strokeWidth={1}
+                />
+              ))}
+
+              {/* Outline */}
+              {outline && (
                 <>
-                  {Array.from({ length: Math.ceil(CANVAS_W / GRID_SIZE) }).map((_, i) => (
-                    <Line
-                      key={`v${i}`}
-                      points={[i * GRID_SIZE, 0, i * GRID_SIZE, CANVAS_H]}
-                      stroke={darkMode ? "#334155" : "#e2e8f0"}
-                      strokeWidth={1}
-                    />
-                  ))}
-                  {Array.from({ length: Math.ceil(CANVAS_H / GRID_SIZE) }).map((_, i) => (
-                    <Line
-                      key={`h${i}`}
-                      points={[0, i * GRID_SIZE, CANVAS_W, i * GRID_SIZE]}
-                      stroke={darkMode ? "#334155" : "#e2e8f0"}
-                      strokeWidth={1}
-                    />
-                  ))}
+                  <Rect
+                    x={outline.x}
+                    y={outline.y}
+                    width={outline.w}
+                    height={outline.h}
+                    fill={COLORS.outlineFill}
+                    stroke={COLORS.outline}
+                    strokeWidth={2}
+                    dash={[8, 8]}
+                    cornerRadius={18}
+                    listening={false}
+                  />
+                  <Text
+                    x={outline.x + 14}
+                    y={outline.y + 10}
+                    text="Dining Area"
+                    fontSize={14}
+                    fill="rgba(255,255,255,0.65)"
+                    listening={false}
+                  />
                 </>
               )}
-            </Layer>
 
-            {/* Objects */}
-            <Layer>
-              {visibleObjects.map(obj => {
-                if (obj.type === 'table') {
-                  const isSelected = selectedIds.includes(obj.id);
-                  const isOverlapping = overlaps.some(pair => pair.includes(obj.id));
-                  
-                  return (
-                    <Group
-                      key={obj.id}
-                      ref={node => layerRefs.current[obj.id] = node}
-                      id={obj.id}
-                      x={obj.x}
-                      y={obj.y}
-                      rotation={obj.rotation || 0}
-                      draggable={!obj.locked && tool === 'select'}
-                      onClick={(e) => handleObjectClick(e, obj.id)}
-                      onDragEnd={() => handleDragEnd(obj.id)}
-                      onTransformEnd={() => handleTransformEnd(obj.id)}
-                      onContextMenu={handleContextMenu}
-                    >
-                      {/* Shadow */}
-                      {obj.shape === 'round' ? (
-                        <Circle
-                          radius={(obj.width || 80) / 2}
-                          fill="#00000010"
-                          offsetY={-3}
-                        />
-                      ) : (
-                        <Rect
-                          width={obj.width || 80}
-                          height={obj.height || 80}
-                          fill="#00000010"
-                          offsetY={-3}
-                          cornerRadius={obj.shape === 'booth' ? 12 : 8}
-                        />
-                      )}
+              {/* Walls */}
+              {walls.map((w) => (
+                <Line
+                  key={w.id}
+                  points={w.points}
+                  stroke={COLORS.wall}
+                  strokeWidth={6}
+                  lineCap="round"
+                  shadowColor={COLORS.wallGlow}
+                  shadowBlur={12}
+                  shadowOpacity={0.6}
+                  listening
+                  onMouseDown={(e) => {
+                    const additive = e.evt.shiftKey || e.evt.metaKey;
+                    toggleSelect(w.id, additive);
+                  }}
+                  onContextMenu={(e) => onContextMenu(e, { type: "wall", id: w.id })}
+                  ref={(node) => registerNode(w.id, node)}
+                />
+              ))}
 
-                      {/* Table Shape */}
-                      {obj.shape === 'round' ? (
-                        <Circle
-                          radius={(obj.width || 80) / 2}
-                          fill={isOverlapping ? '#fee2e2' : obj.fill || '#ffffff'}
-                          stroke={isSelected ? '#8b5cf6' : (isOverlapping ? '#ef4444' : obj.stroke || '#cbd5e1')}
-                          strokeWidth={isSelected ? 3 : 2}
-                        />
-                      ) : (
-                        <Rect
-                          width={obj.width || 80}
-                          height={obj.height || 80}
-                          fill={isOverlapping ? '#fee2e2' : obj.fill || '#ffffff'}
-                          stroke={isSelected ? '#8b5cf6' : (isOverlapping ? '#ef4444' : obj.stroke || '#cbd5e1')}
-                          strokeWidth={isSelected ? 3 : 2}
-                          cornerRadius={obj.shape === 'booth' ? 12 : 8}
-                        />
-                      )}
+              {/* Drawing preview */}
+              {drawing && drawing.type === "outline" && (
+                <Rect
+                  x={Math.min(drawing.start.x, drawing.curr.x)}
+                  y={Math.min(drawing.start.y, drawing.curr.y)}
+                  width={Math.abs(drawing.curr.x - drawing.start.x)}
+                  height={Math.abs(drawing.curr.y - drawing.start.y)}
+                  stroke={COLORS.selected}
+                  strokeWidth={2}
+                  dash={[6, 6]}
+                  cornerRadius={16}
+                  listening={false}
+                />
+              )}
+              {drawing && drawing.type === "wall" && (
+                <Line
+                  points={[drawing.start.x, drawing.start.y, drawing.curr.x, drawing.curr.y]}
+                  stroke={COLORS.selected}
+                  strokeWidth={4}
+                  dash={[6, 6]}
+                  lineCap="round"
+                  listening={false}
+                />
+              )}
 
-                      {/* Label */}
-                      <Text
-                        text={obj.label}
-                        fontSize={14}
-                        fontStyle="bold"
-                        fill="#111827"
-                        width={obj.width || 80}
-                        align="center"
-                        y={obj.shape === 'round' ? 0 : ((obj.height || 80) / 2) - 20}
-                        offsetY={obj.shape === 'round' ? ((obj.width || 80) / 4) : 0}
+              {/* Notes (background only, never reservable) */}
+              {notes.map((n) => (
+                <Text
+                  key={n.id}
+                  x={n.x}
+                  y={n.y}
+                  text={n.text}
+                  fontSize={n.fontSize || 16}
+                  fill={n.color || "rgba(255,255,255,0.75)"}
+                  draggable={!n.locked}
+                  onDragEnd={(e) => {
+                    const node = e.target;
+                    setNotes(prev => prev.map(nn => nn.id === n.id ? { ...nn, x: node.x(), y: node.y() } : nn));
+                  }}
+                  onMouseDown={(e) => {
+                    const additive = e.evt.shiftKey || e.evt.metaKey;
+                    toggleSelect(n.id, additive);
+                  }}
+                  onDblClick={() => {
+                    const next = prompt("Edit note text", n.text);
+                    if (typeof next === "string") {
+                      setNotes(prev => prev.map(nn => nn.id === n.id ? { ...nn, text: next } : nn));
+                    }
+                  }}
+                  onContextMenu={(e) => onContextMenu(e, { type: "note", id: n.id })}
+                  ref={(node) => registerNode(n.id, node)}
+                />
+              ))}
+
+              {/* Tables */}
+              {tables.map((t) => {
+                const selected = selectedSet.has(t.id);
+                const stroke = selected ? COLORS.selected : COLORS.tableStroke;
+
+                return (
+                  <Group
+                    key={t.id}
+                    x={t.x}
+                    y={t.y}
+                    rotation={t.rotation || 0}
+                    draggable={!t.locked}
+                    onDragMove={(e) => onTableDragMove(t.id, e)}
+                    onDragEnd={(e) => onTableDragEnd(t.id, e)}
+                    onMouseDown={(e) => {
+                      const additive = e.evt.shiftKey || e.evt.metaKey;
+                      toggleSelect(t.id, additive);
+                    }}
+                    onContextMenu={(e) => onContextMenu(e, { type: "table", id: t.id })}
+                    ref={(node) => registerNode(t.id, node)}
+                  >
+                    {/* Glow */}
+                    <Rect
+                      x={-6}
+                      y={-6}
+                      width={t.w + 12}
+                      height={t.h + 12}
+                      cornerRadius={18}
+                      fill="rgba(34,211,238,0.06)"
+                      stroke="rgba(34,211,238,0.10)"
+                      strokeWidth={1}
+                      listening={false}
+                    />
+
+                    {t.shape === "round" ? (
+                      <Circle
+                        x={t.w / 2}
+                        y={t.h / 2}
+                        radius={Math.min(t.w, t.h) / 2}
+                        fill={COLORS.tableFree}
+                        stroke={stroke}
+                        strokeWidth={2}
+                        shadowColor="rgba(0,0,0,0.55)"
+                        shadowBlur={10}
+                        shadowOffset={{ x: 0, y: 6 }}
+                        shadowOpacity={0.35}
                       />
-                      <Text
-                        text={`${obj.seats} seats`}
-                        fontSize={11}
-                        fill="#64748b"
-                        width={obj.width || 80}
-                        align="center"
-                        y={obj.shape === 'round' ? 0 : ((obj.height || 80) / 2) + 2}
-                        offsetY={obj.shape === 'round' ? -((obj.width || 80) / 8) : 0}
+                    ) : (
+                      <Rect
+                        x={0}
+                        y={0}
+                        width={t.w}
+                        height={t.h}
+                        cornerRadius={16}
+                        fill={COLORS.tableFree}
+                        stroke={stroke}
+                        strokeWidth={2}
+                        shadowColor="rgba(0,0,0,0.55)"
+                        shadowBlur={10}
+                        shadowOffset={{ x: 0, y: 6 }}
+                        shadowOpacity={0.35}
                       />
+                    )}
 
-                      {/* Lock Badge */}
-                      {obj.locked && (
-                        <Group x={(obj.width || 80) - 20} y={5}>
-                          <Circle radius={10} fill="#111827" opacity={0.8} />
-                          <Text text="🔒" fontSize={10} x={-5} y={-5} />
-                        </Group>
-                      )}
-                    </Group>
-                  );
-                }
-
-                if (obj.type === 'text') {
-                  return (
+                    {/* Label */}
                     <Text
-                      key={obj.id}
-                      ref={node => layerRefs.current[obj.id] = node}
-                      id={obj.id}
-                      x={obj.x}
-                      y={obj.y}
-                      text={obj.text}
-                      fontSize={obj.fontSize || 18}
-                      fill={obj.fill || '#111827'}
-                      fontStyle="bold"
-                      draggable={!obj.locked && tool === 'select'}
-                      onClick={(e) => handleObjectClick(e, obj.id)}
-                      onDragEnd={() => handleDragEnd(obj.id)}
-                      onContextMenu={handleContextMenu}
-                      listening={tool === 'select'}
+                      x={0}
+                      y={t.h / 2 - 12}
+                      width={t.w}
+                      align="center"
+                      text={t.label}
+                      fontSize={14}
+                      fill={COLORS.tableText}
+                      listening={false}
                     />
-                  );
-                }
 
-                if (obj.type === 'wall') {
-                  return (
-                    <Line
-                      key={obj.id}
-                      ref={node => layerRefs.current[obj.id] = node}
-                      id={obj.id}
-                      points={obj.points}
-                      stroke={obj.stroke || '#111827'}
-                      strokeWidth={obj.strokeWidth || 6}
-                      lineCap="round"
-                      onClick={(e) => handleObjectClick(e, obj.id)}
-                      onContextMenu={handleContextMenu}
-                      listening={tool === 'select'}
+                    {/* Seats chip */}
+                    <Rect
+                      x={t.w / 2 - 22}
+                      y={t.h / 2 + 6}
+                      width={44}
+                      height={20}
+                      cornerRadius={10}
+                      fill={COLORS.seatChip}
+                      stroke={COLORS.seatChipStroke}
+                      strokeWidth={1}
+                      listening={false}
                     />
-                  );
-                }
-
-                return null;
+                    <Text
+                      x={t.w / 2 - 22}
+                      y={t.h / 2 + 8}
+                      width={44}
+                      align="center"
+                      text={`${t.seats}`}
+                      fontSize={12}
+                      fill="rgba(255,255,255,0.85)"
+                      listening={false}
+                    />
+                  </Group>
+                );
               })}
 
-              <Transformer ref={transformerRef} />
+              {/* Transformer */}
+              {transformerEnabled && (
+                <Transformer
+                  ref={trRef}
+                  rotateEnabled
+                  enabledAnchors={["top-left","top-right","bottom-left","bottom-right"]}
+                  boundBoxFunc={(oldBox, newBox) => {
+                    // avoid tiny scaling
+                    if (newBox.width < 40 || newBox.height < 40) return oldBox;
+                    return newBox;
+                  }}
+                />
+              )}
             </Layer>
           </Stage>
 
           {/* Context Menu */}
-          {contextMenu.show && (
+          {ctxMenu && (
             <div
-              className="fixed z-50 bg-white rounded-lg shadow-2xl border p-2 w-56"
-              style={{ left: contextMenu.x, top: contextMenu.y }}
+              className="absolute z-50 rounded-xl overflow-hidden"
+              style={{
+                left: ctxMenu.x,
+                top: ctxMenu.y,
+                width: 220,
+                background: "rgba(15,23,42,0.92)",
+                border: "1px solid rgba(255,255,255,0.12)",
+                boxShadow: "0 20px 60px rgba(0,0,0,0.6)",
+                backdropFilter: "blur(10px)",
+              }}
             >
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full justify-start"
-                onClick={() => {
-                  setAiModal({ open: true, prompt: '', targetIds: selectedIds.length ? selectedIds : [contextMenu.targetId] });
-                  setContextMenu({ show: false, x: 0, y: 0, targetId: null });
-                }}
+              <div className="px-3 py-2 text-xs text-slate-300 border-b border-white/10">
+                {ctxMenu.target.type.toUpperCase()}
+              </div>
+
+              <button
+                className="w-full text-left px-3 py-2 text-sm text-white hover:bg-white/10"
+                onClick={() => { askAIForTarget(ctxMenu.target); closeCtx(); }}
               >
-                <Sparkles className="w-4 h-4 mr-2" /> Ask AI
-              </Button>
-              {contextMenu.targetId && (
-                <>
-                  <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => { duplicateSelected(); setContextMenu({ show: false, x: 0, y: 0, targetId: null }); }}>
-                    <Copy className="w-4 h-4 mr-2" /> Duplicate
-                  </Button>
-                  <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => { toggleLock(); setContextMenu({ show: false, x: 0, y: 0, targetId: null }); }}>
-                    {objects.find(o => o.id === contextMenu.targetId)?.locked ? <Unlock className="w-4 h-4 mr-2" /> : <Lock className="w-4 h-4 mr-2" />}
-                    {objects.find(o => o.id === contextMenu.targetId)?.locked ? 'Unlock' : 'Lock'}
-                  </Button>
-                  <Button variant="ghost" size="sm" className="w-full justify-start text-red-600" onClick={() => { deleteSelected(); setContextMenu({ show: false, x: 0, y: 0, targetId: null }); }}>
-                    <Trash2 className="w-4 h-4 mr-2" /> Delete
-                  </Button>
-                </>
-              )}
+                ✨ Ask AI
+              </button>
+
+              <button
+                className="w-full text-left px-3 py-2 text-sm text-white hover:bg-white/10"
+                onClick={() => { duplicateSelectedTables(); closeCtx(); }}
+              >
+                Duplicate
+              </button>
+
+              <button
+                className="w-full text-left px-3 py-2 text-sm text-white hover:bg-white/10"
+                onClick={() => { lockSelected(true); closeCtx(); }}
+              >
+                Lock
+              </button>
+
+              <button
+                className="w-full text-left px-3 py-2 text-sm text-white hover:bg-white/10"
+                onClick={() => { lockSelected(false); closeCtx(); }}
+              >
+                Unlock
+              </button>
+
+              <button
+                className="w-full text-left px-3 py-2 text-sm text-red-200 hover:bg-red-500/15"
+                onClick={() => { deleteSelected(); closeCtx(); }}
+              >
+                Delete
+              </button>
             </div>
           )}
-        </Card>
 
-        {/* Right Panel */}
-        <Card className="p-4 h-[700px] overflow-auto">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-bold text-sm">PROPERTIES</h3>
-              {selectedIds.length > 0 && <Badge>{selectedIds.length} selected</Badge>}
+          {/* Floating hint */}
+          <div className="absolute left-4 bottom-4 text-xs text-white/70">
+            <div className="rounded-full px-3 py-1.5"
+              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)" }}
+            >
+              Pan: drag empty space • Zoom: mouse wheel • Multi-select: Shift+Click • Notes are background only (not reservable)
             </div>
-
-            {selectedIds.length > 0 && (
-              <div className="space-y-2">
-                <div className="flex gap-2">
-                  <Button size="sm" variant="outline" className="flex-1" onClick={toggleLock}>
-                    <Lock className="w-4 h-4 mr-1" /> Lock
-                  </Button>
-                  <Button size="sm" variant="outline" className="flex-1" onClick={duplicateSelected}>
-                    <Copy className="w-4 h-4 mr-1" /> Copy
-                  </Button>
-                </div>
-                <div className="flex gap-2">
-                  <Button size="sm" variant="outline" className="flex-1" onClick={bringToFront}>
-                    Front
-                  </Button>
-                  <Button size="sm" variant="outline" className="flex-1" onClick={sendToBack}>
-                    Back
-                  </Button>
-                </div>
-                <Button size="sm" variant="destructive" className="w-full" onClick={deleteSelected}>
-                  <Trash2 className="w-4 h-4 mr-2" /> Delete
-                </Button>
-              </div>
-            )}
-
-            {overlaps.length > 0 && (
-              <div className="border-t pt-4">
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-                  <div className="flex items-start gap-2 mb-2">
-                    <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5" />
-                    <div>
-                      <div className="font-semibold text-sm text-amber-900">
-                        {overlaps.length} Overlap(s) Detected
-                      </div>
-                      <div className="text-xs text-amber-700">
-                        Tables are overlapping on the floor plan
-                      </div>
-                    </div>
-                  </div>
-                  <Button
-                    size="sm"
-                    className="w-full bg-amber-600 hover:bg-amber-700"
-                    onClick={autoFixOverlaps}
-                  >
-                    <Sparkles className="w-4 h-4 mr-2" /> Auto-Fix Overlaps
-                  </Button>
-                </div>
-              </div>
-            )}
           </div>
-        </Card>
-      </div>
-
-      {/* AI Modal */}
-      {aiModal.open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <Card className="w-[500px] p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Sparkles className="w-6 h-6 text-purple-600" />
-              <h3 className="font-bold text-lg">Ask AI</h3>
-            </div>
-            <Input
-              placeholder="e.g., 'align these tables' or 'rotate 45 degrees'"
-              value={aiModal.prompt}
-              onChange={(e) => setAiModal(prev => ({ ...prev, prompt: e.target.value }))}
-              className="mb-4"
-            />
-            <div className="flex gap-2 justify-end">
-              <Button variant="outline" onClick={() => setAiModal({ open: false, prompt: '', targetIds: [] })}>
-                Cancel
-              </Button>
-              <Button className="bg-purple-600 hover:bg-purple-700" onClick={runAI}>
-                <Sparkles className="w-4 h-4 mr-2" /> Apply
-              </Button>
-            </div>
-          </Card>
         </div>
-      )}
+      </Card>
+
+      {/* Footer Publish */}
+      <div className="flex items-center justify-between">
+        <div className="text-slate-600">
+          <div className="text-xl font-bold">{totalSeats} seats</div>
+          <div className="text-sm">{tables.length} tables • {walls.length} walls • {notes.length} notes</div>
+        </div>
+        <Button className="rounded-full" onClick={handlePublish}>
+          Publish Floor Plan
+        </Button>
+      </div>
     </div>
   );
 }
