@@ -2,11 +2,13 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Stage, Layer, Group, Rect, Circle, Line, Text, Transformer } from "react-konva";
 import Konva from "konva";
 import { base44 } from "@/api/base44Client";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 import {
   MousePointer2,
   Hand,
@@ -59,8 +61,34 @@ const COLORS = {
   roomStroke: "rgba(34,197,94,0.38)",
   noteFill: "rgba(59,130,246,0.10)",
   noteStroke: "rgba(59,130,246,0.35)",
-  danger: "#ef4444"
+  danger: "#ef4444",
+  // Table status colors
+  tableFree: "rgba(16,185,129,0.25)",
+  tableOccupied: "rgba(245,158,11,0.25)",
+  tableReserved: "rgba(59,130,246,0.25)",
+  tableStrokeFree: "rgba(16,185,129,0.6)",
+  tableStrokeOccupied: "rgba(245,158,11,0.6)",
+  tableStrokeReserved: "rgba(59,130,246,0.6)",
+  // Zone colors
+  zoneQuiet: "rgba(139,92,246,0.12)",
+  zoneBar: "rgba(239,68,68,0.12)",
+  zoneFamily: "rgba(34,197,94,0.12)",
+  zoneOutdoor: "rgba(59,130,246,0.12)",
+  zoneVIP: "rgba(234,179,8,0.12)",
+  zoneStrokeQuiet: "rgba(139,92,246,0.35)",
+  zoneStrokeBar: "rgba(239,68,68,0.35)",
+  zoneStrokeFamily: "rgba(34,197,94,0.35)",
+  zoneStrokeOutdoor: "rgba(59,130,246,0.35)",
+  zoneStrokeVIP: "rgba(234,179,8,0.35)"
 };
+
+const ZONE_TYPES = [
+  { id: 'quiet', label: '🤫 Quiet Area', fill: COLORS.zoneQuiet, stroke: COLORS.zoneStrokeQuiet },
+  { id: 'bar', label: '🍷 Bar Seating', fill: COLORS.zoneBar, stroke: COLORS.zoneStrokeBar },
+  { id: 'family', label: '👨\u200d👩\u200d👧\u200d👦 Family Zone', fill: COLORS.zoneFamily, stroke: COLORS.zoneStrokeFamily },
+  { id: 'outdoor', label: '🌳 Outdoor', fill: COLORS.zoneOutdoor, stroke: COLORS.zoneStrokeOutdoor },
+  { id: 'vip', label: '⭐ VIP Section', fill: COLORS.zoneVIP, stroke: COLORS.zoneStrokeVIP }
+];
 
 const ROOM_TABS = [
   { id: "MAIN", label: "MAIN" },
@@ -155,21 +183,47 @@ export default function FloorPlanBuilderPremium({ restaurant, onPublish }) {
   const [cam, setCam] = useState({ x: -260, y: -140, scale: 1.18 });
 
   // Tools
-  const [tool, setTool] = useState("select"); // select | pan | addTable | drawWall | drawRoom | drawRoomRect | addText
+  const [tool, setTool] = useState("select"); // select | pan | addTable | drawWall | drawRoom | drawRoomRect | addText | addZone
   const [presetIndex, setPresetIndex] = useState(2); // default 4-seat
+  const [selectedZoneType, setSelectedZoneType] = useState('quiet'); // quiet | bar | family | outdoor | vip
 
   // Toggles
   const [showGrid, setShowGrid] = useState(true);
   const [collisionGuard, setCollisionGuard] = useState(true);
   const [snapAnglesEnabled, setSnapAnglesEnabled] = useState(true);
+  const [showZones, setShowZones] = useState(true);
+  const [showTableStatus, setShowTableStatus] = useState(true);
 
   // Data
   const [rooms, setRooms] = useState(() =>
     ROOM_TABS.reduce((acc, r) => {
-      acc[r.id] = { roomId: r.id, roomBoundary: [], walls: [], items: [] };
+      acc[r.id] = { roomId: r.id, roomBoundary: [], walls: [], items: [], zones: [] };
       return acc;
     }, {})
   );
+
+  // Fetch real-time table status
+  const { data: liveTablesRaw } = useQuery({
+    queryKey: ['liveTables', restaurant?.id],
+    queryFn: () => base44.entities.Table.filter({ restaurant_id: restaurant.id }),
+    enabled: !!restaurant?.id && showTableStatus,
+    refetchInterval: 15000 // Refresh every 15 seconds
+  });
+  const liveTables = useMemo(() => norm(liveTablesRaw), [liveTablesRaw]);
+  
+  // Build status map by floorplan_item_id
+  const tableStatusMap = useMemo(() => {
+    const map = {};
+    for (const t of liveTables) {
+      if (t?.floorplan_item_id) {
+        map[t.floorplan_item_id] = t.status;
+      }
+    }
+    return map;
+  }, [liveTables]);
+
+  const [showAISuggestions, setShowAISuggestions] = useState(false);
+  const [aiSuggestions, setAISuggestions] = useState(null);
 
   // selection
   const [selectedIds, setSelectedIds] = useState([]);
@@ -221,7 +275,9 @@ export default function FloorPlanBuilderPremium({ restaurant, onPublish }) {
   const allSelectable = useMemo(() => {
     const items = current?.items ?? [];
     const walls = current?.walls ?? [];
+    const zones = current?.zones ?? [];
     return [
+      ...zones,
       ...walls.map((w) => ({ ...w, type: "wall" })),
       ...items
     ].sort((a, b) => (a.z ?? 0) - (b.z ?? 0));
@@ -342,9 +398,85 @@ export default function FloorPlanBuilderPremium({ restaurant, onPublish }) {
     updateRoom((r) => {
       const items = (r.items || []).filter((it) => !ids.includes(it.id));
       const walls = (r.walls || []).filter((w) => !ids.includes(w.id));
-      return { ...r, items, walls };
+      const zones = (r.zones || []).filter((z) => !ids.includes(z.id));
+      return { ...r, items, walls, zones };
     });
     setSelectedIds([]);
+  }
+
+  // AI Suggestions for optimal placement
+  async function getAIPlacementSuggestions() {
+    setShowAISuggestions(true);
+    try {
+      const allTables = current.items.filter(i => i.type === 'table');
+      const zones = current.zones || [];
+      
+      const prompt = `Analyze this restaurant floor plan and provide optimization suggestions:
+      
+Floor Plan Stats:
+- Total tables: ${allTables.length}
+- Total capacity: ${allTables.reduce((sum, t) => sum + (t.seats || 0), 0)} seats
+- Zones defined: ${zones.map(z => z.label).join(', ') || 'None'}
+- Room boundaries: ${current.roomBoundary?.length > 0 ? 'Yes' : 'No'}
+
+Provide JSON with these suggestions:
+{
+  "trafficFlow": "Analysis of current traffic flow and bottlenecks",
+  "spacingIssues": ["List of tables that are too close together"],
+  "zoneOptimization": "How to better organize zones for different guest types",
+  "recommendations": [
+    {"type": "move", "tableId": "id", "reason": "why", "suggestedX": 100, "suggestedY": 200},
+    {"type": "addZone", "zoneType": "quiet|bar|family|outdoor|vip", "reason": "why"}
+  ]
+}`;
+
+      const res = await base44.integrations.Core.InvokeLLM({
+        prompt,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            trafficFlow: { type: "string" },
+            spacingIssues: { type: "array", items: { type: "string" } },
+            zoneOptimization: { type: "string" },
+            recommendations: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  type: { type: "string" },
+                  tableId: { type: "string" },
+                  zoneType: { type: "string" },
+                  reason: { type: "string" },
+                  suggestedX: { type: "number" },
+                  suggestedY: { type: "number" }
+                }
+              }
+            }
+          }
+        }
+      });
+
+      setAISuggestions(res);
+      toast.success("AI analysis complete!");
+    } catch (e) {
+      toast.error(`AI analysis failed: ${e.message}`);
+      setShowAISuggestions(false);
+    }
+  }
+
+  function applyAISuggestion(suggestion) {
+    if (suggestion.type === 'move' && suggestion.tableId) {
+      updateItem(suggestion.tableId, { 
+        x: suggestion.suggestedX, 
+        y: suggestion.suggestedY 
+      });
+      toast.success("Table repositioned based on AI suggestion");
+    } else if (suggestion.type === 'addZone') {
+      const zoneType = ZONE_TYPES.find(z => z.id === suggestion.zoneType) || ZONE_TYPES[0];
+      setSelectedZoneType(zoneType.id);
+      setTool('addZone');
+      toast.message(`Click on the canvas to place a ${zoneType.label} zone`);
+    }
   }
 
   // add table / note
@@ -407,6 +539,29 @@ export default function FloorPlanBuilderPremium({ restaurant, onPublish }) {
     updateRoom((r) => ({ ...r, items: [...(r.items || []), note] }));
     setSelectedIds([id]);
     setNoteEdit({ id, text: note.text });
+  }
+
+  function addZoneAt(world) {
+    const zoneType = ZONE_TYPES.find(z => z.id === selectedZoneType) || ZONE_TYPES[0];
+    const id = uid();
+    
+    const zone = {
+      id,
+      type: "zone",
+      zoneType: zoneType.id,
+      x: world.x - 150,
+      y: world.y - 100,
+      w: 300,
+      h: 200,
+      label: zoneType.label,
+      fill: zoneType.fill,
+      stroke: zoneType.stroke,
+      locked: false,
+      z: -1 // zones should be behind tables/walls
+    };
+
+    updateRoom((r) => ({ ...r, zones: [...(r.zones || []), zone] }));
+    setSelectedIds([id]);
   }
 
   function updateItem(id, patch) {
@@ -577,6 +732,27 @@ export default function FloorPlanBuilderPremium({ restaurant, onPublish }) {
 
       const totalSeats = allTables.reduce((sum, t) => sum + (t.seats || 0), 0);
 
+      // Determine zone for each table
+      const tablesWithZones = allTables.map(table => {
+        const tableRoom = Object.values(rooms).find(r => 
+          r.items.some(i => i.id === table.id)
+        );
+        const zones = tableRoom?.zones || [];
+        
+        // Find which zone contains this table
+        const containingZone = zones.find(zone => {
+          const tx = table.x + table.w / 2;
+          const ty = table.y + table.h / 2;
+          return tx >= zone.x && tx <= zone.x + zone.w &&
+                 ty >= zone.y && ty <= zone.y + zone.h;
+        });
+
+        return {
+          ...table,
+          zoneType: containingZone?.zoneType || null
+        };
+      });
+
       await base44.entities.Restaurant.update(restaurant.id, {
         floor_plan_data: floorPlanData,
         total_seats: totalSeats,
@@ -592,22 +768,28 @@ export default function FloorPlanBuilderPremium({ restaurant, onPublish }) {
       );
 
       const keep = new Set();
-      for (const t of allTables) {
+      for (const t of tablesWithZones) {
         const fpId = t.id;
         const found = existingByFpId.get(fpId);
+
+        // Find which room this table belongs to
+        const tableRoomId = Object.entries(rooms).find(([_, room]) => 
+          room.items.some(i => i.id === t.id)
+        )?.[0] || 'MAIN';
 
         const payload = {
           restaurant_id: restaurant.id,
           floorplan_item_id: fpId,
           label: t.label ? `T${t.label}` : `T${t.seats}`,
           capacity: t.seats,
-          status: "free",
+          status: found?.status || "free", // Preserve existing status
           position_x: t.x,
           position_y: t.y,
           shape: t.shape,
           rotation: t.rotation || 0,
-          room_id: roomId,
-          z_index: t.z ?? 0
+          room_id: tableRoomId,
+          z_index: t.z ?? 0,
+          zone_type: t.zoneType // Add zone assignment
         };
 
         if (found?.id) {
@@ -702,6 +884,11 @@ export default function FloorPlanBuilderPremium({ restaurant, onPublish }) {
 
     if (tool === "addText") {
       addNoteAt(world);
+      return;
+    }
+
+    if (tool === "addZone") {
+      addZoneAt(world);
       return;
     }
 
@@ -829,7 +1016,8 @@ export default function FloorPlanBuilderPremium({ restaurant, onPublish }) {
               { id: "drawWall", label: "Draw Wall", Icon: Pencil },
               { id: "drawRoomRect", label: "Room Rect", Icon: Home },
               { id: "drawRoom", label: "Room Free", Icon: Move },
-              { id: "addText", label: "Note", Icon: Type }
+              { id: "addText", label: "Note", Icon: Type },
+              { id: "addZone", label: "Add Zone", Icon: BringToFront }
             ].map(({ id, label, Icon }) => {
               const active = tool === id;
               return (
@@ -898,6 +1086,16 @@ export default function FloorPlanBuilderPremium({ restaurant, onPublish }) {
               <Switch checked={snapAnglesEnabled} onCheckedChange={setSnapAnglesEnabled} />
             </div>
 
+            <div className="flex items-center gap-2 text-sm" style={{ color: UI.toolbarText }}>
+              <span className="font-semibold">Zones</span>
+              <Switch checked={showZones} onCheckedChange={setShowZones} />
+            </div>
+
+            <div className="flex items-center gap-2 text-sm" style={{ color: UI.toolbarText }}>
+              <span className="font-semibold">Live Status</span>
+              <Switch checked={showTableStatus} onCheckedChange={setShowTableStatus} />
+            </div>
+
             {/* Zoom controls (RESTORED) */}
             <div className="flex items-center gap-1 ml-2">
               <Button
@@ -926,6 +1124,16 @@ export default function FloorPlanBuilderPremium({ restaurant, onPublish }) {
               </Button>
             </div>
 
+            {/* AI Suggestions */}
+            <Button 
+              variant="outline" 
+              className="rounded-full gap-2" 
+              onClick={getAIPlacementSuggestions}
+            >
+              <Sparkles className="w-4 h-4" />
+              AI Optimize
+            </Button>
+
             {/* Actions menu fallback */}
             <Button variant="outline" className="rounded-full" onClick={openActionsMenu}>
               ⋯ Actions
@@ -943,9 +1151,48 @@ export default function FloorPlanBuilderPremium({ restaurant, onPublish }) {
           </div>
         </div>
 
-        <div className="mt-2 text-xs" style={{ color: UI.toolbarSubtext }}>
-          Right-click any item for AI/Z-order/Lock/Duplicate/Delete. Double-click a note to edit. Mousewheel zoom works too.
+        <div className="mt-2 flex items-center justify-between">
+          <div className="text-xs" style={{ color: UI.toolbarSubtext }}>
+            Right-click any item for AI/Z-order/Lock/Duplicate/Delete. Double-click a note to edit. Mousewheel zoom works too.
+          </div>
+          {showTableStatus && liveTables.length > 0 && (
+            <div className="flex items-center gap-3 text-xs">
+              <div className="flex items-center gap-1.5">
+                <div className="w-2.5 h-2.5 rounded-full" style={{ background: COLORS.tableStrokeFree }} />
+                <span style={{ color: UI.toolbarText }}>Free</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-2.5 h-2.5 rounded-full" style={{ background: COLORS.tableStrokeOccupied }} />
+                <span style={{ color: UI.toolbarText }}>Occupied</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-2.5 h-2.5 rounded-full" style={{ background: COLORS.tableStrokeReserved }} />
+                <span style={{ color: UI.toolbarText }}>Reserved</span>
+              </div>
+            </div>
+          )}
         </div>
+        
+        {/* Zone Type Selector - show when addZone tool is active */}
+        {tool === 'addZone' && (
+          <div className="mt-3 flex items-center gap-2">
+            <span className="text-sm font-semibold" style={{ color: UI.toolbarText }}>Zone Type:</span>
+            {ZONE_TYPES.map(zone => (
+              <button
+                key={zone.id}
+                onClick={() => setSelectedZoneType(zone.id)}
+                className="px-3 py-1.5 rounded-full border text-xs font-medium transition"
+                style={{
+                  background: selectedZoneType === zone.id ? zone.fill : UI.pillOffBg,
+                  borderColor: selectedZoneType === zone.id ? zone.stroke : UI.pillBorder,
+                  color: UI.toolbarText
+                }}
+              >
+                {zone.label}
+              </button>
+            ))}
+          </div>
+        )}
       </Card>
 
       {/* Canvas */}
@@ -1021,6 +1268,67 @@ export default function FloorPlanBuilderPremium({ restaurant, onPublish }) {
                   listening={false}
                 />
               )}
+
+              {/* Zones */}
+              {showZones && (current?.zones || [])
+                .slice()
+                .sort((a, b) => (a.z ?? 0) - (b.z ?? 0))
+                .map((zone) => {
+                  const isSelected = selectedIds.includes(zone.id);
+                  return (
+                    <Group
+                      key={zone.id}
+                      id={zone.id}
+                      x={zone.x}
+                      y={zone.y}
+                      draggable={!zone.locked && tool === "select"}
+                      onMouseDown={(e) => {
+                        e.cancelBubble = true;
+                        if (e.evt?.button === 2) {
+                          openContextMenuFromEvent(e, zone.id);
+                          return;
+                        }
+                        if (e.evt?.shiftKey) {
+                          setSelectedIds((prev) => (prev.includes(zone.id) ? prev : [...prev, zone.id]));
+                        } else {
+                          setSelectedIds([zone.id]);
+                        }
+                      }}
+                      onContextMenu={(e) => openContextMenuFromEvent(e, zone.id)}
+                      onDragMove={(e) => {
+                        const node = e.target;
+                        updateRoom((r) => ({
+                          ...r,
+                          zones: (r.zones || []).map((z) =>
+                            z.id === zone.id ? { ...z, x: node.x(), y: node.y() } : z
+                          )
+                        }));
+                      }}
+                    >
+                      <Rect
+                        width={zone.w}
+                        height={zone.h}
+                        fill={zone.fill}
+                        stroke={isSelected ? COLORS.accent : zone.stroke}
+                        strokeWidth={isSelected ? 3 : 2}
+                        dash={[12, 8]}
+                        cornerRadius={16}
+                        opacity={0.5}
+                        shadowBlur={isSelected ? 10 : 0}
+                        shadowColor={COLORS.accent}
+                      />
+                      <Text
+                        x={12}
+                        y={12}
+                        text={zone.label}
+                        fill={COLORS.text}
+                        fontSize={16}
+                        fontStyle="700"
+                        listening={false}
+                      />
+                    </Group>
+                  );
+                })}
 
               {/* Walls */}
               {(current?.walls || [])
@@ -1128,6 +1436,15 @@ export default function FloorPlanBuilderPremium({ restaurant, onPublish }) {
                   const nextRect = { x: it.x, y: it.y, w: it.w, h: it.h };
                   const colliding = it.type === "table" && collisionGuard && wouldCollide(it.id, nextRect);
                   const label = it.label || `${it.seats}`;
+                  
+                  // Get live status for this table
+                  const liveStatus = showTableStatus ? tableStatusMap[it.id] : null;
+                  const statusFill = liveStatus === 'occupied' ? COLORS.tableOccupied :
+                                    liveStatus === 'reserved' ? COLORS.tableReserved :
+                                    liveStatus === 'free' ? COLORS.tableFree : it.fill || COLORS.tableFill;
+                  const statusStroke = liveStatus === 'occupied' ? COLORS.tableStrokeOccupied :
+                                      liveStatus === 'reserved' ? COLORS.tableStrokeReserved :
+                                      liveStatus === 'free' ? COLORS.tableStrokeFree : it.stroke || COLORS.tableStroke;
 
                   return (
                     <Group
@@ -1167,9 +1484,9 @@ export default function FloorPlanBuilderPremium({ restaurant, onPublish }) {
                           x={it.w / 2}
                           y={it.h / 2}
                           radius={it.w / 2}
-                          fill={it.fill || COLORS.tableFill}
+                          fill={statusFill}
                           stroke={
-                            colliding ? COLORS.danger : isSelected ? COLORS.accent : it.stroke || COLORS.tableStroke
+                            colliding ? COLORS.danger : isSelected ? COLORS.accent : statusStroke
                           }
                           strokeWidth={isSelected ? 3 : 2}
                           shadowBlur={isSelected ? 14 : 0}
@@ -1179,9 +1496,9 @@ export default function FloorPlanBuilderPremium({ restaurant, onPublish }) {
                         <Rect
                           width={it.w}
                           height={it.h}
-                          fill={it.fill || COLORS.tableFill}
+                          fill={statusFill}
                           stroke={
-                            colliding ? COLORS.danger : isSelected ? COLORS.accent : it.stroke || COLORS.tableStroke
+                            colliding ? COLORS.danger : isSelected ? COLORS.accent : statusStroke
                           }
                           strokeWidth={isSelected ? 3 : 2}
                           cornerRadius={14}
