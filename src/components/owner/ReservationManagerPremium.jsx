@@ -299,33 +299,40 @@ export default function ReservationManagerPremium({ reservations = [], restauran
                       </div>
                     )}
 
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={() => handleApprove(reservation)}
-                        disabled={updateReservationMutation.isPending}
-                        className="flex-1 gap-1.5 bg-emerald-600 hover:bg-emerald-700"
-                      >
-                        <Check className="w-4 h-4" />
-                        Approve
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => handleReschedule(reservation)}
-                        disabled={updateReservationMutation.isPending}
-                        className="flex-1 gap-1.5"
-                      >
-                        <CalendarClock className="w-4 h-4" />
-                        Reschedule
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        onClick={() => handleDecline(reservation)}
-                        disabled={updateReservationMutation.isPending}
-                        className="flex-1 gap-1.5"
-                      >
-                        <X className="w-4 h-4" />
-                        Decline
-                      </Button>
+                    <div className="flex flex-col gap-2">
+                      <SmartTableAssigner 
+                        reservation={reservation} 
+                        restaurant={{ id: restaurantId }} 
+                        onTableAssigned={() => queryClient.invalidateQueries(['reservations'])}
+                      />
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => handleApprove(reservation)}
+                          disabled={updateReservationMutation.isPending}
+                          className="flex-1 gap-1.5 bg-emerald-600 hover:bg-emerald-700"
+                        >
+                          <Check className="w-4 h-4" />
+                          Approve
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => handleReschedule(reservation)}
+                          disabled={updateReservationMutation.isPending}
+                          className="flex-1 gap-1.5"
+                        >
+                          <CalendarClock className="w-4 h-4" />
+                          Reschedule
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          onClick={() => handleDecline(reservation)}
+                          disabled={updateReservationMutation.isPending}
+                          className="flex-1 gap-1.5"
+                        >
+                          <X className="w-4 h-4" />
+                          Decline
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 );
