@@ -1,58 +1,135 @@
-import React, { useState } from 'react';
-import { ZoomIn, ZoomOut, Eye, Clock } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Stage, Layer, Rect, Circle, Text, Group } from 'react-konva';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Eye, ZoomIn, ZoomOut, Maximize2, Clock } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import moment from 'moment';
 
 const STATUS_COLORS = {
   free: { bg: '#10B981', text: 'Free', emoji: '🟢' },
-  seated: { bg: '#F59E0B', text: 'Seated', emoji: '🟡' },
-  dirty: { bg: '#F97316', text: 'Needs Cleaning', emoji: '🟠' },
-  reserved: { bg: '#3B82F6', text: 'Reserved', emoji: '🔵' },
-  closed: { bg: '#94A3B8', text: 'Closed', emoji: '⚪' }
+  occupied: { bg: '#F59E0B', text: 'Seated', emoji: '🟡' },
+  reserved: { bg: '#3B82F6', text: 'Reserved', emoji: '🔵' }
 };
 
 export default function LiveSeatingFloor({ 
   floorPlan, 
   tables = [], 
+  reservations = [],
   selectedTable, 
   onTableClick,
   highlightedTables = []
 }) {
-  const [zoom, setZoom] = useState(1);
+  const stageRef = useRef(null);
+  const [zoom, setZoom] = useState(0.5);
+  const [stagePos, setStagePos] = useState({ x: 20, y: 20 });
+  const [activeLayer, setActiveLayer] = useState('main');
 
-  const getTableData = (floorTable) => {
-    return (tables || []).find(t => t?.label === floorTable?.label) || floorTable;
+  const fitToContent = () => {
+    if (!floorPlan?.objects?.length) return;
+    
+    const tableObjs = floorPlan.objects.filter(o => o.type === 'table');
+    if (tableObjs.length === 0) return;
+
+    const xs = tableObjs.map(t => t.x);
+    const ys = tableObjs.map(t => t.y);
+    const minX = Math.min(...xs) - 100;
+    const minY = Math.min(...ys) - 100;
+    const maxX = Math.max(...xs.map((x, i) => x + (tableObjs[i].width || 80))) + 100;
+    const maxY = Math.max(...ys.map((y, i) => y + (tableObjs[i].height || 80))) + 100;
+
+    const contentW = maxX - minX;
+    const contentH = maxY - minY;
+    const containerW = 1000;
+    const containerH = 600;
+
+    const scaleX = containerW / contentW;
+    const scaleY = containerH / contentH;
+    const newZoom = Math.min(scaleX, scaleY, 1) * 0.85;
+
+    setZoom(newZoom);
+    setStagePos({
+      x: (containerW - contentW * newZoom) / 2 - minX * newZoom,
+      y: (containerH - contentH * newZoom) / 2 - minY * newZoom
+    });
   };
 
-  const getSeatedDuration = (table) => {
-    if (!table.seated_at) return null;
-    return moment().diff(moment(table.seated_at), 'minutes');
+  useEffect(() => {
+    if (floorPlan?.objects?.length) {
+      fitToContent();
+    }
+  }, [floorPlan?.objects?.length]);
+
+  const getTableStatus = (tableObj) => {
+    const liveTable = tables.find(t => t.label === tableObj.label);
+    if (!liveTable) return 'free';
+    
+    // Check if table is reserved
+    const now = new Date();
+    const hasActiveReservation = reservations.some(res => {
+      if (!res.table_id || res.status !== 'approved') return false;
+      const resTable = tables.find(t => t.id === res.table_id);
+      if (!resTable || resTable.label !== tableObj.label) return false;
+      
+      const resDate = new Date(res.reservation_date);
+      const [hours, minutes] = (res.reservation_time || '00:00').split(':');
+      resDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+      
+      const timeDiff = Math.abs(now - resDate) / (1000 * 60);
+      return timeDiff < 120;
+    });
+
+    if (hasActiveReservation) return 'reserved';
+    return liveTable.status || 'free';
   };
+
+  const getSeatedDuration = (tableObj) => {
+    const liveTable = tables.find(t => t.label === tableObj.label);
+    if (!liveTable?.seated_at) return null;
+    return moment().diff(moment(liveTable.seated_at), 'minutes');
+  };
+
+  const visibleObjects = floorPlan?.objects?.filter(o => o.layer === activeLayer) || [];
+  const layers = [...new Set(floorPlan?.objects?.map(o => o.layer) || ['main'])];
 
   return (
     <Card className="border-0 shadow-lg h-full">
-      <CardHeader className="border-b">
+      <CardHeader className="border-b bg-gradient-to-r from-slate-50 to-slate-100">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <Eye className="w-5 h-5 text-emerald-500" />
             Live Floor Plan
           </CardTitle>
           <div className="flex items-center gap-2">
-            <Button size="sm" variant="outline" onClick={() => setZoom(Math.max(0.5, zoom - 0.1))}>
+            {layers.length > 1 && (
+              <div className="flex gap-1 mr-2">
+                {layers.map(layer => (
+                  <Button
+                    key={layer}
+                    size="sm"
+                    variant={activeLayer === layer ? 'default' : 'outline'}
+                    onClick={() => setActiveLayer(layer)}
+                  >
+                    {layer}
+                  </Button>
+                ))}
+              </div>
+            )}
+            <Button size="sm" variant="outline" onClick={() => setZoom(Math.max(0.1, zoom - 0.1))}>
               <ZoomOut className="w-4 h-4" />
             </Button>
-            <Badge variant="outline">{Math.round(zoom * 100)}%</Badge>
-            <Button size="sm" variant="outline" onClick={() => setZoom(Math.min(1.5, zoom + 0.1))}>
+            <Badge variant="outline" className="px-3">{Math.round(zoom * 100)}%</Badge>
+            <Button size="sm" variant="outline" onClick={() => setZoom(Math.min(2, zoom + 0.1))}>
               <ZoomIn className="w-4 h-4" />
+            </Button>
+            <Button size="sm" variant="outline" onClick={fitToContent}>
+              <Maximize2 className="w-4 h-4" />
             </Button>
           </div>
         </div>
       </CardHeader>
-      <CardContent className="p-4 overflow-auto">
+      <CardContent className="p-4">
         {/* Status Legend */}
         <div className="flex flex-wrap gap-2 mb-4 justify-center">
           {Object.entries(STATUS_COLORS).map(([status, info]) => (
@@ -63,112 +140,166 @@ export default function LiveSeatingFloor({
           ))}
         </div>
 
-        {/* Floor Plan Canvas */}
-        <div className="bg-slate-100 rounded-xl overflow-hidden mx-auto" style={{ width: 'fit-content' }}>
-          <div
-            className="relative bg-white"
-            style={{
-              width: 1000 * zoom,
-              height: 700 * zoom
-            }}
+        {/* Canvas */}
+        <div className="bg-slate-50 rounded-xl overflow-hidden mx-auto" style={{ width: 'fit-content' }}>
+          <Stage
+            ref={stageRef}
+            width={1000}
+            height={600}
+            scaleX={zoom}
+            scaleY={zoom}
+            x={stagePos.x}
+            y={stagePos.y}
+            draggable
+            onDragEnd={(e) => setStagePos({ x: e.target.x(), y: e.target.y() })}
           >
-            {/* Grid */}
-            <svg className="absolute inset-0 pointer-events-none" width="100%" height="100%">
-              <defs>
-                <pattern id="liveGrid" width={40 * zoom} height={40 * zoom} patternUnits="userSpaceOnUse">
-                  <path d={`M ${40 * zoom} 0 L 0 0 0 ${40 * zoom}`} fill="none" stroke="#e2e8f0" strokeWidth="1" />
-                </pattern>
-              </defs>
-              <rect width="100%" height="100%" fill="url(#liveGrid)" />
-            </svg>
+            <Layer>
+              {/* Background */}
+              <Rect width={2000} height={1400} fill="#ffffff" />
 
-            {/* Areas */}
-            {(floorPlan?.areas || []).map(area => (
-              <div
-                key={area.id}
-                className="absolute border-2 border-dashed rounded-lg pointer-events-none"
-                style={{
-                  left: area.x * zoom,
-                  top: area.y * zoom,
-                  width: area.width * zoom,
-                  height: area.height * zoom,
-                  backgroundColor: `${area.color}10`,
-                  borderColor: `${area.color}40`
-                }}
-              >
-                <div
-                  className="absolute -top-2.5 left-2 px-2 py-0.5 rounded text-white font-medium"
-                  style={{ backgroundColor: area.color, fontSize: 10 * zoom }}
-                >
-                  {area.name}
-                </div>
-              </div>
-            ))}
+              {/* Objects */}
+              {visibleObjects.map(obj => {
+                if (obj.type === 'table') {
+                  const status = getTableStatus(obj);
+                  const statusInfo = STATUS_COLORS[status] || STATUS_COLORS.free;
+                  const isSelected = selectedTable?.label === obj.label;
+                  const isHighlighted = highlightedTables.some(id => {
+                    const t = tables.find(tb => tb.id === id);
+                    return t?.label === obj.label;
+                  });
+                  const duration = getSeatedDuration(obj);
 
-            {/* Tables */}
-            <TooltipProvider>
-              {(floorPlan?.tables || []).map(floorTable => {
-                const table = getTableData(floorTable);
-                const statusInfo = STATUS_COLORS[table.status] || STATUS_COLORS.free;
-                const isSelected = selectedTable?.id === table.id;
-                const isHighlighted = highlightedTables.includes(table.id);
-                const duration = getSeatedDuration(table);
+                  return (
+                    <Group
+                      key={obj.id}
+                      x={obj.x}
+                      y={obj.y}
+                      rotation={obj.rotation || 0}
+                      onClick={() => {
+                        const liveTable = tables.find(t => t.label === obj.label);
+                        if (liveTable) onTableClick?.(liveTable);
+                      }}
+                      onTap={() => {
+                        const liveTable = tables.find(t => t.label === obj.label);
+                        if (liveTable) onTableClick?.(liveTable);
+                      }}
+                    >
+                      {/* Shadow */}
+                      {obj.shape === 'round' ? (
+                        <Circle
+                          radius={(obj.width || 80) / 2}
+                          fill="#00000015"
+                          offsetY={-4}
+                        />
+                      ) : (
+                        <Rect
+                          width={obj.width || 80}
+                          height={obj.height || 80}
+                          fill="#00000015"
+                          offsetY={-4}
+                          cornerRadius={obj.shape === 'booth' ? 12 : 8}
+                        />
+                      )}
 
-                return (
-                  <Tooltip key={table.id}>
-                    <TooltipTrigger asChild>
-                      <div
-                        className={cn(
-                          "absolute flex flex-col items-center justify-center cursor-pointer transition-all border-2",
-                          isSelected && "ring-4 ring-emerald-400 z-30",
-                          isHighlighted && "ring-4 ring-blue-300 animate-pulse z-20",
-                          !isSelected && !isHighlighted && "hover:shadow-lg z-10",
-                          table.shape === 'circle' && "rounded-full",
-                          table.shape === 'square' && "rounded-lg",
-                          (table.shape === 'rectangle' || table.shape === 'large') && "rounded-lg"
-                        )}
-                        style={{
-                          left: table.x * zoom,
-                          top: table.y * zoom,
-                          width: table.width * zoom,
-                          height: table.height * zoom,
-                          backgroundColor: statusInfo.bg,
-                          borderColor: isSelected ? '#10B981' : statusInfo.bg
-                        }}
-                        onClick={() => onTableClick(table)}
-                      >
-                        <div className="text-white text-center pointer-events-none">
-                          <div className="font-bold" style={{ fontSize: 12 * zoom }}>{table.label}</div>
-                          <div className="opacity-90" style={{ fontSize: 9 * zoom }}>{table.capacity} seats</div>
-                        </div>
-                        {table.status === 'seated' && duration && (
-                          <div 
-                            className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-white px-1.5 py-0.5 rounded-full shadow-sm border border-amber-200"
-                            style={{ fontSize: 8 * zoom }}
-                          >
-                            <Clock className="w-2 h-2 inline mr-0.5" />
-                            {duration}m
-                          </div>
-                        )}
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent side="top" className="max-w-xs">
-                      <div className="space-y-1">
-                        <div className="font-semibold">{table.label} ({table.capacity} seats)</div>
-                        <div className="text-xs">Status: {statusInfo.emoji} {statusInfo.text}</div>
-                        {table.status === 'seated' && table.party_name && (
-                          <>
-                            <div className="text-xs">Party: {table.party_name} ({table.party_size || table.capacity})</div>
-                            {duration && <div className="text-xs">Seated: {duration} minutes ago</div>}
-                          </>
-                        )}
-                      </div>
-                    </TooltipContent>
-                  </Tooltip>
-                );
+                      {/* Table */}
+                      {obj.shape === 'round' ? (
+                        <Circle
+                          radius={(obj.width || 80) / 2}
+                          fill={statusInfo.bg}
+                          stroke={isSelected ? '#10B981' : (isHighlighted ? '#3B82F6' : statusInfo.bg)}
+                          strokeWidth={isSelected || isHighlighted ? 4 : 0}
+                        />
+                      ) : (
+                        <Rect
+                          width={obj.width || 80}
+                          height={obj.height || 80}
+                          fill={statusInfo.bg}
+                          stroke={isSelected ? '#10B981' : (isHighlighted ? '#3B82F6' : statusInfo.bg)}
+                          strokeWidth={isSelected || isHighlighted ? 4 : 0}
+                          cornerRadius={obj.shape === 'booth' ? 12 : 8}
+                        />
+                      )}
+
+                      {/* Label */}
+                      <Text
+                        text={obj.label}
+                        fontSize={13}
+                        fontStyle="bold"
+                        fill="#ffffff"
+                        width={obj.width || 80}
+                        align="center"
+                        y={obj.shape === 'round' ? 0 : ((obj.height || 80) / 2) - 18}
+                        offsetY={obj.shape === 'round' ? ((obj.width || 80) / 4) : 0}
+                      />
+                      <Text
+                        text={`${obj.seats} seats`}
+                        fontSize={10}
+                        fill="#ffffff"
+                        opacity={0.9}
+                        width={obj.width || 80}
+                        align="center"
+                        y={obj.shape === 'round' ? 0 : ((obj.height || 80) / 2) + 2}
+                        offsetY={obj.shape === 'round' ? -((obj.width || 80) / 8) : 0}
+                      />
+
+                      {/* Duration Badge */}
+                      {status === 'occupied' && duration && (
+                        <Group y={(obj.height || 80) + 5}>
+                          <Rect
+                            width={60}
+                            height={20}
+                            fill="#ffffff"
+                            cornerRadius={10}
+                            stroke="#F59E0B"
+                            strokeWidth={1}
+                          />
+                          <Text
+                            text={`⏱ ${duration}m`}
+                            fontSize={9}
+                            fill="#F59E0B"
+                            fontStyle="bold"
+                            width={60}
+                            align="center"
+                            y={6}
+                          />
+                        </Group>
+                      )}
+                    </Group>
+                  );
+                }
+
+                if (obj.type === 'text') {
+                  return (
+                    <Text
+                      key={obj.id}
+                      x={obj.x}
+                      y={obj.y}
+                      text={obj.text}
+                      fontSize={obj.fontSize || 18}
+                      fill={obj.fill || '#111827'}
+                      fontStyle="bold"
+                      listening={false}
+                    />
+                  );
+                }
+
+                if (obj.type === 'wall') {
+                  return (
+                    <Line
+                      key={obj.id}
+                      points={obj.points}
+                      stroke={obj.stroke || '#111827'}
+                      strokeWidth={obj.strokeWidth || 6}
+                      lineCap="round"
+                      listening={false}
+                    />
+                  );
+                }
+
+                return null;
               })}
-            </TooltipProvider>
-          </div>
+            </Layer>
+          </Stage>
         </div>
       </CardContent>
     </Card>
