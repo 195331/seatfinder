@@ -68,6 +68,7 @@ import AICustomerInsights from "@/components/analytics/AICustomerInsights";
 import AIMenuSuggestions from "@/components/ai/AIMenuSuggestions";
 import OwnerMessages from "@/components/messaging/OwnerMessages";
 import MenuOptimizationEngine from "@/components/ai/MenuOptimizationEngine";
+import StaffNotifications from '@/components/owner/StaffNotifications';
 
 /**
  * Normalize anything into an array (prevents undefined.map crashes)
