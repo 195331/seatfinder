@@ -29,8 +29,8 @@ const LAYERS_CONFIG = [
 const TABLE_SHAPES = [
   { id: 'round', label: 'Round', icon: CircleIcon, seats: 4 },
   { id: 'square', label: 'Square', icon: Square, seats: 4 },
-  { id: 'rectangle', label: 'Rectangle', seats: 6 },
-  { id: 'booth', label: 'Booth', seats: 6 }
+  { id: 'rectangle', label: 'Rectangle', icon: Square, seats: 6 },
+  { id: 'booth', label: 'Booth', icon: Square, seats: 6 }
 ];
 
 export default function FloorPlanBuilderPremium({ restaurant, onPublish }) {
