@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Stage, Layer, Rect, Circle, Text, Group } from 'react-konva';
+import { Stage, Layer, Rect, Circle, Text, Group, Line } from 'react-konva';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
