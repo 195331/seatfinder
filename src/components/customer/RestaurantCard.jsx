@@ -1,4 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { base44 } from '@/api/base44Client';
+import { useQuery } from '@tanstack/react-query';
 import { Heart, MapPin, Clock, Zap, AlertTriangle, Award } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +23,37 @@ export default function RestaurantCard({
   distance = null,
   reviews = []
 }) {
+  const [isHovering, setIsHovering] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const hoverTimerRef = useRef(null);
+  const cycleTimerRef = useRef(null);
+
+  const { data: images = [] } = useQuery({
+    queryKey: ['restaurantImages', restaurant?.id],
+    queryFn: () => base44.entities.RestaurantImage.filter({ restaurant_id: restaurant.id }, 'sort_order'),
+    enabled: !!restaurant?.id && isHovering
+  });
+
+  const displayImages = images.length > 0 
+    ? images 
+    : [{ url: restaurant.cover_image || `https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&q=80`, is_cover: true }];
+
+  useEffect(() => {
+    if (isHovering && displayImages.length > 1) {
+      hoverTimerRef.current = setTimeout(() => {
+        cycleTimerRef.current = setInterval(() => {
+          setCurrentImageIndex((prev) => (prev + 1) % displayImages.length);
+        }, 1400);
+      }, 4000);
+    }
+
+    return () => {
+      if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+      if (cycleTimerRef.current) clearInterval(cycleTimerRef.current);
+      if (!isHovering) setCurrentImageIndex(0);
+    };
+  }, [isHovering, displayImages.length]);
+
   const handleFavoriteClick = (e) => {
     e.stopPropagation();
     onFavoriteToggle?.(restaurant);
@@ -33,19 +66,47 @@ export default function RestaurantCard({
   return (
     <div 
       onClick={() => onClick?.(restaurant)}
+      onMouseEnter={() => setIsHovering(true)}
+      onMouseLeave={() => setIsHovering(false)}
       className={cn(
         "bg-white rounded-2xl border overflow-hidden cursor-pointer group",
         "hover:shadow-xl transition-all duration-300",
         isVerifiedLive ? "border-emerald-200 shadow-md" : "border-slate-100 shadow-sm hover:border-slate-200"
       )}
     >
-      {/* Image */}
+      {/* Image Carousel */}
       <div className="relative aspect-[16/10] overflow-hidden bg-slate-100">
-        <img 
-          src={restaurant.cover_image || `https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&q=80`}
-          alt={restaurant.name}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-        />
+        {displayImages.map((img, idx) => (
+          <img 
+            key={img.id || idx}
+            src={img.url}
+            alt={img.alt || `${restaurant.name} photo ${idx + 1}`}
+            srcSet={`${img.url}?w=600 1x, ${img.url}?w=1200 2x`}
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            className={cn(
+              "absolute inset-0 w-full h-full object-cover transition-all duration-500",
+              "group-hover:scale-105",
+              idx === currentImageIndex ? "opacity-100 z-10" : "opacity-0 z-0"
+            )}
+          />
+        ))}
+
+        {/* Image indicators */}
+        {displayImages.length > 1 && (
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
+            {displayImages.map((_, idx) => (
+              <div
+                key={idx}
+                className={cn(
+                  "w-1.5 h-1.5 rounded-full transition-all",
+                  idx === currentImageIndex 
+                    ? "bg-white w-4" 
+                    : "bg-white/60"
+                )}
+              />
+            ))}
+          </div>
+        )}
 
         {/* Top Left Badges */}
         <div className="absolute top-3 left-3 flex flex-col gap-2">

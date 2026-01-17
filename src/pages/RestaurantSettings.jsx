@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import SubscriptionPlans from '@/components/subscription/SubscriptionPlans';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ImageUploader from '@/components/owner/ImageUploader';
+import RestaurantImageManager from '@/components/owner/RestaurantImageManager';
 import OpeningHoursEditor from '@/components/owner/OpeningHoursEditor';
 import MenuBuilder from '@/components/owner/MenuBuilder';
 import PreOrderSettings from '@/components/owner/PreOrderSettings';
@@ -200,19 +201,8 @@ export default function RestaurantSettings() {
           </TabsList>
 
           <TabsContent value="general" className="space-y-6">
-            {/* Cover Image */}
-            <Card className="border-0 shadow-lg">
-              <CardHeader>
-                <CardTitle>Cover Image</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ImageUploader
-                  currentImage={formData.cover_image}
-                  onImageUploaded={(url) => updateField('cover_image', url)}
-                  placeholder="Upload restaurant cover photo"
-                />
-              </CardContent>
-            </Card>
+            {/* Restaurant Images */}
+            <RestaurantImageManager restaurant={restaurant} />
 
             {/* Basic Info */}
             <Card className="border-0 shadow-lg">
