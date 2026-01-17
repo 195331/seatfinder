@@ -90,8 +90,16 @@ export default function LiveSeatingFloor({
     return moment().diff(moment(liveTable.seated_at), 'minutes');
   };
 
-  const visibleObjects = floorPlan?.objects?.filter(o => o.layer === activeLayer) || [];
-  const layers = [...new Set(floorPlan?.objects?.map(o => o.layer) || ['main'])];
+  // Handle new floor plan structure with rooms
+  const currentRoom = floorPlan?.rooms?.[activeLayer];
+  const visibleObjects = currentRoom?.items || floorPlan?.objects?.filter(o => o.layer === activeLayer) || [];
+  const visibleZones = currentRoom?.zones || [];
+  const visibleWalls = currentRoom?.walls || [];
+  const roomBoundary = currentRoom?.roomBoundary || [];
+  
+  const layers = floorPlan?.rooms 
+    ? Object.keys(floorPlan.rooms) 
+    : [...new Set(floorPlan?.objects?.map(o => o.layer) || ['main'])];
 
   return (
     <Card className="border-0 shadow-lg h-full">
@@ -155,19 +163,68 @@ export default function LiveSeatingFloor({
           >
             <Layer>
               {/* Background */}
-              <Rect width={2000} height={1400} fill="#ffffff" />
+              <Rect width={2400} height={1700} fill="#0b1220" />
 
-              {/* Objects */}
+              {/* Room Boundary */}
+              {roomBoundary.length >= 3 && (
+                <Line
+                  points={roomBoundary.flatMap(p => [p.x, p.y]).concat([roomBoundary[0].x, roomBoundary[0].y])}
+                  closed
+                  fill="rgba(34,197,94,0.10)"
+                  stroke="rgba(34,197,94,0.38)"
+                  strokeWidth={2}
+                  listening={false}
+                />
+              )}
+
+              {/* Zones */}
+              {visibleZones.map(zone => (
+                <Group key={zone.id} x={zone.x} y={zone.y}>
+                  <Rect
+                    width={zone.w}
+                    height={zone.h}
+                    fill={zone.fill}
+                    stroke={zone.stroke}
+                    strokeWidth={2}
+                    dash={[12, 8]}
+                    cornerRadius={16}
+                    opacity={0.5}
+                    listening={false}
+                  />
+                  <Text
+                    x={12}
+                    y={12}
+                    text={zone.label}
+                    fill="rgba(255,255,255,0.92)"
+                    fontSize={16}
+                    fontStyle="700"
+                    listening={false}
+                  />
+                </Group>
+              ))}
+
+              {/* Walls */}
+              {visibleWalls.map(wall => (
+                <Line
+                  key={wall.id}
+                  points={wall.points?.flatMap(p => [p.x, p.y]) || []}
+                  stroke="rgba(255,255,255,0.42)"
+                  strokeWidth={wall.thickness || 10}
+                  lineCap="round"
+                  lineJoin="round"
+                  listening={false}
+                />
+              ))}
+
+              {/* Tables */}
               {visibleObjects.map(obj => {
                 if (obj.type === 'table') {
-                  const status = getTableStatus(obj);
+                  const liveTable = tables.find(t => t.floorplan_item_id === obj.id);
+                  const status = liveTable?.status || 'free';
                   const statusInfo = STATUS_COLORS[status] || STATUS_COLORS.free;
-                  const isSelected = selectedTable?.label === obj.label;
-                  const isHighlighted = highlightedTables.some(id => {
-                    const t = tables.find(tb => tb.id === id);
-                    return t?.label === obj.label;
-                  });
-                  const duration = getSeatedDuration(obj);
+                  const isSelected = selectedTable?.id === liveTable?.id;
+                  const isHighlighted = highlightedTables.includes(liveTable?.id);
+                  const duration = liveTable?.seated_at ? moment().diff(moment(liveTable.seated_at), 'minutes') : null;
 
                   return (
                     <Group
@@ -175,76 +232,48 @@ export default function LiveSeatingFloor({
                       x={obj.x}
                       y={obj.y}
                       rotation={obj.rotation || 0}
-                      onClick={() => {
-                        const liveTable = tables.find(t => t.label === obj.label);
-                        if (liveTable) onTableClick?.(liveTable);
-                      }}
-                      onTap={() => {
-                        const liveTable = tables.find(t => t.label === obj.label);
-                        if (liveTable) onTableClick?.(liveTable);
-                      }}
+                      onClick={() => liveTable && onTableClick?.(liveTable)}
+                      onTap={() => liveTable && onTableClick?.(liveTable)}
                     >
-                      {/* Shadow */}
-                      {obj.shape === 'round' ? (
-                        <Circle
-                          radius={(obj.width || 80) / 2}
-                          fill="#00000015"
-                          offsetY={-4}
-                        />
-                      ) : (
-                        <Rect
-                          width={obj.width || 80}
-                          height={obj.height || 80}
-                          fill="#00000015"
-                          offsetY={-4}
-                          cornerRadius={obj.shape === 'booth' ? 12 : 8}
-                        />
-                      )}
-
                       {/* Table */}
                       {obj.shape === 'round' ? (
                         <Circle
-                          radius={(obj.width || 80) / 2}
+                          x={obj.w / 2}
+                          y={obj.h / 2}
+                          radius={obj.w / 2}
                           fill={statusInfo.bg}
-                          stroke={isSelected ? '#10B981' : (isHighlighted ? '#3B82F6' : statusInfo.bg)}
-                          strokeWidth={isSelected || isHighlighted ? 4 : 0}
+                          stroke={isSelected ? '#22c55e' : (isHighlighted ? '#3B82F6' : '#ffffff')}
+                          strokeWidth={isSelected || isHighlighted ? 3 : 2}
                         />
                       ) : (
                         <Rect
-                          width={obj.width || 80}
-                          height={obj.height || 80}
+                          width={obj.w}
+                          height={obj.h}
                           fill={statusInfo.bg}
-                          stroke={isSelected ? '#10B981' : (isHighlighted ? '#3B82F6' : statusInfo.bg)}
-                          strokeWidth={isSelected || isHighlighted ? 4 : 0}
-                          cornerRadius={obj.shape === 'booth' ? 12 : 8}
+                          stroke={isSelected ? '#22c55e' : (isHighlighted ? '#3B82F6' : '#ffffff')}
+                          strokeWidth={isSelected || isHighlighted ? 3 : 2}
+                          cornerRadius={14}
                         />
                       )}
 
                       {/* Label */}
                       <Text
+                        x={0}
+                        y={0}
+                        width={obj.w}
+                        height={obj.h}
                         text={obj.label}
-                        fontSize={13}
-                        fontStyle="bold"
+                        fontSize={18}
+                        fontStyle="700"
                         fill="#ffffff"
-                        width={obj.width || 80}
                         align="center"
-                        y={obj.shape === 'round' ? 0 : ((obj.height || 80) / 2) - 18}
-                        offsetY={obj.shape === 'round' ? ((obj.width || 80) / 4) : 0}
-                      />
-                      <Text
-                        text={`${obj.seats} seats`}
-                        fontSize={10}
-                        fill="#ffffff"
-                        opacity={0.9}
-                        width={obj.width || 80}
-                        align="center"
-                        y={obj.shape === 'round' ? 0 : ((obj.height || 80) / 2) + 2}
-                        offsetY={obj.shape === 'round' ? -((obj.width || 80) / 8) : 0}
+                        verticalAlign="middle"
+                        listening={false}
                       />
 
                       {/* Duration Badge */}
                       {status === 'occupied' && duration && (
-                        <Group y={(obj.height || 80) + 5}>
+                        <Group y={obj.h + 5}>
                           <Rect
                             width={60}
                             height={20}
@@ -268,31 +297,28 @@ export default function LiveSeatingFloor({
                   );
                 }
 
-                if (obj.type === 'text') {
+                if (obj.type === 'note') {
                   return (
-                    <Text
-                      key={obj.id}
-                      x={obj.x}
-                      y={obj.y}
-                      text={obj.text}
-                      fontSize={obj.fontSize || 18}
-                      fill={obj.fill || '#111827'}
-                      fontStyle="bold"
-                      listening={false}
-                    />
-                  );
-                }
-
-                if (obj.type === 'wall') {
-                  return (
-                    <Line
-                      key={obj.id}
-                      points={obj.points}
-                      stroke={obj.stroke || '#111827'}
-                      strokeWidth={obj.strokeWidth || 6}
-                      lineCap="round"
-                      listening={false}
-                    />
+                    <Group key={obj.id} x={obj.x} y={obj.y}>
+                      <Rect
+                        width={obj.w}
+                        height={obj.h}
+                        fill={obj.fill || 'rgba(59,130,246,0.10)'}
+                        stroke={obj.stroke || 'rgba(59,130,246,0.35)'}
+                        strokeWidth={1.6}
+                        cornerRadius={14}
+                        listening={false}
+                      />
+                      <Text
+                        x={16}
+                        y={16}
+                        text={obj.text || 'Note'}
+                        fill="rgba(255,255,255,0.92)"
+                        fontSize={16}
+                        fontStyle="600"
+                        listening={false}
+                      />
+                    </Group>
                   );
                 }
 

@@ -38,29 +38,33 @@ export default function FloorPlanViewPremium({
     occasion: 'none'
   });
 
-  // Extract data from new floor plan format
-  const outline = floorPlanData?.outline;
-  const items = floorPlanData?.items || [];
+  // Handle new floor plan structure with rooms
+  const rooms = floorPlanData?.rooms || {};
+  const allTables = Object.values(rooms).flatMap(room => 
+    (room.items || []).filter(it => it.type === 'table')
+  );
   
-  // Get tables from items array with status merged from tables prop
+  // Get tables with status merged from tables prop
   const floorPlanTables = useMemo(() => {
-    return items
-      .filter(it => it.type === 'table')
-      .map(fpTable => {
-        // Find matching table entity for status
-        const tableEntity = tables.find(t => t.label === fpTable.label);
-        return {
-          ...fpTable,
-          status: tableEntity?.status || 'free',
-          id: tableEntity?.id || fpTable.id,
-          capacity: fpTable.seats
-        };
-      });
-  }, [items, tables]);
+    return allTables.map(fpTable => {
+      // Find matching table entity for status
+      const tableEntity = tables.find(t => t.floorplan_item_id === fpTable.id);
+      return {
+        ...fpTable,
+        status: tableEntity?.status || 'free',
+        id: tableEntity?.id || fpTable.id,
+        capacity: fpTable.seats,
+        zone_type: tableEntity?.zone_type
+      };
+    });
+  }, [allTables, tables]);
 
-  const areas = items.filter(it => it.type === 'area');
-  const walls = items.filter(it => it.type === 'wall');
-  const textBoxes = items.filter(it => it.type === 'textBox');
+  const allZones = Object.values(rooms).flatMap(room => room.zones || []);
+  const allWalls = Object.values(rooms).flatMap(room => room.walls || []);
+  const allRoomBoundaries = Object.entries(rooms).map(([id, room]) => ({
+    id,
+    boundary: room.roomBoundary || []
+  }));
 
   const handleTableClick = async (table) => {
     if (table.status === 'occupied' || table.status === 'reserved') return;
@@ -127,105 +131,63 @@ export default function FloorPlanViewPremium({
       </div>
 
       {/* Floor Plan Canvas */}
-      <div className="relative bg-slate-50 rounded-xl border-2 border-slate-200 overflow-auto">
+      <div className="relative bg-slate-900 rounded-xl border-2 border-slate-700 overflow-auto">
         <div style={{ minHeight: 500, position: 'relative' }}>
           <svg
             width="100%"
             height="100%"
-            viewBox="0 0 2400 1600"
+            viewBox="0 0 2400 1700"
             className="w-full"
             style={{ minHeight: 500 }}
           >
-            {/* Subtle grid */}
-            <defs>
-              <pattern id="customerGridPattern" width="80" height="80" patternUnits="userSpaceOnUse">
-                <path d="M 80 0 L 0 0 0 80" fill="none" stroke="#f1f5f9" strokeWidth="1"/>
-              </pattern>
-            </defs>
-            <rect width="2400" height="1600" fill="url(#customerGridPattern)" />
+            {/* Dark background */}
+            <rect width="2400" height="1700" fill="#0b1220" />
 
-            {/* Outline */}
-            {outline && (
-              <rect
-                x={outline.x}
-                y={outline.y}
-                width={outline.w}
-                height={outline.h}
-                fill="#ffffff"
-                stroke="#e2e8f0"
-                strokeWidth={3}
-                rx={14}
-              />
+            {/* Room Boundaries */}
+            {allRoomBoundaries.map(({ id, boundary }) => 
+              boundary.length >= 3 && (
+                <polygon
+                  key={id}
+                  points={boundary.map(p => `${p.x},${p.y}`).join(' ')}
+                  fill="rgba(34,197,94,0.10)"
+                  stroke="rgba(34,197,94,0.38)"
+                  strokeWidth={2}
+                />
+              )
             )}
 
-            {/* Areas (background zones) */}
-            {areas.map(area => (
-              <g key={area.id}>
+            {/* Zones */}
+            {allZones.map(zone => (
+              <g key={zone.id}>
                 <rect
-                  x={area.x}
-                  y={area.y}
-                  width={area.w}
-                  height={area.h}
-                  rx={12}
-                  fill={area.style?.fill || '#e0f2fe'}
-                  opacity={area.style?.opacity || 0.3}
-                  stroke={area.style?.stroke || '#60a5fa'}
+                  x={zone.x}
+                  y={zone.y}
+                  width={zone.w}
+                  height={zone.h}
+                  rx={16}
+                  fill={zone.fill}
+                  stroke={zone.stroke}
                   strokeWidth={2}
-                  strokeDasharray="6,6"
+                  strokeDasharray="12,8"
+                  opacity={0.5}
                 />
-                <g pointerEvents="none">
-                  <rect
-                    x={area.x + 12}
-                    y={area.y + 10}
-                    width={Math.max(70, (area.name?.length || 4) * 8 + 26)}
-                    height={26}
-                    rx={8}
-                    fill={area.style?.stroke || '#60a5fa'}
-                    opacity={0.95}
-                  />
-                  <text x={area.x + 24} y={area.y + 28} fill="#ffffff" fontSize={13} fontWeight={700}>
-                    {area.name || "Area"}
-                  </text>
-                </g>
+                <text x={zone.x + 12} y={zone.y + 28} fill="rgba(255,255,255,0.92)" fontSize={16} fontWeight={700}>
+                  {zone.label}
+                </text>
               </g>
             ))}
 
             {/* Walls */}
-            {walls.map(wall => (
-              <line
+            {allWalls.map(wall => (
+              <polyline
                 key={wall.id}
-                x1={wall.x1}
-                y1={wall.y1}
-                x2={wall.x2}
-                y2={wall.y2}
-                stroke={wall.style?.stroke || '#111827'}
-                strokeWidth={wall.style?.width || 6}
+                points={wall.points?.map(p => `${p.x},${p.y}`).join(' ') || ''}
+                fill="none"
+                stroke="rgba(255,255,255,0.42)"
+                strokeWidth={wall.thickness || 10}
                 strokeLinecap="round"
+                strokeLinejoin="round"
               />
-            ))}
-
-            {/* Text Labels */}
-            {textBoxes.map(txt => (
-              <g key={txt.id}>
-                <rect 
-                  x={txt.x} 
-                  y={txt.y} 
-                  width={txt.w} 
-                  height={txt.h} 
-                  rx={10} 
-                  fill="#ffffff" 
-                  opacity={0.65} 
-                />
-                <text 
-                  x={txt.x + 10} 
-                  y={txt.y + txt.h / 2 + 6} 
-                  fill={txt.style?.color || '#111827'} 
-                  fontSize={txt.style?.size || 16} 
-                  fontWeight={700}
-                >
-                  {txt.text || "Label"}
-                </text>
-              </g>
             ))}
 
             {/* Tables (interactive) */}
@@ -251,15 +213,6 @@ export default function FloorPlanViewPremium({
                   )}
                   onClick={() => handleTableClick(table)}
                 >
-                  {/* Shadow */}
-                  <ellipse
-                    cx={cx}
-                    cy={table.y + table.h + 10}
-                    rx={table.w / 2}
-                    ry={8}
-                    fill="#00000012"
-                  />
-
                   {/* Table shape */}
                   {table.shape === 'round' ? (
                     <circle 
@@ -267,9 +220,9 @@ export default function FloorPlanViewPremium({
                       cy={cy} 
                       r={Math.min(table.w, table.h) / 2} 
                       fill={fill} 
-                      stroke={isSelected ? '#8b5cf6' : stroke} 
+                      stroke={isSelected ? '#22c55e' : stroke} 
                       strokeWidth={isSelected ? 4 : 3}
-                      filter={isSelected ? 'drop-shadow(0 0 8px rgba(139, 92, 246, 0.5))' : ''}
+                      filter={isSelected ? 'drop-shadow(0 0 12px rgba(34, 197, 94, 0.5))' : ''}
                     />
                   ) : (
                     <rect 
@@ -279,18 +232,15 @@ export default function FloorPlanViewPremium({
                       height={table.h} 
                       rx={14} 
                       fill={fill} 
-                      stroke={isSelected ? '#8b5cf6' : stroke} 
+                      stroke={isSelected ? '#22c55e' : stroke} 
                       strokeWidth={isSelected ? 4 : 3}
-                      filter={isSelected ? 'drop-shadow(0 0 8px rgba(139, 92, 246, 0.5))' : ''}
+                      filter={isSelected ? 'drop-shadow(0 0 12px rgba(34, 197, 94, 0.5))' : ''}
                     />
                   )}
 
                   {/* Label */}
-                  <text x={cx} y={cy - 4} textAnchor="middle" fontSize={15} fontWeight={800} fill="#111827">
+                  <text x={cx} y={cy} textAnchor="middle" fontSize={18} fontWeight={700} fill="#ffffff">
                     {table.label}
-                  </text>
-                  <text x={cx} y={cy + 16} textAnchor="middle" fontSize={12} fontWeight={600} fill="#64748b">
-                    {table.seats} seats
                   </text>
 
                   {/* Status badge */}
