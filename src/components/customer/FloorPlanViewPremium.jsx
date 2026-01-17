@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -7,10 +7,11 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Users, Loader2, LogIn, Sparkles, CheckCircle } from 'lucide-react';
+import { CalendarIcon, Users, Loader2, LogIn, CheckCircle, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from "@/lib/utils";
 import SpecialRequestsForm from './SpecialRequestsForm';
+import FloorPlanRenderer from '../owner/FloorPlanRenderer';
 
 const TIME_SLOTS = [
   '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '14:00',
@@ -24,9 +25,12 @@ export default function FloorPlanViewPremium({
   isSubmitting,
   currentUser 
 }) {
+  const stageRef = useRef(null);
   const [selectedTable, setSelectedTable] = useState(null);
   const [showReserveDialog, setShowReserveDialog] = useState(false);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
+  const [camera, setCamera] = useState({ x: -260, y: -140, scale: 1.18 });
+  const [activeLayer, setActiveLayer] = useState('MAIN');
   const [reservationData, setReservationData] = useState({
     date: null,
     time: '',
@@ -41,45 +45,66 @@ export default function FloorPlanViewPremium({
   // Handle new floor plan structure with rooms
   const rooms = floorPlanData?.rooms || {};
   const hasFloorPlan = Object.keys(rooms).length > 0 && floorPlanData?.publishedAt;
+  const layers = hasFloorPlan ? Object.keys(rooms) : [];
   
-  const allTables = Object.values(rooms).flatMap(room => 
-    (room.items || []).filter(it => it.type === 'table')
-  );
-  
-  // Get tables with status merged from tables prop
-  const floorPlanTables = useMemo(() => {
-    return allTables.map(fpTable => {
-      // Find matching table entity for status
-      const tableEntity = tables.find(t => t.floorplan_item_id === fpTable.id);
-      return {
-        ...fpTable,
-        status: tableEntity?.status || 'free',
-        id: tableEntity?.id || fpTable.id,
-        capacity: fpTable.seats,
-        zone_type: tableEntity?.zone_type
-      };
-    });
-  }, [allTables, tables]);
+  const currentRoom = rooms[activeLayer];
 
-  const allZones = Object.values(rooms).flatMap(room => room.zones || []);
-  const allWalls = Object.values(rooms).flatMap(room => room.walls || []);
-  const allRoomBoundaries = Object.entries(rooms).map(([id, room]) => ({
-    id,
-    boundary: room.roomBoundary || []
-  }));
+  // Build table status map
+  const tableStatusMap = useMemo(() => {
+    const map = {};
+    for (const t of tables) {
+      if (t?.floorplan_item_id) {
+        map[t.floorplan_item_id] = t.status;
+      }
+    }
+    return map;
+  }, [tables]);
 
-  const handleTableClick = async (table) => {
-    if (table.status === 'occupied' || table.status === 'reserved') return;
+  const selectedTableItemId = useMemo(() => {
+    return tables.find(t => t.id === selectedTable?.id)?.floorplan_item_id;
+  }, [selectedTable, tables]);
+
+  const clampScale = (s) => Math.max(0.35, Math.min(2.4, s));
+
+  const fitToContent = () => {
+    const boundary = currentRoom?.roomBoundary;
+    if (!boundary || boundary.length < 3) {
+      setCamera({ x: -260, y: -140, scale: 1.18 });
+      return;
+    }
+    const xs = boundary.map((p) => p.x);
+    const ys = boundary.map((p) => p.y);
+    const minX = Math.min(...xs), maxX = Math.max(...xs);
+    const minY = Math.min(...ys), maxY = Math.max(...ys);
+
+    const pad = 80;
+    const boxW = (maxX - minX) + pad * 2;
+    const boxH = (maxY - minY) + pad * 2;
+
+    const viewW = 1180;
+    const viewH = 600;
+
+    const scale = clampScale(Math.min(viewW / boxW, viewH / boxH));
+    const x = -(minX - pad) * scale + 20;
+    const y = -(minY - pad) * scale + 20;
+    setCamera({ x, y, scale });
+  };
+
+  const handleTableClick = async (tableObj) => {
+    // Find the actual table entity
+    const tableEntity = tables.find(t => t.floorplan_item_id === tableObj.id);
+    if (!tableEntity) return;
+    if (tableEntity.status === 'occupied' || tableEntity.status === 'reserved') return;
     
     const isAuth = await base44.auth.isAuthenticated();
     if (!isAuth) {
-      setSelectedTable(table);
+      setSelectedTable(tableEntity);
       setShowLoginDialog(true);
       return;
     }
     
-    setSelectedTable(table);
-    setReservationData(prev => ({ ...prev, partySize: table.capacity || 2 }));
+    setSelectedTable(tableEntity);
+    setReservationData(prev => ({ ...prev, partySize: tableObj.seats || 2 }));
     setShowReserveDialog(true);
   };
 
@@ -110,9 +135,9 @@ export default function FloorPlanViewPremium({
     setReservationData({ date: null, time: '', partySize: 2, notes: '', seatingPreference: '', specialRequests: '', dietaryNeeds: [], occasion: 'none' });
   };
 
-  const availableCount = floorPlanTables.filter(t => t.status === 'free').length;
-  const reservedCount = floorPlanTables.filter(t => t.status === 'reserved').length;
-  const occupiedCount = floorPlanTables.filter(t => t.status === 'occupied').length;
+  const availableCount = tables.filter(t => t.status === 'free').length;
+  const reservedCount = tables.filter(t => t.status === 'reserved').length;
+  const occupiedCount = tables.filter(t => t.status === 'occupied').length;
 
   if (!hasFloorPlan) {
     return (
@@ -146,146 +171,82 @@ export default function FloorPlanViewPremium({
         </div>
       </div>
 
-      {/* Floor Plan Canvas */}
-      <div className="relative bg-slate-900 rounded-xl border-2 border-slate-700 overflow-auto">
-        <div style={{ minHeight: 500, position: 'relative' }}>
-          <svg
-            width="100%"
-            height="100%"
-            viewBox="0 0 2400 1700"
-            className="w-full"
-            style={{ minHeight: 500 }}
-          >
-            {/* Dark background */}
-            <rect width="2400" height="1700" fill="#0b1220" />
-
-            {/* Room Boundaries */}
-            {allRoomBoundaries.map(({ id, boundary }) => 
-              boundary.length >= 3 && (
-                <polygon
-                  key={id}
-                  points={boundary.map(p => `${p.x},${p.y}`).join(' ')}
-                  fill="rgba(34,197,94,0.10)"
-                  stroke="rgba(34,197,94,0.38)"
-                  strokeWidth={2}
-                />
-              )
-            )}
-
-            {/* Zones */}
-            {allZones.map(zone => (
-              <g key={zone.id}>
-                <rect
-                  x={zone.x}
-                  y={zone.y}
-                  width={zone.w}
-                  height={zone.h}
-                  rx={16}
-                  fill={zone.fill}
-                  stroke={zone.stroke}
-                  strokeWidth={2}
-                  strokeDasharray="12,8"
-                  opacity={0.5}
-                />
-                <text x={zone.x + 12} y={zone.y + 28} fill="rgba(255,255,255,0.92)" fontSize={16} fontWeight={700}>
-                  {zone.label}
-                </text>
-              </g>
-            ))}
-
-            {/* Walls */}
-            {allWalls.map(wall => (
-              <polyline
-                key={wall.id}
-                points={wall.points?.map(p => `${p.x},${p.y}`).join(' ') || ''}
-                fill="none"
-                stroke="rgba(255,255,255,0.42)"
-                strokeWidth={wall.thickness || 10}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            ))}
-
-            {/* Tables (interactive) */}
-            {floorPlanTables.map(table => {
-              const isAvailable = table.status === 'free';
-              const isSelected = selectedTable?.id === table.id;
-              
-              const fill = isAvailable ? '#d1fae5' : 
-                          table.status === 'reserved' ? '#fef3c7' : '#fee2e2';
-              const stroke = isAvailable ? '#10b981' : 
-                            table.status === 'reserved' ? '#f59e0b' : '#ef4444';
-
-              const cx = table.x + table.w / 2;
-              const cy = table.y + table.h / 2;
-
-              return (
-                <g 
-                  key={table.id}
-                  transform={`rotate(${table.rotation || 0}, ${cx}, ${cy})`}
-                  className={cn(
-                    "transition-all",
-                    isAvailable && "cursor-pointer hover:opacity-80"
-                  )}
-                  onClick={() => handleTableClick(table)}
-                >
-                  {/* Table shape */}
-                  {table.shape === 'round' ? (
-                    <circle 
-                      cx={cx} 
-                      cy={cy} 
-                      r={Math.min(table.w, table.h) / 2} 
-                      fill={fill} 
-                      stroke={isSelected ? '#22c55e' : stroke} 
-                      strokeWidth={isSelected ? 4 : 3}
-                      filter={isSelected ? 'drop-shadow(0 0 12px rgba(34, 197, 94, 0.5))' : ''}
-                    />
-                  ) : (
-                    <rect 
-                      x={table.x} 
-                      y={table.y} 
-                      width={table.w} 
-                      height={table.h} 
-                      rx={14} 
-                      fill={fill} 
-                      stroke={isSelected ? '#22c55e' : stroke} 
-                      strokeWidth={isSelected ? 4 : 3}
-                      filter={isSelected ? 'drop-shadow(0 0 12px rgba(34, 197, 94, 0.5))' : ''}
-                    />
-                  )}
-
-                  {/* Label */}
-                  <text x={cx} y={cy} textAnchor="middle" fontSize={18} fontWeight={700} fill="#ffffff">
-                    {table.label}
-                  </text>
-
-                  {/* Status badge */}
-                  {!isAvailable && (
-                    <g>
-                      <circle cx={table.x + table.w - 14} cy={table.y + 14} r={12} fill={stroke} />
-                      <text x={table.x + table.w - 14} y={table.y + 18} textAnchor="middle" fontSize={10} fill="#fff" fontWeight={700}>
-                        {table.status === 'reserved' ? '⏱' : '✕'}
-                      </text>
-                    </g>
-                  )}
-
-                  {/* Available checkmark */}
-                  {isAvailable && (
-                    <g opacity={0.5}>
-                      <circle cx={table.x + table.w - 14} cy={table.y + 14} r={12} fill="#10b981" />
-                      <text x={table.x + table.w - 14} y={table.y + 18} textAnchor="middle" fontSize={10} fill="#fff" fontWeight={700}>
-                        ✓
-                      </text>
-                    </g>
-                  )}
-                </g>
-              );
-            })}
-          </svg>
+      {/* Floor Plan Controls */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          {layers.length > 1 && layers.map(layer => (
+            <Button
+              key={layer}
+              size="sm"
+              variant={activeLayer === layer ? 'default' : 'outline'}
+              onClick={() => setActiveLayer(layer)}
+              className="rounded-full"
+            >
+              {layer}
+            </Button>
+          ))}
+        </div>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" onClick={() => setCamera(c => ({ ...c, scale: clampScale(c.scale * 0.88) }))}>
+            <ZoomOut className="w-4 h-4" />
+          </Button>
+          <Badge variant="outline" className="px-3">{Math.round(camera.scale * 100)}%</Badge>
+          <Button size="sm" variant="outline" onClick={() => setCamera(c => ({ ...c, scale: clampScale(c.scale * 1.12) }))}>
+            <ZoomIn className="w-4 h-4" />
+          </Button>
+          <Button size="sm" variant="outline" onClick={fitToContent}>
+            <Maximize2 className="w-4 h-4" />
+          </Button>
         </div>
       </div>
 
-      <p className="text-sm text-slate-500 text-center">
+      {/* Floor Plan Canvas */}
+      <div className="relative bg-slate-900 rounded-xl border-2 border-slate-700 overflow-hidden" style={{ height: 600 }}>
+        <FloorPlanRenderer
+          stageRef={stageRef}
+          width={1180}
+          height={600}
+          camera={camera}
+          roomData={currentRoom}
+          showGrid={true}
+          showZones={true}
+          showTableStatus={true}
+          tableStatusMap={tableStatusMap}
+          selectedIds={selectedTableItemId ? [selectedTableItemId] : []}
+          highlightedIds={[]}
+          onTableClick={handleTableClick}
+          draggable={true}
+          onDragEnd={(e) => setCamera(c => ({ ...c, x: e.target.x(), y: e.target.y() }))}
+          onWheel={(e) => {
+            e.evt.preventDefault();
+            const st = stageRef.current;
+            if (!st) return;
+            const pointer = st.getPointerPosition();
+            if (!pointer) return;
+
+            const direction = e.evt.deltaY > 0 ? -1 : 1;
+            const factor = direction > 0 ? 1.08 : 0.92;
+            
+            const oldScale = st.scaleX();
+            const newScale = clampScale(oldScale * factor);
+
+            const mousePointTo = {
+              x: (pointer.x - st.x()) / oldScale,
+              y: (pointer.y - st.y()) / oldScale
+            };
+
+            const newPos = {
+              x: pointer.x - mousePointTo.x * newScale,
+              y: pointer.y - mousePointTo.y * newScale
+            };
+
+            setCamera({ x: newPos.x, y: newPos.y, scale: newScale });
+          }}
+          readOnly={true}
+        />
+      </div>
+
+      <p className="text-sm text-slate-500 text-center mt-4">
         Click on an available table to request a reservation
       </p>
 

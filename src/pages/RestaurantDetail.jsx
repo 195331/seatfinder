@@ -959,7 +959,7 @@ export default function RestaurantDetail() {
                   )}
                 </CardHeader>
                 <CardContent>
-                  {restaurant.floor_plan_data?.items ? (
+                  {restaurant.floor_plan_data?.rooms || restaurant.floor_plan_data?.publishedAt ? (
                     <FloorPlanViewPremium
                       floorPlanData={restaurant.floor_plan_data}
                       tables={tables}
@@ -967,16 +967,10 @@ export default function RestaurantDetail() {
                       isSubmitting={reserveTableMutation.isPending}
                       currentUser={currentUser}
                     />
-                  ) : displayTables.length > 0 ? (
-                    <div className="text-center py-12">
-                      <LayoutGrid className="w-12 h-12 mx-auto text-slate-300 mb-3" />
-                      <p className="text-slate-500">This restaurant hasn't set up their floor plan yet</p>
-                      <p className="text-sm text-slate-400 mt-1">Try joining the waitlist instead</p>
-                    </div>
                   ) : (
                     <div className="text-center py-12">
                       <LayoutGrid className="w-12 h-12 mx-auto text-slate-300 mb-3" />
-                      <p className="text-slate-500">No floor plan available for this restaurant</p>
+                      <p className="text-slate-500">This restaurant hasn't set up their floor plan yet</p>
                       <p className="text-sm text-slate-400 mt-1">Try joining the waitlist instead</p>
                     </div>
                   )}
