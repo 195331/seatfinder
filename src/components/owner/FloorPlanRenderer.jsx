@@ -110,19 +110,30 @@ export default function FloorPlanRenderer({
   ].sort((a, b) => (a.renderOrder ?? 0) - (b.renderOrder ?? 0));
 
   return (
-    <Stage
-      ref={stageRef}
-      width={width}
-      height={height}
-      x={camera.x}
-      y={camera.y}
-      scaleX={camera.scale}
-      scaleY={camera.scale}
-      draggable={draggable}
-      onDragEnd={onDragEnd}
-      onWheel={onWheel}
-      onContextMenu={onContextMenu}
-    >
+  <Stage
+  ref={stageRef}
+  width={width}
+  height={height}
+  x={camera.x}
+  y={camera.y}
+  scaleX={camera.scale}
+  scaleY={camera.scale}
+  draggable={draggable}
+  onDragEnd={onDragEnd}
+  onWheel={onWheel}
+  onContextMenu={(e) => {
+    e.evt?.preventDefault?.(); // IMPORTANT: stops browser right-click menu
+    console.log("STAGE CONTEXT ✅", e.target?.id?.(), e.target?.className);
+    onContextMenu?.(e);
+  }}
+  onMouseDown={(e) => {
+    console.log("STAGE CLICK ✅", e.target?.id?.(), e.target?.className);
+  }}
+  onTap={(e) => {
+    console.log("STAGE TAP ✅", e.target?.id?.(), e.target?.className);
+  }}
+>
+
       {/* Background Layer - NOT listening */}
       <Layer listening={false}>
         {/* Grid */}
@@ -159,20 +170,24 @@ export default function FloorPlanRenderer({
 
           if (obj.type === 'zone' && showZones) {
             return (
-              <Group key={obj.id} x={obj.x} y={obj.y}>
-                <Rect
-                  width={obj.w}
-                  height={obj.h}
-                  fill={obj.fill}
-                  stroke={isSelected ? COLORS.accent : obj.stroke}
-                  strokeWidth={isSelected ? 3 : 2}
-                  dash={[12, 8]}
-                  cornerRadius={16}
-                  opacity={0.5}
-                  shadowBlur={isSelected ? 10 : 0}
-                  shadowColor={COLORS.accent}
-                  listening={false}
-                />
+            <Group
+  key={obj.id}
+  id={obj.id}
+  x={obj.x}
+  y={obj.y}
+  rotation={obj.rotation || 0}
+  onMouseDown={(e) => {
+    e.cancelBubble = true;
+    console.log("TABLE CLICK ✅", obj.id, obj.table_number, obj.seats);
+    onTableClick?.(obj);
+  }}
+  onTap={(e) => {
+    e.cancelBubble = true;
+    console.log("TABLE TAP ✅", obj.id, obj.table_number, obj.seats);
+    onTableClick?.(obj);
+  }}
+>
+
                 <Text
                   x={12}
                   y={12}
