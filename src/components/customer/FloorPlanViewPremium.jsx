@@ -267,21 +267,11 @@ export default function FloorPlanViewPremium({
       </div>
 
       {/* Canvas (FIXES the blob / overflow + makes tables clickable) */}
-      <div ref={wrapRef} ...>
-  <div className="absolute inset-0 pointer-events-none">
-    <FloorPlanRenderer ... />
-  </div>
-
-  <div className="absolute inset-0 z-10" ... />
-
-  {/* CLICK TEST */}
-  <div
-    className="absolute inset-0 z-[9999]"
-    style={{ background: "transparent", pointerEvents: "auto" }}
-    onPointerDown={() => alert("CLICK LAYER WORKS ✅")}
-  />
-</div>
-
+      <div
+        ref={wrapRef}
+        className="relative bg-slate-900 rounded-xl border-2 border-slate-700 overflow-hidden"
+        style={{ height: 600 }}
+      >
         {/* Visual renderer (pointer events disabled) */}
         <div className="absolute inset-0 pointer-events-none">
           <FloorPlanRenderer
