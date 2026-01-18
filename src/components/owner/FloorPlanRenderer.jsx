@@ -123,7 +123,8 @@ export default function FloorPlanRenderer({
       onWheel={onWheel}
       onContextMenu={onContextMenu}
     >
-      <Layer>
+      {/* Background Layer - NOT listening */}
+      <Layer listening={false}>
         {/* Grid */}
         {gridLines.map((g, i) => (
           <Line key={i} points={g.points} stroke={g.stroke} strokeWidth={g.width} listening={false} />
@@ -170,7 +171,7 @@ export default function FloorPlanRenderer({
                   opacity={0.5}
                   shadowBlur={isSelected ? 10 : 0}
                   shadowColor={COLORS.accent}
-                  listening={!readOnly && interactive}
+                  listening={false}
                 />
                 <Text
                   x={12}
@@ -198,7 +199,7 @@ export default function FloorPlanRenderer({
                 opacity={isSelected ? 0.92 : 0.66}
                 shadowBlur={isSelected ? 10 : 0}
                 shadowColor={COLORS.accent}
-                listening={!readOnly && interactive}
+                listening={false}
               />
             );
           }
@@ -215,7 +216,7 @@ export default function FloorPlanRenderer({
                   cornerRadius={14}
                   shadowBlur={isSelected ? 14 : 0}
                   shadowColor={COLORS.accent}
-                  listening={!readOnly && interactive}
+                  listening={false}
                 />
                 <Text
                   x={16}
@@ -230,90 +231,134 @@ export default function FloorPlanRenderer({
             );
           }
 
-          if (obj.type === 'table') {
-            const liveStatus = showTableStatus ? tableStatusMap[obj.id] : null;
-            const statusFill = liveStatus === 'occupied' ? COLORS.tableOccupied :
-                              liveStatus === 'reserved' ? COLORS.tableReserved :
-                              liveStatus === 'free' ? COLORS.tableFree : obj.fill || COLORS.tableFill;
-            const statusStroke = liveStatus === 'occupied' ? COLORS.tableStrokeOccupied :
-                                liveStatus === 'reserved' ? COLORS.tableStrokeReserved :
-                                liveStatus === 'free' ? COLORS.tableStrokeFree : obj.stroke || COLORS.tableStroke;
-            const label = obj.label || `${obj.seats}`;
-
-            return (
-              <Group
-                key={obj.id}
-                id={obj.id}
-                x={obj.x}
-                y={obj.y}
-                rotation={obj.rotation || 0}
-                onClick={(e) => {
-                  e.cancelBubble = true;
-                  onTableClick?.(obj);
-                }}
-                onTap={(e) => {
-                  e.cancelBubble = true;
-                  onTableClick?.(obj);
-                }}
-              >
-                {obj.shape === 'round' && <ChairNubs w={obj.w} h={obj.h} seats={obj.seats} />}
-
-                {obj.shape === 'round' ? (
-                  <Circle
-                    x={obj.w / 2}
-                    y={obj.h / 2}
-                    radius={obj.w / 2}
-                    fill={statusFill}
-                    stroke={isSelected ? COLORS.accent : isHighlighted ? '#3B82F6' : statusStroke}
-                    strokeWidth={isSelected || isHighlighted ? 3 : 2}
-                    shadowBlur={isSelected || isHighlighted ? 14 : 0}
-                    shadowColor={isSelected ? COLORS.accent : '#3B82F6'}
-                  />
-                ) : (
-                  <Rect
-                    width={obj.w}
-                    height={obj.h}
-                    fill={statusFill}
-                    stroke={isSelected ? COLORS.accent : isHighlighted ? '#3B82F6' : statusStroke}
-                    strokeWidth={isSelected || isHighlighted ? 3 : 2}
-                    cornerRadius={14}
-                    shadowBlur={isSelected || isHighlighted ? 14 : 0}
-                    shadowColor={isSelected ? COLORS.accent : '#3B82F6'}
-                  />
-                )}
-
-                <Text
-                  x={0}
-                  y={0}
-                  width={obj.w}
-                  height={obj.h}
-                  align="center"
-                  verticalAlign="middle"
-                  text={label}
-                  fill={COLORS.text}
-                  fontSize={18}
-                  fontStyle="700"
-                  listening={false}
-                />
-
-                {obj.locked && (
-                  <Text
-                    x={obj.w - 18}
-                    y={6}
-                    text="🔒"
-                    fontSize={14}
-                    opacity={0.85}
-                    listening={false}
-                  />
-                )}
-              </Group>
-            );
-          }
-
           return null;
         })}
 
         {children}
+      </Layer>
+
+      {/* Tables Layer - LISTENING for clicks */}
+      <Layer listening={true}>
+        {items.filter(obj => obj.type === 'table').map((obj) => {
+          const isSelected = selectedIds.includes(obj.id);
+          const isHighlighted = highlightedIds.includes(obj.id);
+          const liveStatus = showTableStatus ? tableStatusMap[obj.id] : null;
+          const statusFill = liveStatus === 'occupied' ? COLORS.tableOccupied :
+                            liveStatus === 'reserved' ? COLORS.tableReserved :
+                            liveStatus === 'free' ? COLORS.tableFree : obj.fill || COLORS.tableFill;
+          const statusStroke = liveStatus === 'occupied' ? COLORS.tableStrokeOccupied :
+                              liveStatus === 'reserved' ? COLORS.tableStrokeReserved :
+                              liveStatus === 'free' ? COLORS.tableStrokeFree : obj.stroke || COLORS.tableStroke;
+          
+          // Generate table label: T{table_number}
+          const tableNumber = obj.table_number || obj.seats || 1;
+          const tableLabel = `T${tableNumber}`;
+          
+          return (
+            <Group
+              key={obj.id}
+              id={obj.id}
+              x={obj.x}
+              y={obj.y}
+              rotation={obj.rotation || 0}
+              onMouseDown={(e) => {
+                e.cancelBubble = true;
+                onTableClick?.(obj);
+              }}
+              onTap={(e) => {
+                e.cancelBubble = true;
+                onTableClick?.(obj);
+              }}
+            >
+              {/* Invisible hit area for easier clicking */}
+              {obj.shape === 'round' ? (
+                <Circle
+                  x={obj.w / 2}
+                  y={obj.h / 2}
+                  radius={obj.w / 2 + 10}
+                  fill="transparent"
+                  listening={true}
+                />
+              ) : (
+                <Rect
+                  x={-10}
+                  y={-10}
+                  width={obj.w + 20}
+                  height={obj.h + 20}
+                  fill="transparent"
+                  listening={true}
+                />
+              )}
+              {obj.shape === 'round' && <ChairNubs w={obj.w} h={obj.h} seats={obj.seats} />}
+
+              {obj.shape === 'round' ? (
+                <Circle
+                  x={obj.w / 2}
+                  y={obj.h / 2}
+                  radius={obj.w / 2}
+                  fill={statusFill}
+                  stroke={isSelected ? COLORS.accent : isHighlighted ? '#3B82F6' : statusStroke}
+                  strokeWidth={isSelected || isHighlighted ? 3 : 2}
+                  shadowBlur={isSelected || isHighlighted ? 14 : 0}
+                  shadowColor={isSelected ? COLORS.accent : '#3B82F6'}
+                  listening={false}
+                />
+              ) : (
+                <Rect
+                  width={obj.w}
+                  height={obj.h}
+                  fill={statusFill}
+                  stroke={isSelected ? COLORS.accent : isHighlighted ? '#3B82F6' : statusStroke}
+                  strokeWidth={isSelected || isHighlighted ? 3 : 2}
+                  cornerRadius={14}
+                  shadowBlur={isSelected || isHighlighted ? 14 : 0}
+                  shadowColor={isSelected ? COLORS.accent : '#3B82F6'}
+                  listening={false}
+                />
+              )}
+
+              {/* Table Label */}
+              <Text
+                x={0}
+                y={-4}
+                width={obj.w}
+                height={obj.h / 2}
+                align="center"
+                verticalAlign="middle"
+                text={tableLabel}
+                fill={COLORS.text}
+                fontSize={16}
+                fontStyle="700"
+                listening={false}
+              />
+
+              {/* Seat Count */}
+              <Text
+                x={0}
+                y={obj.h / 2 + 4}
+                width={obj.w}
+                height={obj.h / 2}
+                align="center"
+                verticalAlign="middle"
+                text={`${obj.seats} seats`}
+                fill={COLORS.subtext}
+                fontSize={12}
+                listening={false}
+              />
+
+              {obj.locked && (
+                <Text
+                  x={obj.w - 18}
+                  y={6}
+                  text="🔒"
+                  fontSize={14}
+                  opacity={0.85}
+                  listening={false}
+                />
+              )}
+            </Group>
+          );
+        })}
       </Layer>
     </Stage>
   );
