@@ -26,6 +26,7 @@ export default function FloorPlanViewPremium({
   currentUser 
 }) {
   const stageRef = useRef(null);
+  const wrapRef = useRef(null);
   const [selectedTable, setSelectedTable] = useState(null);
   const [showReserveDialog, setShowReserveDialog] = useState(false);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
@@ -65,6 +66,46 @@ export default function FloorPlanViewPremium({
   }, [selectedTable, tables]);
 
   const clampScale = (s) => Math.max(0.35, Math.min(2.4, s));
+
+  // Convert screen click -> world coords using camera (not Konva events)
+  const hitTestTable = (clientX, clientY) => {
+    const rect = wrapRef.current?.getBoundingClientRect();
+    if (!rect) return null;
+
+    const px = clientX - rect.left;
+    const py = clientY - rect.top;
+
+    const worldX = (px - camera.x) / camera.scale;
+    const worldY = (py - camera.y) / camera.scale;
+
+    // Room tables come from floorplan (not Base44 table entities)
+    const roomItems = currentRoom?.items || [];
+    const roomTables = roomItems.filter(i => i?.type === "table");
+
+    // pick topmost by z
+    let hit = null;
+    let bestZ = -Infinity;
+
+    for (const t of roomTables) {
+      const pad = 18; // makes clicking easier
+      const inside =
+        worldX >= t.x - pad &&
+        worldX <= t.x + t.w + pad &&
+        worldY >= t.y - pad &&
+        worldY <= t.y + t.h + pad;
+
+      if (inside) {
+        const z = t.z ?? 0;
+        if (z >= bestZ) {
+          bestZ = z;
+          hit = t;
+        }
+      }
+    }
+
+    // return floorplan table object (the one with .id .seats etc)
+    return hit;
+  };
 
   const fitToContent = () => {
     const boundary = currentRoom?.roomBoundary;
@@ -201,53 +242,67 @@ export default function FloorPlanViewPremium({
       </div>
 
       {/* Floor Plan Canvas */}
-      <div className="relative bg-slate-900 rounded-xl border-2 border-slate-700 overflow-hidden" style={{ height: 600 }}>
-        <FloorPlanRenderer
-          stageRef={stageRef}
-          width={1180}
-          height={600}
-          camera={camera}
-          roomData={currentRoom}
-          showGrid={true}
-          showZones={true}
-          showTableStatus={true}
-          tableStatusMap={tableStatusMap}
-          selectedIds={selectedTableItemId ? [selectedTableItemId] : []}
-          highlightedIds={[]}
-          onTableClick={(tableObj) => {
-            if (tableObj.type === 'table') {
-              console.log("Customer table click:", tableObj);
-              handleTableClick(tableObj);
-            }
+      <div
+        ref={wrapRef}
+        className="relative bg-slate-900 rounded-xl border-2 border-slate-700 overflow-hidden"
+        style={{ height: 600 }}
+      >
+        {/* Visual renderer (non-interactive) */}
+        <div className="absolute inset-0 pointer-events-none">
+          <FloorPlanRenderer
+            stageRef={stageRef}
+            width={1180}
+            height={600}
+            camera={camera}
+            roomData={currentRoom}
+            showGrid={true}
+            showZones={true}
+            showTableStatus={true}
+            tableStatusMap={tableStatusMap}
+            selectedIds={selectedTableItemId ? [selectedTableItemId] : []}
+            highlightedIds={[]}
+            draggable={true}
+            onDragEnd={(e) => setCamera(c => ({ ...c, x: e.target.x(), y: e.target.y() }))}
+            onWheel={(e) => {
+              e.evt.preventDefault();
+              const st = stageRef.current;
+              if (!st) return;
+              const pointer = st.getPointerPosition();
+              if (!pointer) return;
+
+              const direction = e.evt.deltaY > 0 ? -1 : 1;
+              const factor = direction > 0 ? 1.08 : 0.92;
+              
+              const oldScale = st.scaleX();
+              const newScale = clampScale(oldScale * factor);
+
+              const mousePointTo = {
+                x: (pointer.x - st.x()) / oldScale,
+                y: (pointer.y - st.y()) / oldScale
+              };
+
+              const newPos = {
+                x: pointer.x - mousePointTo.x * newScale,
+                y: pointer.y - mousePointTo.y * newScale
+              };
+
+              setCamera({ x: newPos.x, y: newPos.y, scale: newScale });
+            }}
+            readOnly={true}
+          />
+        </div>
+
+        {/* Click layer that makes tables clickable */}
+        <div
+          className="absolute inset-0 z-20 cursor-pointer"
+          onPointerDown={(e) => {
+            e.preventDefault?.();
+            const hit = hitTestTable(e.clientX, e.clientY);
+            if (!hit) return;
+            console.log("DOM click hit table:", hit);
+            handleTableClick(hit);
           }}
-          draggable={true}
-          onDragEnd={(e) => setCamera(c => ({ ...c, x: e.target.x(), y: e.target.y() }))}
-          onWheel={(e) => {
-            e.evt.preventDefault();
-            const st = stageRef.current;
-            if (!st) return;
-            const pointer = st.getPointerPosition();
-            if (!pointer) return;
-
-            const direction = e.evt.deltaY > 0 ? -1 : 1;
-            const factor = direction > 0 ? 1.08 : 0.92;
-            
-            const oldScale = st.scaleX();
-            const newScale = clampScale(oldScale * factor);
-
-            const mousePointTo = {
-              x: (pointer.x - st.x()) / oldScale,
-              y: (pointer.y - st.y()) / oldScale
-            };
-
-            const newPos = {
-              x: pointer.x - mousePointTo.x * newScale,
-              y: pointer.y - mousePointTo.y * newScale
-            };
-
-            setCamera({ x: newPos.x, y: newPos.y, scale: newScale });
-          }}
-          readOnly={true}
+          onContextMenu={(ev) => ev.preventDefault()}
         />
       </div>
 
