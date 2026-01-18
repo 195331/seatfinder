@@ -214,7 +214,9 @@ export default function FloorPlanViewPremium({
           tableStatusMap={tableStatusMap}
           selectedIds={selectedTableItemId ? [selectedTableItemId] : []}
           highlightedIds={[]}
-          onTableClick={handleTableClick}
+          onTableClick={(tableObj) => {
+            handleTableClick(tableObj);
+          }}
           draggable={true}
           onDragEnd={(e) => setCamera(c => ({ ...c, x: e.target.x(), y: e.target.y() }))}
           onWheel={(e) => {

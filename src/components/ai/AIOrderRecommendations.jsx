@@ -79,7 +79,14 @@ export default function AIOrderRecommendations({ restaurantId, currentUser, menu
             .join(', ')}`
         : 'First time ordering';
 
-      const prompt = `As a restaurant recommendation expert, suggest 4-5 personalized menu items for this customer.
+      const menuList = menuItems.map(item => `- ${item.name} (${item.category}, $${item.price})`).join('\n');
+
+      const prompt = `As a restaurant recommendation expert, suggest 3-4 menu items from the EXACT menu below for this customer.
+
+**IMPORTANT: You MUST only recommend items that appear in the menu list below. Do not make up or suggest any dishes not listed.**
+
+**Full Menu:**
+${menuList}
 
 **Customer History:**
 ${userHistory}
@@ -90,10 +97,7 @@ ${topItems.slice(0, 5).map(i => `- ${i.name} (${i.category})`).join('\n')}
 **Active Promotions:**
 ${promotions.length > 0 ? promotions.map(p => `- ${p.title}`).join('\n') : 'None'}
 
-**Available Categories:**
-${[...new Set(menuItems.map(i => i.category))].join(', ')}
-
-Return JSON with recommendations that build on customer taste, include popular items, and suggest pairings.`;
+Only recommend items from the menu above. Match the exact item names.`;
 
       const result = await base44.integrations.Core.InvokeLLM({
         prompt,

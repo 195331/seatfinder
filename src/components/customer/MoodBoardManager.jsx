@@ -40,10 +40,12 @@ export default function MoodBoardManager({ currentUser, allRestaurants, onRestau
     queryKey: ['boardRestaurants', favorites],
     queryFn: async () => {
       if (favorites.length === 0) return [];
-      const restaurantPromises = favorites.map(f => 
-        base44.entities.Restaurant.filter({ id: f.restaurant_id }).then(r => r[0])
+      const uniqueRestaurantIds = [...new Set(favorites.map(f => f.restaurant_id))];
+      const restaurantPromises = uniqueRestaurantIds.map(id => 
+        base44.entities.Restaurant.filter({ id }).then(r => r[0])
       );
-      return Promise.all(restaurantPromises);
+      const results = await Promise.all(restaurantPromises);
+      return results.filter(Boolean);
     },
     enabled: favorites.length > 0,
   });
