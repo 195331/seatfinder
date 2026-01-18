@@ -110,12 +110,6 @@ export default function RestaurantDetail() {
     queryFn: () => base44.entities.Table.filter({ restaurant_id: restaurantId }),
     enabled: !!restaurantId,
   });
-
-  const { data: reviews = [] } = useQuery({
-    queryKey: ['reviews', restaurantId],
-    queryFn: () => base44.entities.Review.filter({ restaurant_id: restaurantId, is_hidden: false }),
-    enabled: !!restaurantId,
-  });
 const handleReserveTable = async (payload) => {
   try {
     // payload contains: table_id, reservation_date, reservation_time, party_size, notes, etc.
@@ -128,6 +122,12 @@ const handleReserveTable = async (payload) => {
     console.error("Reservation create failed:", e);
   }
 };
+
+  const { data: reviews = [] } = useQuery({
+    queryKey: ['reviews', restaurantId],
+    queryFn: () => base44.entities.Review.filter({ restaurant_id: restaurantId, is_hidden: false }),
+    enabled: !!restaurantId,
+  });
 
   // Calculate vibe data from reviews
   useEffect(() => {
