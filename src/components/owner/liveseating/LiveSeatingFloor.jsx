@@ -126,7 +126,7 @@ export default function LiveSeatingFloor({
         </div>
 
         {/* Canvas - with clipping */}
-        <div className="bg-slate-900 rounded-xl overflow-hidden mx-auto border-2 border-slate-700 relative" style={{ width: 1180, height: 690 }}>
+        <div className="bg-slate-900 rounded-xl overflow-hidden mx-auto border-2 border-slate-700 relative" style={{ width: 1180, height: 690, pointerEvents: 'auto' }}>
           <FloorPlanRenderer
             stageRef={stageRef}
             width={1180}
@@ -140,8 +140,11 @@ export default function LiveSeatingFloor({
             selectedIds={selectedTableItemId ? [selectedTableItemId] : []}
             highlightedIds={highlightedIds}
             onTableClick={(tableObj) => {
-              const liveTable = tables.find(t => t.floorplan_item_id === tableObj.id);
-              if (liveTable) onTableClick?.(liveTable);
+              if (tableObj.type === 'table') {
+                console.log("Owner table click:", tableObj);
+                const liveTable = tables.find(t => t.floorplan_item_id === tableObj.id);
+                if (liveTable) onTableClick?.(liveTable);
+              }
             }}
             draggable={true}
             onDragEnd={(e) => setCamera(c => ({ ...c, x: e.target.x(), y: e.target.y() }))}

@@ -170,24 +170,20 @@ export default function FloorPlanRenderer({
 
           if (obj.type === 'zone' && showZones) {
             return (
-            <Group
-  key={obj.id}
-  id={obj.id}
-  x={obj.x}
-  y={obj.y}
-  rotation={obj.rotation || 0}
-  onMouseDown={(e) => {
-    e.cancelBubble = true;
-    console.log("TABLE CLICK ✅", obj.id, obj.table_number, obj.seats);
-    onTableClick?.(obj);
-  }}
-  onTap={(e) => {
-    e.cancelBubble = true;
-    console.log("TABLE TAP ✅", obj.id, obj.table_number, obj.seats);
-    onTableClick?.(obj);
-  }}
->
-
+              <Group key={obj.id} x={obj.x} y={obj.y}>
+                <Rect
+                  width={obj.w}
+                  height={obj.h}
+                  fill={obj.fill}
+                  stroke={isSelected ? COLORS.accent : obj.stroke}
+                  strokeWidth={isSelected ? 3 : 2}
+                  dash={[12, 8]}
+                  cornerRadius={16}
+                  opacity={0.5}
+                  shadowBlur={isSelected ? 10 : 0}
+                  shadowColor={COLORS.accent}
+                  listening={false}
+                />
                 <Text
                   x={12}
                   y={12}
@@ -278,10 +274,12 @@ export default function FloorPlanRenderer({
               rotation={obj.rotation || 0}
               onMouseDown={(e) => {
                 e.cancelBubble = true;
+                console.log("TABLE CLICK ✅", obj.id, obj.table_number, obj.seats);
                 onTableClick?.(obj);
               }}
               onTap={(e) => {
                 e.cancelBubble = true;
+                console.log("TABLE TAP ✅", obj.id, obj.table_number, obj.seats);
                 onTableClick?.(obj);
               }}
             >

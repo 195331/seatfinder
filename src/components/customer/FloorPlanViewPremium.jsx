@@ -215,7 +215,10 @@ export default function FloorPlanViewPremium({
           selectedIds={selectedTableItemId ? [selectedTableItemId] : []}
           highlightedIds={[]}
           onTableClick={(tableObj) => {
-            handleTableClick(tableObj);
+            if (tableObj.type === 'table') {
+              console.log("Customer table click:", tableObj);
+              handleTableClick(tableObj);
+            }
           }}
           draggable={true}
           onDragEnd={(e) => setCamera(c => ({ ...c, x: e.target.x(), y: e.target.y() }))}
