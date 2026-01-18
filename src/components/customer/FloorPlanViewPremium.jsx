@@ -22,6 +22,7 @@ const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
 const clampScale = (s) => clamp(s, 0.35, 2.4);
 
 export default function FloorPlanViewPremium({
+  restaurantId,          // ✅ add this prop from parent if possible
   floorPlanData,
   tables = [],
   onReserveTable,
@@ -34,12 +35,14 @@ export default function FloorPlanViewPremium({
   const [showReserveDialog, setShowReserveDialog] = useState(false);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
 
-  // camera controls the renderer (same as your old code)
+  // camera controls rendering (pan/zoom)
   const [camera, setCamera] = useState({ x: -260, y: -140, scale: 1.18 });
 
+  // Rooms
   const rooms = floorPlanData?.rooms || {};
   const hasFloorPlan = Object.keys(rooms).length > 0 && !!floorPlanData?.publishedAt;
   const layers = hasFloorPlan ? Object.keys(rooms) : [];
+
   const [activeLayer, setActiveLayer] = useState(layers[0] || "MAIN");
 
   useEffect(() => {
@@ -49,7 +52,7 @@ export default function FloorPlanViewPremium({
 
   const currentRoom = rooms?.[activeLayer];
 
-  // status map: floorplan_item_id -> status
+  // Map: floorplan_item_id -> status
   const tableStatusMap = useMemo(() => {
     const map = {};
     const arr = Array.isArray(tables) ? tables : [];
@@ -60,8 +63,8 @@ export default function FloorPlanViewPremium({
   }, [tables]);
 
   const availableCount = (Array.isArray(tables) ? tables : []).filter((t) => t.status === "free").length;
-  const reservedCount = (Array.isArray(tables) ? tables : []).filter((t) => t.status === "reserved").length;
-  const occupiedCount = (Array.isArray(tables) ? tables : []).filter((t) => t.status === "occupied").length;
+  const reservedCount  = (Array.isArray(tables) ? tables : []).filter((t) => t.status === "reserved").length;
+  const occupiedCount  = (Array.isArray(tables) ? tables : []).filter((t) => t.status === "occupied").length;
 
   const [reservationData, setReservationData] = useState({
     date: null,
@@ -74,12 +77,12 @@ export default function FloorPlanViewPremium({
     occasion: "none"
   });
 
-  // --- THE FIX: hit test in “world coords” so tables are ALWAYS clickable ---
+  // --- HARD FIX: hit-test in WORLD COORDS (not Konva events) ---
   const hitTestFloorplanTable = (clientX, clientY) => {
     const rect = wrapRef.current?.getBoundingClientRect();
     if (!rect) return null;
 
-    const px = clientX - rect.left; // local to container
+    const px = clientX - rect.left;
     const py = clientY - rect.top;
 
     // convert to world coords using camera
@@ -89,12 +92,12 @@ export default function FloorPlanViewPremium({
     const items = currentRoom?.items || [];
     const fpTables = items.filter((i) => i?.type === "table");
 
-    // choose topmost by z
+    // pick topmost table by z
     let hit = null;
     let bestZ = -Infinity;
 
     for (const t of fpTables) {
-      const pad = 22; // big click target, feels better
+      const pad = 26; // big hit target
       const inside =
         wx >= t.x - pad &&
         wx <= t.x + t.w + pad &&
@@ -112,18 +115,30 @@ export default function FloorPlanViewPremium({
     return hit;
   };
 
+  // If tables prop doesn't contain mapping, fetch table entity as fallback
+  const getTableEntityForFloorplanId = async (floorplanItemId) => {
+    const local = (Array.isArray(tables) ? tables : []).find((t) => t.floorplan_item_id === floorplanItemId);
+    if (local) return local;
+
+    // fallback fetch (only if restaurantId provided)
+    if (!restaurantId) return null;
+    try {
+      const res = await base44.entities.Table.filter({
+        restaurant_id: restaurantId,
+        floorplan_item_id: floorplanItemId
+      });
+      return Array.isArray(res) ? res[0] : null;
+    } catch {
+      return null;
+    }
+  };
+
   const openReservationForFloorplanObj = async (tableObj) => {
     if (!tableObj?.id) return;
 
-    // Find the Base44 Table entity mapped to this floorplan object
-    const tableEntity = (Array.isArray(tables) ? tables : []).find(
-      (t) => t.floorplan_item_id === tableObj.id
-    );
+    const tableEntity = await getTableEntityForFloorplanId(tableObj.id);
+    if (!tableEntity) return; // nothing to reserve if mapping doesn't exist
 
-    // If mapping is missing, do nothing (prevents “ghost” clicks)
-    if (!tableEntity) return;
-
-    // Only allow reserving FREE tables
     if (tableEntity.status === "occupied" || tableEntity.status === "reserved") return;
 
     const isAuth = await base44.auth.isAuthenticated();
@@ -134,16 +149,21 @@ export default function FloorPlanViewPremium({
       return;
     }
 
-    setReservationData((prev) => ({ ...prev, partySize: tableObj.seats || tableEntity.capacity || 2 }));
+    setReservationData((prev) => ({
+      ...prev,
+      partySize: tableObj.seats || tableEntity.capacity || 2
+    }));
     setShowReserveDialog(true);
   };
 
+  // Fit-to-room so it doesn’t become a “blob”
   const fitToContent = () => {
     const boundary = currentRoom?.roomBoundary;
     if (!boundary || boundary.length < 3) {
       setCamera({ x: -260, y: -140, scale: 1.18 });
       return;
     }
+
     const xs = boundary.map((p) => p.x);
     const ys = boundary.map((p) => p.y);
     const minX = Math.min(...xs), maxX = Math.max(...xs);
@@ -162,15 +182,15 @@ export default function FloorPlanViewPremium({
     setCamera({ x, y, scale });
   };
 
-  // auto-fit once when room changes
   useEffect(() => {
     if (hasFloorPlan) fitToContent();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeLayer, hasFloorPlan]);
 
-  const handleLogin = () => {
-    base44.auth.redirectToLogin(window.location.href);
-  };
+  // Pan/zoom handling on the overlay (NOT Konva)
+  const dragRef = useRef({ down: false, sx: 0, sy: 0, cx: 0, cy: 0, moved: false, hit: null });
+
+  const handleLogin = () => base44.auth.redirectToLogin(window.location.href);
 
   const handleSubmitReservation = () => {
     if (!reservationData.date || !reservationData.time || !selectedTable?.id) return;
@@ -198,7 +218,6 @@ export default function FloorPlanViewPremium({
     });
   };
 
-  // highlight selected in renderer
   const selectedTableItemId = useMemo(() => {
     return (Array.isArray(tables) ? tables : []).find((t) => t.id === selectedTable?.id)?.floorplan_item_id;
   }, [selectedTable, tables]);
@@ -266,13 +285,13 @@ export default function FloorPlanViewPremium({
         </div>
       </div>
 
-      {/* Canvas (FIXES the blob / overflow + makes tables clickable) */}
+      {/* Canvas (fixes overflow/blob + makes tables clickable) */}
       <div
         ref={wrapRef}
-        className="relative bg-slate-900 rounded-xl border-2 border-slate-700 overflow-hidden"
-        style={{ height: 600 }}
+        className="relative rounded-xl border-2 border-slate-700 bg-slate-900 overflow-hidden"
+        style={{ height: 600, width: "100%", maxWidth: 1180 }}
       >
-        {/* Visual renderer (pointer events disabled) */}
+        {/* Renderer (pure visuals) */}
         <div className="absolute inset-0 pointer-events-none">
           <FloorPlanRenderer
             stageRef={null}
@@ -291,15 +310,39 @@ export default function FloorPlanViewPremium({
           />
         </div>
 
-        {/* Click layer on top (ONLY tables trigger actions) */}
+        {/* Interaction Layer (ALL interactions here) */}
         <div
-          className="absolute inset-0 z-10"
+          className="absolute inset-0"
           style={{ touchAction: "none" }}
           onContextMenu={(e) => e.preventDefault()}
           onPointerDown={(e) => {
-            const hit = hitTestFloorplanTable(e.clientX, e.clientY);
-            if (!hit) return;
-            openReservationForFloorplanObj(hit);
+            dragRef.current.down = true;
+            dragRef.current.sx = e.clientX;
+            dragRef.current.sy = e.clientY;
+            dragRef.current.cx = camera.x;
+            dragRef.current.cy = camera.y;
+            dragRef.current.moved = false;
+            dragRef.current.hit = hitTestFloorplanTable(e.clientX, e.clientY);
+          }}
+          onPointerMove={(e) => {
+            if (!dragRef.current.down) return;
+            const dx = e.clientX - dragRef.current.sx;
+            const dy = e.clientY - dragRef.current.sy;
+            if (Math.abs(dx) + Math.abs(dy) > 6) dragRef.current.moved = true;
+            if (dragRef.current.moved) {
+              setCamera((c) => ({ ...c, x: dragRef.current.cx + dx, y: dragRef.current.cy + dy }));
+            }
+          }}
+          onPointerUp={async () => {
+            if (!dragRef.current.down) return;
+            const wasClick = !dragRef.current.moved;
+            const hit = dragRef.current.hit;
+            dragRef.current.down = false;
+            dragRef.current.hit = null;
+
+            if (wasClick && hit) {
+              await openReservationForFloorplanObj(hit);
+            }
           }}
           onWheel={(e) => {
             e.preventDefault();
