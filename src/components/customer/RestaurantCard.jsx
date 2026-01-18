@@ -40,16 +40,16 @@ export default function RestaurantCard({
 
   useEffect(() => {
     if (isHovering && displayImages.length > 1) {
-      hoverTimerRef.current = setTimeout(() => {
-        cycleTimerRef.current = setInterval(() => {
-          setCurrentImageIndex((prev) => (prev + 1) % displayImages.length);
-        }, 1400);
-      }, 4000);
+      cycleTimerRef.current = setInterval(() => {
+        setCurrentImageIndex((prev) => (prev + 1) % displayImages.length);
+      }, 2000);
     }
 
     return () => {
-      if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
-      if (cycleTimerRef.current) clearInterval(cycleTimerRef.current);
+      if (cycleTimerRef.current) {
+        clearInterval(cycleTimerRef.current);
+        cycleTimerRef.current = null;
+      }
       if (!isHovering) setCurrentImageIndex(0);
     };
   }, [isHovering, displayImages.length]);

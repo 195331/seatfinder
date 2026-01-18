@@ -823,15 +823,27 @@ export default function Home() {
                       <h2 className="text-xl font-semibold text-slate-900">
                         {filteredRestaurants.length} restaurant{filteredRestaurants.length !== 1 ? 's' : ''}
                       </h2>
-                      <select
-                        value={sortBy}
-                        onChange={(e) => setSortBy(e.target.value)}
-                        className="px-4 py-2 text-sm border border-slate-200 rounded-full bg-white hover:border-slate-300 transition-colors shadow-sm font-medium text-slate-700"
-                      >
-                        <option value="verified">✨ Best Match</option>
-                        <option value="rating">⭐ Top Rated</option>
-                        {userLocation && <option value="distance">📍 Nearest</option>}
-                      </select>
+                      <div className="flex items-center gap-2">
+                        {/* Active Filter Sticker */}
+                        {(sortBy !== 'verified' || Object.keys(filters).length > 0 || activePreset) && (
+                          <Badge className="bg-gradient-to-r from-purple-600 to-pink-600 text-white border-0 shadow-lg">
+                            {sortBy === 'distance' ? '📍 Nearest First' : 
+                             sortBy === 'rating' ? '⭐ Top Rated' :
+                             activePreset ? activePreset.icon + ' ' + activePreset.name :
+                             Object.keys(filters).length > 0 ? '🔍 Filtered' :
+                             '✨ Best Match'}
+                          </Badge>
+                        )}
+                        <select
+                          value={sortBy}
+                          onChange={(e) => setSortBy(e.target.value)}
+                          className="px-4 py-2 text-sm border border-slate-200 rounded-full bg-white hover:border-slate-300 transition-colors shadow-sm font-medium text-slate-700"
+                        >
+                          <option value="verified">✨ Best Match</option>
+                          <option value="rating">⭐ Top Rated</option>
+                          {userLocation && <option value="distance">📍 Nearest</option>}
+                        </select>
+                      </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                       {filteredRestaurants.map((restaurant) => {
