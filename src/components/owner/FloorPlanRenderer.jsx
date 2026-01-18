@@ -247,8 +247,14 @@ export default function FloorPlanRenderer({
                 x={obj.x}
                 y={obj.y}
                 rotation={obj.rotation || 0}
-                onClick={() => onTableClick?.(obj)}
-                onTap={() => onTableClick?.(obj)}
+                onClick={(e) => {
+                  e.cancelBubble = true;
+                  onTableClick?.(obj);
+                }}
+                onTap={(e) => {
+                  e.cancelBubble = true;
+                  onTableClick?.(obj);
+                }}
               >
                 {obj.shape === 'round' && <ChairNubs w={obj.w} h={obj.h} seats={obj.seats} />}
 
