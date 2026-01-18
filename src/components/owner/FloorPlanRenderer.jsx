@@ -267,109 +267,70 @@ export default function FloorPlanRenderer({
           
           return (
             <Group
-              key={obj.id}
-              id={obj.id}
-              x={obj.x}
-              y={obj.y}
-              rotation={obj.rotation || 0}
-              onMouseDown={(e) => {
-                e.cancelBubble = true;
-                console.log("TABLE CLICK ✅", obj.id, obj.table_number, obj.seats);
-                onTableClick?.(obj);
-              }}
-              onTap={(e) => {
-                e.cancelBubble = true;
-                console.log("TABLE TAP ✅", obj.id, obj.table_number, obj.seats);
-                onTableClick?.(obj);
-              }}
-            >
-              {/* Invisible hit area for easier clicking */}
-              {obj.shape === 'round' ? (
-                <Circle
-                  x={obj.w / 2}
-                  y={obj.h / 2}
-                  radius={obj.w / 2 + 10}
-                  fill="transparent"
-                  listening={true}
-                />
-              ) : (
-                <Rect
-                  x={-10}
-                  y={-10}
-                  width={obj.w + 20}
-                  height={obj.h + 20}
-                  fill="transparent"
-                  listening={true}
-                />
-              )}
-              {obj.shape === 'round' && <ChairNubs w={obj.w} h={obj.h} seats={obj.seats} />}
+  key={obj.id}
+  id={obj.id}
+  x={obj.x}
+  y={obj.y}
+  rotation={obj.rotation || 0}
+  listening={true}
+  onMouseDown={(e) => {
+    e.cancelBubble = true;
+    onTableClick?.(obj);
+  }}
+  onTap={(e) => {
+    e.cancelBubble = true;
+    onTableClick?.(obj);
+  }}
+>
+  {/* BIG invisible hit box — makes clicking easy */}
+  <Rect
+    x={-14}
+    y={-14}
+    width={obj.w + 28}
+    height={obj.h + 28}
+    fill="transparent"
+    listening={true}
+  />
 
-              {obj.shape === 'round' ? (
-                <Circle
-                  x={obj.w / 2}
-                  y={obj.h / 2}
-                  radius={obj.w / 2}
-                  fill={statusFill}
-                  stroke={isSelected ? COLORS.accent : isHighlighted ? '#3B82F6' : statusStroke}
-                  strokeWidth={isSelected || isHighlighted ? 3 : 2}
-                  shadowBlur={isSelected || isHighlighted ? 14 : 0}
-                  shadowColor={isSelected ? COLORS.accent : '#3B82F6'}
-                  listening={false}
-                />
-              ) : (
-                <Rect
-                  width={obj.w}
-                  height={obj.h}
-                  fill={statusFill}
-                  stroke={isSelected ? COLORS.accent : isHighlighted ? '#3B82F6' : statusStroke}
-                  strokeWidth={isSelected || isHighlighted ? 3 : 2}
-                  cornerRadius={14}
-                  shadowBlur={isSelected || isHighlighted ? 14 : 0}
-                  shadowColor={isSelected ? COLORS.accent : '#3B82F6'}
-                  listening={false}
-                />
-              )}
+  {/* Your pretty table shapes should NOT listen */}
+  {obj.shape === "round" ? (
+    <Circle
+      x={obj.w / 2}
+      y={obj.h / 2}
+      radius={obj.w / 2}
+      fill={statusFill}
+      stroke={statusStroke}
+      strokeWidth={2}
+      listening={false}
+    />
+  ) : (
+    <Rect
+      width={obj.w}
+      height={obj.h}
+      cornerRadius={14}
+      fill={statusFill}
+      stroke={statusStroke}
+      strokeWidth={2}
+      listening={false}
+    />
+  )}
 
-              {/* Table Label */}
-              <Text
-                x={0}
-                y={-4}
-                width={obj.w}
-                height={obj.h / 2}
-                align="center"
-                verticalAlign="middle"
-                text={tableLabel}
-                fill={COLORS.text}
-                fontSize={16}
-                fontStyle="700"
-                listening={false}
-              />
+  {/* Label always visible */}
+  <Text
+    x={0}
+    y={0}
+    width={obj.w}
+    height={obj.h}
+    align="center"
+    verticalAlign="middle"
+    text={`T${obj.table_number ?? obj.label ?? ""}`}
+    fill="rgba(255,255,255,0.95)"
+    fontSize={16}
+    fontStyle="700"
+    listening={false}
+  />
+</Group>
 
-              {/* Seat Count */}
-              <Text
-                x={0}
-                y={obj.h / 2 + 4}
-                width={obj.w}
-                height={obj.h / 2}
-                align="center"
-                verticalAlign="middle"
-                text={`${obj.seats} seats`}
-                fill={COLORS.subtext}
-                fontSize={12}
-                listening={false}
-              />
-
-              {obj.locked && (
-                <Text
-                  x={obj.w - 18}
-                  y={6}
-                  text="🔒"
-                  fontSize={14}
-                  opacity={0.85}
-                  listening={false}
-                />
-              )}
-            </Group>
           );
         })}
       </Layer>
