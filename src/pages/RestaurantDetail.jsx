@@ -116,6 +116,18 @@ export default function RestaurantDetail() {
     queryFn: () => base44.entities.Review.filter({ restaurant_id: restaurantId, is_hidden: false }),
     enabled: !!restaurantId,
   });
+const handleReserveTable = async (payload) => {
+  try {
+    // payload contains: table_id, reservation_date, reservation_time, party_size, notes, etc.
+    await base44.entities.Reservation.create({
+      restaurant_id: restaurant.id,
+      status: "pending",
+      ...payload,
+    });
+  } catch (e) {
+    console.error("Reservation create failed:", e);
+  }
+};
 
   // Calculate vibe data from reviews
   useEffect(() => {
@@ -960,14 +972,12 @@ export default function RestaurantDetail() {
                 </CardHeader>
                 <CardContent>
                   {restaurant.floor_plan_data?.rooms || restaurant.floor_plan_data?.publishedAt ? (
-                    <FloorPlanViewPremium
-                      restaurantId={restaurant.id}
-                      floorPlanData={restaurant.floor_plan_data}
-                      tables={tables}
-                      onReserveTable={(data) => reserveTableMutation.mutate(data)}
-                      isSubmitting={reserveTableMutation.isPending}
-                      currentUser={currentUser}
-                    />
+                   <FloorPlanViewPremium
+  restaurantId={restaurant.id}
+  floorPlanData={restaurant.floor_plan_data}
+  tables={tables}
+  onReserveTable={handleReserveTable}
+/>
                   ) : (
                     <div className="text-center py-12">
                       <LayoutGrid className="w-12 h-12 mx-auto text-slate-300 mb-3" />
