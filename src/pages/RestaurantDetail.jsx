@@ -26,7 +26,7 @@ import {
 import { format } from "date-fns";
 
 // ✅ IMPORTANT: this is your Konva renderer (already in your project)
-import FloorPlanRenderer from "../owner/FloorPlanRenderer";
+import FloorPlanRenderer from "@/components/owner/FloorPlanRenderer";
 // optional if you have it
 import SpecialRequestsForm from "./SpecialRequestsForm";
 
