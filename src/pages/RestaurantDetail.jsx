@@ -960,12 +960,14 @@ export default function RestaurantDetail() {
                 </CardHeader>
                 <CardContent>
                   {restaurant.floor_plan_data?.rooms || restaurant.floor_plan_data?.publishedAt ? (
-                   <FloorPlanViewPremium
-  restaurantId={restaurant.id}
-  floorPlanData={restaurant.floor_plan_data}
-  tables={tables}
-  onReserveTable={handleReserveTable}
-/>
+                    <FloorPlanViewPremium
+                      restaurantId={restaurant.id}
+                      floorPlanData={restaurant.floor_plan_data}
+                      tables={tables}
+                      onReserveTable={(data) => reserveTableMutation.mutate(data)}
+                      isSubmitting={reserveTableMutation.isPending}
+                      currentUser={currentUser}
+                    />
                   ) : (
                     <div className="text-center py-12">
                       <LayoutGrid className="w-12 h-12 mx-auto text-slate-300 mb-3" />
