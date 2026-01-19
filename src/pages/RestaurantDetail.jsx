@@ -27,8 +27,7 @@ import { format } from "date-fns";
 
 // ✅ IMPORTANT: this is your Konva renderer (already in your project)
 import FloorPlanRenderer from "@/components/owner/FloorPlanRenderer";
-// optional if you have it
-import SpecialRequestsForm from "./SpecialRequestsForm";
+import SpecialRequestsForm from "@/components/customer/SpecialRequestsForm";
 
 const TIME_SLOTS = [
   "11:00","11:30","12:00","12:30","13:00","13:30","14:00",
