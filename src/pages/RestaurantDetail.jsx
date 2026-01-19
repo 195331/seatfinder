@@ -9,8 +9,8 @@ import { toast } from "sonner";
 import FloorPlanViewPremium from "@/components/customer/FloorPlanViewPremium";
 
 export default function RestaurantDetail() {
-  const params = useParams();
-  const restaurantId = params.id || params.restaurantId; // supports both route styles
+  const urlParams = new URLSearchParams(window.location.search);
+  const restaurantId = urlParams.get('id'); // read from query params
 
   // ---- Fetch restaurant (robust + won't crash on Base44 method differences) ----
   const {
