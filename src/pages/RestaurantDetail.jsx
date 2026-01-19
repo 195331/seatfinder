@@ -8,7 +8,7 @@ import { toast } from "sonner";
 
 // ✅ IMPORTANT: Adjust these 2 imports if your files live elsewhere.
 // If you don't have a floor plan view yet, you can comment out FloorPlanViewPremium usage below.
-import FloorPlanViewPremium from "./FloorPlanViewPremium"; // <-- update path if needed
+import FloorPlanViewPremium from "./restaurant/FloorPlanViewPremium"; // <-- update path if needed
 
 export default function RestaurantDetail() {
   const params = useParams();
