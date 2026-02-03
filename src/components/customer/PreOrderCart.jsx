@@ -134,7 +134,7 @@ export default function PreOrderCart({
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {cart.length === 0 ? (
+            {(!cart || cart.length === 0) ? (
               <p className="text-slate-500 text-center py-6 text-sm">
                 No items added yet. Browse the menu above.
               </p>
