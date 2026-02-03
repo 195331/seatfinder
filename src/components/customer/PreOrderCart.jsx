@@ -20,14 +20,14 @@ export default function PreOrderCart({
 }) {
   const [specialInstructions, setSpecialInstructions] = useState('');
 
-  const groupedMenu = menuItems.reduce((acc, item) => {
+  const groupedMenu = (menuItems || []).reduce((acc, item) => {
     if (!acc[item.category]) acc[item.category] = [];
     acc[item.category].push(item);
     return acc;
   }, {});
 
-  const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const cartTotal = (cart || []).reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const cartCount = (cart || []).reduce((sum, item) => sum + item.quantity, 0);
 
   const getItemQuantity = (menuItemId) => {
     const cartItem = cart.find(c => c.menu_item_id === menuItemId);
