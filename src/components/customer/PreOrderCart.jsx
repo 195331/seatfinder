@@ -30,7 +30,7 @@ export default function PreOrderCart({
   const cartCount = (cart || []).reduce((sum, item) => sum + item.quantity, 0);
 
   const getItemQuantity = (menuItemId) => {
-    const cartItem = cart.find(c => c.menu_item_id === menuItemId);
+    const cartItem = (cart || []).find(c => c.menu_item_id === menuItemId);
     return cartItem?.quantity || 0;
   };
 
