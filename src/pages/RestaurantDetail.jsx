@@ -243,7 +243,7 @@ export default function RestaurantDetail() {
         <Card className="max-w-md w-full p-6">
           <h2 className="text-xl font-bold text-red-600 mb-2">Restaurant Not Found</h2>
           <p className="text-slate-600 mb-4">
-            {restaurantError?.message || 'The restaurant you're looking for doesn't exist.'}
+            {restaurantError?.message || "The restaurant you're looking for doesn't exist."}
           </p>
           <Button onClick={() => navigate(createPageUrl('Home'))}>
             Back to Home
