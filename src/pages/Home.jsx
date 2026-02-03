@@ -346,7 +346,7 @@ export default function Home() {
       metadata: { source: 'home_page', view_type: view }
     }).catch(() => {});
     
-    navigate(createPageUrl('RestaurantDetail', { id: restaurant.id }));
+    navigate(createPageUrl('RestaurantDetail') + `?id=${restaurant.id}`);
   };
 
   const handleFavoriteClick = async (restaurant) => {

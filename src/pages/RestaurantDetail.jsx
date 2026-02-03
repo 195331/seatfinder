@@ -10,7 +10,7 @@ import FloorPlanViewPremium from "@/components/customer/FloorPlanViewPremium";
 
 export default function RestaurantDetail() {
   const urlParams = new URLSearchParams(window.location.search);
-  const restaurantId = urlParams.get('id'); // read from query params
+  const restaurantId = urlParams.get('id') || urlParams.get('restaurantId');
 
   // ---- Fetch restaurant (robust + won't crash on Base44 method differences) ----
   const {
