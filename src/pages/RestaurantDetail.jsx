@@ -432,12 +432,11 @@ export default function RestaurantDetail() {
 
         {/* Main Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-5">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="reserve">Reserve</TabsTrigger>
             <TabsTrigger value="menu">Menu</TabsTrigger>
+            <TabsTrigger value="reserve">Reserve</TabsTrigger>
             <TabsTrigger value="reviews">Reviews</TabsTrigger>
-            <TabsTrigger value="ai">AI Insights</TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
@@ -516,13 +515,23 @@ export default function RestaurantDetail() {
             />
           </TabsContent>
 
+          {/* Menu Tab */}
+          <TabsContent value="menu" className="space-y-6">
+            <MenuView
+              restaurantId={restaurantId}
+              menuItems={menuItems}
+              restaurant={restaurant}
+              currentUser={currentUser}
+            />
+          </TabsContent>
+
           {/* Reserve Tab */}
           <TabsContent value="reserve" className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Calendar className="w-5 h-5" />
-                  Reserve Your Table
+                  Select a Table to Reserve
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -538,16 +547,6 @@ export default function RestaurantDetail() {
             </Card>
           </TabsContent>
 
-          {/* Menu Tab */}
-          <TabsContent value="menu">
-            <MenuView
-              restaurantId={restaurantId}
-              menuItems={menuItems}
-              restaurant={restaurant}
-              currentUser={currentUser}
-            />
-          </TabsContent>
-
           {/* Reviews Tab */}
           <TabsContent value="reviews" className="space-y-6">
             <ReviewSummary 
@@ -556,10 +555,6 @@ export default function RestaurantDetail() {
               currentUser={currentUser}
               expanded
             />
-          </TabsContent>
-
-          {/* AI Insights Tab */}
-          <TabsContent value="ai" className="space-y-6">
             <AIReviewSummary 
               reviews={reviews}
               restaurantName={restaurant.name}
