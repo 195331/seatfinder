@@ -161,6 +161,11 @@ export default function RestaurantDetail() {
     }
   });
 
+  // State for pre-order flow
+  const [showPreOrderFlow, setShowPreOrderFlow] = useState(false);
+  const [pendingReservation, setPendingReservation] = useState(null);
+  const [cart, setCart] = useState([]);
+
   // Reserve table mutation
   const reserveMutation = useMutation({
     mutationFn: async (payload) => {
@@ -168,20 +173,51 @@ export default function RestaurantDetail() {
         base44.auth.redirectToLogin(window.location.href);
         return;
       }
-      return await base44.entities.Reservation.create({
+      
+      // If pre-order enabled, show pre-order flow first
+      if (restaurant?.enable_preorder && !payload.skipPreOrder) {
+        setPendingReservation(payload);
+        setShowPreOrderFlow(true);
+        return { skipToast: true };
+      }
+
+      // Create reservation with pre-order if cart has items
+      const reservationData = {
         restaurant_id: restaurantId,
         user_id: currentUser.id,
         user_name: currentUser.full_name,
         user_email: currentUser.email,
         status: restaurant?.instant_confirm_enabled ? 'approved' : 'pending',
         ...payload
-      });
+      };
+
+      const reservation = await base44.entities.Reservation.create(reservationData);
+
+      // Create pre-order if cart has items
+      if (cart.length > 0) {
+        await base44.entities.PreOrder.create({
+          reservation_id: reservation.id,
+          restaurant_id: restaurantId,
+          user_id: currentUser.id,
+          items: cart,
+          special_instructions: payload.preOrderInstructions || '',
+          total_amount: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0),
+          status: 'pending'
+        });
+      }
+
+      return reservation;
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
+      if (result?.skipToast) return;
+      
       toast.success(restaurant?.instant_confirm_enabled 
         ? 'Reservation confirmed!' 
         : 'Reservation request sent!');
       refetchTables();
+      setCart([]);
+      setShowPreOrderFlow(false);
+      setPendingReservation(null);
     },
     onError: (e) => toast.error(e?.message || 'Reservation failed')
   });
@@ -517,11 +553,18 @@ export default function RestaurantDetail() {
 
           {/* Menu Tab */}
           <TabsContent value="menu" className="space-y-6">
-            <MenuView
-              restaurantId={restaurantId}
+            <Card>
+              <CardContent className="p-6">
+                <MenuView
+                  items={menuItems}
+                  restaurantName={restaurant.name}
+                />
+              </CardContent>
+            </Card>
+            
+            <MenuHighlights 
               menuItems={menuItems}
-              restaurant={restaurant}
-              currentUser={currentUser}
+              onViewFullMenu={() => {}}
             />
           </TabsContent>
 
@@ -563,12 +606,56 @@ export default function RestaurantDetail() {
         </Tabs>
       </div>
 
-      {/* Pre-Order Cart (if enabled) */}
-      {restaurant?.enable_preorder && currentUser && (
-        <PreOrderCart 
-          restaurantId={restaurantId}
-          currentUser={currentUser}
-        />
+      {/* Pre-Order Flow Dialog */}
+      {showPreOrderFlow && restaurant?.enable_preorder && (
+        <Dialog open={showPreOrderFlow} onOpenChange={(open) => {
+          if (!open) {
+            setShowPreOrderFlow(false);
+            setPendingReservation(null);
+          }
+        }}>
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Add Pre-Order to Your Reservation (Optional)</DialogTitle>
+            </DialogHeader>
+            <PreOrderCart 
+              menuItems={menuItems}
+              cart={cart}
+              onAddToCart={(item) => {
+                setCart(prev => [...prev, { 
+                  menu_item_id: item.id, 
+                  name: item.name, 
+                  price: item.price, 
+                  quantity: 1 
+                }]);
+              }}
+              onUpdateQuantity={(itemId, newQty) => {
+                if (newQty === 0) {
+                  setCart(prev => prev.filter(c => c.menu_item_id !== itemId));
+                } else {
+                  setCart(prev => prev.map(c => 
+                    c.menu_item_id === itemId ? { ...c, quantity: newQty } : c
+                  ));
+                }
+              }}
+              onRemoveFromCart={(itemId) => {
+                setCart(prev => prev.filter(c => c.menu_item_id !== itemId));
+              }}
+              onComplete={(data) => {
+                reserveMutation.mutate({
+                  ...pendingReservation,
+                  skipPreOrder: true,
+                  preOrderInstructions: data.specialInstructions
+                });
+              }}
+              onBack={() => {
+                setShowPreOrderFlow(false);
+                setPendingReservation(null);
+              }}
+              isSubmitting={reserveMutation.isPending}
+            />
+          </DialogContent>
+        </Dialog>
       )}
 
       {/* Share Dialog */}
