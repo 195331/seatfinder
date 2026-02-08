@@ -31,6 +31,9 @@ import AIConcierge from '@/components/ai/AIConcierge';
 import AICollections from '@/components/home/AICollections';
 import Leaderboard from '@/components/social/Leaderboard';
 import MoodBoardCreator from '@/components/social/MoodBoardCreator';
+import FriendRecommendations from '@/components/social/FriendRecommendations';
+import SocialFeed from '@/components/social/SocialFeed';
+import RestaurantLeaderboard from '@/components/social/RestaurantLeaderboard';
 import SmartFilters from '@/components/customer/SmartFilters';
 import { getIsVerifiedLive, getIsStale } from '@/components/ui/FreshnessIndicator';
 import { Switch } from "@/components/ui/switch";
@@ -709,6 +712,25 @@ export default function Home() {
                   userLocation={userLocation}
                   onRestaurantClick={handleRestaurantClick}
                 />
+                
+                {/* Social Feed */}
+                <div className="mt-8">
+                  <SocialFeed currentUser={currentUser} />
+                </div>
+
+                {/* Friend Recommendations */}
+                <div className="mt-8">
+                  <FriendRecommendations 
+                    currentUser={currentUser}
+                    onRestaurantClick={handleRestaurantClick}
+                  />
+                </div>
+
+                {/* Restaurant Leaderboard */}
+                <div className="mt-8">
+                  <RestaurantLeaderboard selectedCity={selectedCity} />
+                </div>
+
                 <div className="mt-12 flex justify-end">
                   <MoodBoardCreator
                     currentUser={currentUser}
