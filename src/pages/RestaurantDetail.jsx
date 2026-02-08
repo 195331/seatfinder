@@ -25,6 +25,7 @@ import VibeDial from '@/components/restaurant/VibeDial';
 import VibeBar from '@/components/restaurant/VibeBar';
 import MenuHighlights from '@/components/restaurant/MenuHighlights';
 import PreOrderCart from '@/components/customer/PreOrderCart';
+import ReservationConcierge from '@/components/ai/ReservationConcierge';
 import PromotionBanner from '@/components/customer/PromotionBanner';
 import LoyaltyCard from '@/components/customer/LoyaltyCard';
 import InstantConfirmBadge from '@/components/customer/InstantConfirmBadge';
@@ -570,11 +571,35 @@ export default function RestaurantDetail() {
 
           {/* Reserve Tab */}
           <TabsContent value="reserve" className="space-y-6">
+            {/* AI Reservation Concierge */}
+            <Card className="border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50">
+              <CardContent className="p-6">
+                <div className="flex items-start gap-4 mb-4">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 flex items-center justify-center">
+                    <Sparkles className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-lg mb-1">Smart Reservation Assistant</h3>
+                    <p className="text-sm text-slate-600 mb-4">
+                      Let AI find the perfect time, handle your special requests, and suggest alternatives if needed.
+                    </p>
+                    <ReservationConcierge
+                      restaurant={restaurant}
+                      tables={tables}
+                      currentUser={currentUser}
+                      onReservationComplete={() => refetchTables()}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Manual Floor Plan Selection */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Calendar className="w-5 h-5" />
-                  Select a Table to Reserve
+                  Or Select a Table Manually
                 </CardTitle>
               </CardHeader>
               <CardContent>
