@@ -126,7 +126,7 @@ export default function LiveSeatingFloor({
         </div>
 
         {/* Canvas - with clipping */}
-        <div className="bg-slate-900 rounded-xl overflow-hidden mx-auto border-2 border-slate-700 relative" style={{ width: 1180, height: 690, pointerEvents: 'auto' }}>
+        <div className="bg-slate-900 rounded-xl mx-auto border-2 border-slate-700 relative" style={{ width: 1180, height: 690, overflow: 'hidden', pointerEvents: 'auto' }}>
           <FloorPlanRenderer
             stageRef={stageRef}
             width={1180}

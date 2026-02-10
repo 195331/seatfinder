@@ -158,22 +158,6 @@ export default function FilterPanel({ open, onOpenChange, filters, onFiltersChan
           </div>
         </SheetContent>
       </Sheet>
-
-      {/* Quick Presets */}
-      {presets?.map((preset) => (
-        <button
-          key={preset.id}
-          onClick={() => onPresetSelect(preset)}
-          className={cn(
-            "px-4 py-2 rounded-full border whitespace-nowrap transition-all",
-            activePreset?.id === preset.id
-              ? "bg-slate-900 text-white border-slate-900"
-              : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
-          )}
-        >
-          {preset.icon} {preset.name}
-        </button>
-      ))}
     </>
   );
 }

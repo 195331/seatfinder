@@ -35,6 +35,7 @@ import OccupancyBadge from '@/components/ui/OccupancyBadge';
 import FreshnessIndicator from '@/components/ui/FreshnessIndicator';
 import PriceLevel from '@/components/ui/PriceLevel';
 import StarRating from '@/components/ui/StarRating';
+import { trackReservationCreated } from '@/components/gamification/PointsTracker';
 
 export default function RestaurantDetail() {
   const navigate = useNavigate();
@@ -221,6 +222,11 @@ export default function RestaurantDetail() {
       setCart([]);
       setShowPreOrderFlow(false);
       setPendingReservation(null);
+      
+      // Track points
+      if (currentUser) {
+        trackReservationCreated(currentUser.id);
+      }
     },
     onError: (e) => toast.error(e?.message || 'Reservation failed')
   });
