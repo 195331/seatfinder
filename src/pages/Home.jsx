@@ -394,8 +394,11 @@ export default function Home() {
         type: 'toggle',
         icon: '📍',
         label: 'Near Me',
-        active: sortBy === 'distance',
-        onClick: () => setSortBy('distance')
+        active: filters.nearMe,
+        onClick: () => {
+          setFilters(prev => ({ ...prev, nearMe: !prev.nearMe }));
+          if (!filters.nearMe) setSortBy('distance');
+        }
       });
     }
 
@@ -531,8 +534,13 @@ export default function Home() {
           <div className="flex items-center gap-3 overflow-x-auto scrollbar-hide pb-1">
             {/* Filters Button - Left Side */}
             <button
-              onClick={() => setShowFilterPanel(true)}
-              className="px-4 py-2 rounded-full border text-sm font-medium whitespace-nowrap bg-white text-slate-600 border-slate-200 hover:border-purple-300 hover:shadow-md transition-all shrink-0 gap-2 flex items-center"
+              onClick={() => setShowFilterPanel(!showFilterPanel)}
+              className={cn(
+                "px-4 py-2 rounded-full border text-sm font-medium whitespace-nowrap transition-all shrink-0 gap-2 flex items-center",
+                showFilterPanel 
+                  ? "bg-emerald-50 text-emerald-700 border-emerald-500 shadow-md" 
+                  : "bg-white text-slate-600 border-slate-200 hover:border-purple-300 hover:shadow-md"
+              )}
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
@@ -943,6 +951,8 @@ export default function Home() {
 
       {/* Filter Panel */}
       <FilterPanel
+        open={showFilterPanel}
+        onOpenChange={setShowFilterPanel}
         filters={filters}
         onFiltersChange={setFilters}
         presets={[]}
