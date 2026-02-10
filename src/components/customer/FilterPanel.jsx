@@ -16,8 +16,7 @@ const SEATING_LEVELS = [
   { value: "any", label: "Any", maxOccupancy: 100 }
 ];
 
-export default function FilterPanel({ filters, onFiltersChange, presets, activePreset, onPresetSelect }) {
-  const [open, setOpen] = useState(false);
+export default function FilterPanel({ open, onOpenChange, filters, onFiltersChange, presets, activePreset, onPresetSelect }) {
   
   const updateFilter = (key, value) => {
     onFiltersChange({ ...filters, [key]: value });
@@ -42,22 +41,7 @@ export default function FilterPanel({ filters, onFiltersChange, presets, activeP
 
   return (
     <>
-      <Sheet open={open} onOpenChange={setOpen}>
-        <SheetTrigger asChild>
-          <button
-            className="px-4 py-2 rounded-full border text-sm font-medium whitespace-nowrap bg-white text-slate-600 border-slate-200 hover:border-purple-300 hover:shadow-md transition-all shrink-0 gap-2 flex items-center"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-            </svg>
-            Filters
-            {activeFilterCount > 0 && (
-              <Badge className="bg-purple-600 text-white h-5 w-5 p-0 flex items-center justify-center">
-                {activeFilterCount}
-              </Badge>
-            )}
-          </button>
-        </SheetTrigger>
+      <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent side="bottom" className="h-[80vh] rounded-t-3xl">
           <SheetHeader className="pb-4 border-b">
             <div className="flex items-center justify-between">
@@ -167,7 +151,7 @@ export default function FilterPanel({ filters, onFiltersChange, presets, activeP
           <div className="absolute bottom-0 left-0 right-0 p-4 bg-white border-t">
             <Button 
               className="w-full rounded-full h-12 text-base"
-              onClick={() => setOpen(false)}
+              onClick={() => onOpenChange(false)}
             >
               Show Results
             </Button>
