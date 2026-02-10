@@ -27,6 +27,7 @@ import MenuHighlights from '@/components/restaurant/MenuHighlights';
 import PreOrderCart from '@/components/customer/PreOrderCart';
 import ReservationConcierge from '@/components/ai/ReservationConcierge';
 import PromotionBanner from '@/components/customer/PromotionBanner';
+import ReservationSuccess from '@/components/customer/ReservationSuccess';
 import LoyaltyCard from '@/components/customer/LoyaltyCard';
 import InstantConfirmBadge from '@/components/customer/InstantConfirmBadge';
 import SocialShare from '@/components/customer/SocialShare';
@@ -166,6 +167,8 @@ export default function RestaurantDetail() {
   const [showPreOrderFlow, setShowPreOrderFlow] = useState(false);
   const [pendingReservation, setPendingReservation] = useState(null);
   const [cart, setCart] = useState([]);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [completedReservation, setCompletedReservation] = useState(null);
 
   // Reserve table mutation
   const reserveMutation = useMutation({
@@ -212,9 +215,8 @@ export default function RestaurantDetail() {
     onSuccess: (result) => {
       if (result?.skipToast) return;
       
-      toast.success(restaurant?.instant_confirm_enabled 
-        ? 'Reservation confirmed!' 
-        : 'Reservation request sent!');
+      setCompletedReservation(result);
+      setShowSuccessDialog(true);
       refetchTables();
       setCart([]);
       setShowPreOrderFlow(false);
@@ -617,15 +619,15 @@ export default function RestaurantDetail() {
 
           {/* Reviews Tab */}
           <TabsContent value="reviews" className="space-y-6">
+            <AIReviewSummary 
+              reviews={reviews}
+              restaurantName={restaurant.name}
+            />
             <ReviewSummary 
               reviews={reviews}
               restaurantId={restaurantId}
               currentUser={currentUser}
               expanded
-            />
-            <AIReviewSummary 
-              reviews={reviews}
-              restaurantName={restaurant.name}
             />
           </TabsContent>
         </Tabs>
@@ -691,6 +693,15 @@ export default function RestaurantDetail() {
           onOpenChange={setShowShareDialog}
         />
       )}
+
+      {/* Success Dialog */}
+      <ReservationSuccess
+        open={showSuccessDialog}
+        onClose={() => setShowSuccessDialog(false)}
+        reservation={completedReservation}
+        restaurantName={restaurant?.name}
+        instantConfirmed={restaurant?.instant_confirm_enabled}
+      />
     </div>
   );
 }

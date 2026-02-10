@@ -413,14 +413,14 @@ export default function FloorPlanViewPremium({
 
       {/* Reservation Dialog */}
       <Dialog open={showReserveDialog} onOpenChange={setShowReserveDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle>
               Reserve {selectedTable?.label || selectedTable?.name || "Table"}
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4 pt-4">
+          <div className="space-y-4 pt-4 overflow-y-auto pr-2">
             <div className="flex items-center gap-2 p-3 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-lg border border-emerald-200">
               <Users className="w-5 h-5 text-emerald-600" />
               <span className="font-medium text-emerald-900">
