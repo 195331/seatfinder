@@ -24,6 +24,11 @@ export default function Leaderboard({ currentUser }) {
     queryFn: () => base44.entities.Reservation.filter({ status: 'approved' }, '-created_date', 1000),
   });
 
+  const { data: allUserStats = [] } = useQuery({
+    queryKey: ['allUserStats'],
+    queryFn: () => base44.entities.UserStats.list('-total_points', 100),
+  });
+
   const getFilteredData = (data, dateField = 'created_date') => {
     if (period === 'all-time') return data;
     
@@ -125,11 +130,48 @@ export default function Leaderboard({ currentUser }) {
           </TabsList>
         </Tabs>
 
-        <Tabs defaultValue="reviewers">
+        <Tabs defaultValue="points">
           <TabsList className="w-full bg-slate-50">
+            <TabsTrigger value="points" className="flex-1">By Points</TabsTrigger>
             <TabsTrigger value="reviewers" className="flex-1">Top Reviewers</TabsTrigger>
             <TabsTrigger value="diners" className="flex-1">Most Active</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="points" className="mt-4">
+            <div className="space-y-2">
+              {allUserStats.slice(0, 10).map((userStat, index) => (
+                <div
+                  key={userStat.user_id}
+                  className={cn(
+                    "flex items-center gap-4 p-4 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer",
+                    currentUser?.id === userStat.user_id && "bg-purple-50 hover:bg-purple-100"
+                  )}
+                  onClick={() => navigate(createPageUrl('UserProfile') + `?id=${userStat.user_id}`)}
+                >
+                  <div className="flex items-center gap-3 flex-1">
+                    <Trophy className={cn("w-6 h-6", getMedalColor(index))} />
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-slate-900">#{index + 1}</span>
+                      <span className="font-medium text-slate-700">{userStat.user_name}</span>
+                      {currentUser?.id === userStat.user_id && (
+                        <Badge variant="secondary" className="text-xs">You</Badge>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="text-center">
+                      <p className="font-bold text-purple-600">Lvl {userStat.level}</p>
+                    </div>
+                    <AchievementBadges userId={userStat.user_id} variant="compact" />
+                    <div className="text-right">
+                      <p className="font-bold text-slate-900">{userStat.total_points}</p>
+                      <p className="text-xs text-slate-500">points</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </TabsContent>
 
           <TabsContent value="reviewers" className="mt-4">
             <div className="space-y-2">

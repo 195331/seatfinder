@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import FeedbackAutomation from '@/components/feedback/FeedbackAutomation';
+import PointsTracker from '@/components/gamification/PointsTracker';
 
 export default function Layout({ children, currentPageName }) {
   const navigate = useNavigate();
@@ -137,9 +138,11 @@ export default function Layout({ children, currentPageName }) {
 
   // Default layout for other pages
   return (
-    <div className="min-h-screen bg-slate-50">
-      <FeedbackAutomation />
-      {children}
-    </div>
+    <PointsTracker currentUser={currentUser}>
+      <div className="min-h-screen bg-slate-50">
+        <FeedbackAutomation />
+        {children}
+      </div>
+    </PointsTracker>
   );
 }

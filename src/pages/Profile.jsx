@@ -1,14 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { createPageUrl } from '@/utils';
-import { ArrowLeft, Check, Loader2, Camera, X } from 'lucide-react';
+import { ArrowLeft, Check, Loader2, Camera, X, Trophy, Star, TrendingUp } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import BadgeProgress from '@/components/gamification/BadgeProgress';
+import DailyCheckIn from '@/components/gamification/DailyCheckIn';
+import { LEVEL_THRESHOLDS } from '@/components/gamification/GamificationTracker';
 
 const FOOD_AVATARS = [
   { id: 'pizza', emoji: '🍕', name: 'Pizza' },
@@ -53,6 +59,16 @@ export default function Profile() {
   const [isNewUser, setIsNewUser] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
+
+  // Fetch user stats
+  const { data: stats } = useQuery({
+    queryKey: ['userStats', currentUser?.id],
+    queryFn: async () => {
+      const result = await base44.entities.UserStats.filter({ user_id: currentUser.id });
+      return Array.isArray(result) ? result[0] : null;
+    },
+    enabled: !!currentUser,
+  });
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -246,6 +262,58 @@ export default function Profile() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Gamification Stats */}
+        {!isNewUser && stats && (
+          <>
+            {/* Daily Check-In */}
+            <DailyCheckIn currentUser={currentUser} />
+
+            {/* Level & Points */}
+            <Card className="border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center">
+                      <Trophy className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-lg text-purple-900">Level {stats.level || 1}</h3>
+                      <p className="text-sm text-purple-700">{stats.total_points || 0} Total Points</p>
+                    </div>
+                  </div>
+                  <Badge className="bg-purple-600 text-white px-4 py-2">
+                    <TrendingUp className="w-4 h-4 mr-1" />
+                    {stats.points_to_next_level || 100} to next
+                  </Badge>
+                </div>
+                
+                <Progress 
+                  value={((LEVEL_THRESHOLDS[stats.level] - stats.points_to_next_level) / LEVEL_THRESHOLDS[stats.level]) * 100} 
+                  className="h-3"
+                />
+                
+                <div className="grid grid-cols-3 gap-4 mt-6">
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-purple-900">{stats.review_count || 0}</p>
+                    <p className="text-xs text-purple-700">Reviews</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-purple-900">{stats.reservation_count || 0}</p>
+                    <p className="text-xs text-purple-700">Reservations</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-purple-900">{stats.check_in_streak || 0}</p>
+                    <p className="text-xs text-purple-700">Day Streak</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Badge Progress */}
+            <BadgeProgress userId={currentUser.id} />
+          </>
+        )}
 
         {/* Save Button */}
         <Button
