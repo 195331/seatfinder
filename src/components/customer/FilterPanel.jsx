@@ -40,9 +40,8 @@ export default function FilterPanel({ open, onOpenChange, filters, onFiltersChan
   }).length;
 
   return (
-    <>
-      <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent side="bottom" className="h-[80vh] rounded-t-3xl">
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="bottom" className="h-[80vh] rounded-t-3xl">
           <SheetHeader className="pb-4 border-b">
             <div className="flex items-center justify-between">
               <SheetTitle className="text-xl">Filters</SheetTitle>
@@ -157,7 +156,6 @@ export default function FilterPanel({ open, onOpenChange, filters, onFiltersChan
             </Button>
           </div>
         </SheetContent>
-      </Sheet>
-    </>
+    </Sheet>
   );
 }
