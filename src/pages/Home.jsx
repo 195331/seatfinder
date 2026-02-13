@@ -950,15 +950,14 @@ export default function Home() {
       />
 
       {/* Filter Panel */}
-      <FilterPanel
-        open={showFilterPanel}
-        onOpenChange={setShowFilterPanel}
-        filters={filters}
-        onFiltersChange={setFilters}
-        presets={[]}
-        activePreset={null}
-        onPresetSelect={() => {}}
-      />
+      {showFilterPanel && (
+        <FilterPanel
+          open={showFilterPanel}
+          onOpenChange={setShowFilterPanel}
+          filters={filters}
+          onFiltersChange={setFilters}
+        />
+      )}
 
       {/* Surprise Me Dialog */}
       {showSurpriseMe && (
