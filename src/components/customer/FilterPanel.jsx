@@ -42,16 +42,16 @@ export default function FilterPanel({ open, onOpenChange, filters, onFiltersChan
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="h-[80vh] rounded-t-3xl">
-          <SheetHeader className="pb-4 border-b">
-            <div className="flex items-center justify-between">
-              <SheetTitle className="text-xl">Filters</SheetTitle>
-              <Button variant="ghost" size="sm" onClick={clearFilters}>
-                Clear all
-              </Button>
-            </div>
-          </SheetHeader>
-          
-          <div className="py-6 space-y-8 overflow-y-auto h-[calc(100%-8rem)]">
+        <SheetHeader className="pb-4 border-b">
+          <div className="flex items-center justify-between">
+            <SheetTitle className="text-xl">Filters</SheetTitle>
+            <Button variant="ghost" size="sm" onClick={clearFilters}>
+              Clear all
+            </Button>
+          </div>
+        </SheetHeader>
+        
+        <div className="py-6 space-y-8 overflow-y-auto h-[calc(100%-8rem)]">
             {/* Price Level */}
             <div>
               <h3 className="font-medium text-slate-900 mb-3">Price</h3>
@@ -144,18 +144,18 @@ export default function FilterPanel({ open, onOpenChange, filters, onFiltersChan
                   </label>
                 ))}
               </div>
-            </div>
           </div>
+        </div>
 
-          <div className="absolute bottom-0 left-0 right-0 p-4 bg-white border-t">
-            <Button 
-              className="w-full rounded-full h-12 text-base"
-              onClick={() => onOpenChange(false)}
-            >
-              Show Results
-            </Button>
-          </div>
-        </SheetContent>
+        <div className="absolute bottom-0 left-0 right-0 p-4 bg-white border-t">
+          <Button 
+            className="w-full rounded-full h-12 text-base"
+            onClick={() => onOpenChange(false)}
+          >
+            Show Results
+          </Button>
+        </div>
+      </SheetContent>
     </Sheet>
   );
 }
