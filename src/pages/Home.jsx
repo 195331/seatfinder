@@ -763,54 +763,6 @@ export default function Home() {
             {/* All Restaurants View */}
             {exploreView === 'all' && (
               <>
-                {/* Smart Filters */}
-                <SmartFilters
-                  restaurants={restaurants}
-                  onFilteredResults={(filtered) => {
-                    // You can set filtered results to state if needed
-                  }}
-                  currentUser={currentUser}
-                />
-
-                {/* Premium AI Card */}
-                {currentUser && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="mb-8"
-                  >
-                    <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500 p-[2px] hover:shadow-2xl hover:shadow-purple-500/30 transition-all group">
-                      <div className="absolute inset-0 bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500 opacity-0 group-hover:opacity-100 blur-xl transition-opacity" />
-                      <div className="relative bg-white rounded-[22px] p-8 md:p-10">
-                        <div className="flex items-start justify-between gap-6">
-                          <div className="flex-1">
-                            <motion.div
-                              animate={{ rotate: [0, 10, -10, 0] }}
-                              transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                              className="inline-block mb-4"
-                            >
-                              <Sparkles className="w-10 h-10 text-purple-600" />
-                            </motion.div>
-                            <h3 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">
-                              Feeling adventurous?
-                            </h3>
-                            <p className="text-slate-600 text-base md:text-lg mb-6">
-                              Let AI find your perfect hidden gem right now
-                            </p>
-                            <Button
-                              onClick={() => setShowSurpriseMe(true)}
-                              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg hover:shadow-xl hover:shadow-purple-500/30 hover:-translate-y-0.5 transition-all rounded-full px-8 h-12"
-                            >
-                              <Sparkles className="w-5 h-5 mr-2" />
-                              Surprise Me
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-
                 {/* AI Search Results */}
                 {showAISearch && (
                   <div className="mb-8">
@@ -823,7 +775,7 @@ export default function Home() {
                   </div>
                 )}
 
-                {/* Recently Viewed */}
+                {/* Recently Viewed - Moved to top */}
                 <RecentlyViewed
                   currentUser={currentUser}
                   onFavoriteToggle={handleFavoriteClick}
@@ -877,7 +829,7 @@ export default function Home() {
                       </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                      {filteredRestaurants.map((restaurant) => {
+                      {filteredRestaurants.map((restaurant, index) => {
                         const tasteProfile = currentUser?.taste_profile || {};
                         const isBestMatch = (
                           (tasteProfile.outdoor_seating && restaurant.has_outdoor) ||
@@ -885,24 +837,80 @@ export default function Home() {
                           (tasteProfile.bar_seating && restaurant.has_bar_seating)
                         );
 
+                        // Insert Smart Filters after 6th card if more than 6 restaurants
+                        const shouldShowSmartFilters = index === 6 && filteredRestaurants.length > 6;
+                        
+                        // Randomly insert "Feeling adventurous" card
+                        const randomInsertPosition = Math.floor(filteredRestaurants.length / 3);
+                        const shouldShowAdventurous = currentUser && index === randomInsertPosition;
+
                         return (
-                          <motion.div
-                            key={restaurant.id}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            whileHover={{ y: -4 }}
-                            transition={{ duration: 0.2 }}
-                          >
-                            <RestaurantCard
-                              restaurant={restaurant}
-                              isFavorite={favoriteIds.has(restaurant.id)}
-                              onFavoriteToggle={handleFavoriteClick}
-                              onClick={handleRestaurantClick}
-                              showBestMatch={isBestMatch}
-                              distance={restaurant.distance}
-                              reviews={allReviews.filter(r => r.restaurant_id === restaurant.id)}
-                            />
-                          </motion.div>
+                          <React.Fragment key={restaurant.id}>
+                            {shouldShowSmartFilters && (
+                              <div className="md:col-span-2 lg:col-span-3">
+                                <SmartFilters
+                                  restaurants={restaurants}
+                                  onFilteredResults={(filtered) => {}}
+                                  currentUser={currentUser}
+                                />
+                              </div>
+                            )}
+                            
+                            {shouldShowAdventurous && (
+                              <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="md:col-span-2 lg:col-span-3"
+                              >
+                                <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500 p-[2px] hover:shadow-2xl hover:shadow-purple-500/30 transition-all group">
+                                  <div className="absolute inset-0 bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500 opacity-0 group-hover:opacity-100 blur-xl transition-opacity" />
+                                  <div className="relative bg-white rounded-[22px] p-8 md:p-10">
+                                    <div className="flex items-start justify-between gap-6">
+                                      <div className="flex-1">
+                                        <motion.div
+                                          animate={{ rotate: [0, 10, -10, 0] }}
+                                          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                                          className="inline-block mb-4"
+                                        >
+                                          <Sparkles className="w-10 h-10 text-purple-600" />
+                                        </motion.div>
+                                        <h3 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">
+                                          Feeling adventurous?
+                                        </h3>
+                                        <p className="text-slate-600 text-base md:text-lg mb-6">
+                                          Let AI find your perfect hidden gem right now
+                                        </p>
+                                        <Button
+                                          onClick={() => setShowSurpriseMe(true)}
+                                          className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg hover:shadow-xl hover:shadow-purple-500/30 hover:-translate-y-0.5 transition-all rounded-full px-8 h-12"
+                                        >
+                                          <Sparkles className="w-5 h-5 mr-2" />
+                                          Surprise Me
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </motion.div>
+                            )}
+
+                            <motion.div
+                              initial={{ opacity: 0, y: 20 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              whileHover={{ y: -4 }}
+                              transition={{ duration: 0.2 }}
+                            >
+                              <RestaurantCard
+                                restaurant={restaurant}
+                                isFavorite={favoriteIds.has(restaurant.id)}
+                                onFavoriteToggle={handleFavoriteClick}
+                                onClick={handleRestaurantClick}
+                                showBestMatch={isBestMatch}
+                                distance={restaurant.distance}
+                                reviews={allReviews.filter(r => r.restaurant_id === restaurant.id)}
+                              />
+                            </motion.div>
+                          </React.Fragment>
                         );
                       })}
                     </div>
