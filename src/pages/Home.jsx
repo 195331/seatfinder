@@ -601,6 +601,55 @@ export default function Home() {
 
       {/* Content */}
       <main className="max-w-7xl mx-auto px-4 py-8 relative z-10">
+        {/* Recently Viewed - Always at top */}
+        <RecentlyViewed
+          currentUser={currentUser}
+          onFavoriteToggle={handleFavoriteClick}
+          favoriteIds={favoriteIds}
+          onClick={handleRestaurantClick}
+        />
+
+        {/* First 6 Restaurant Cards - Always shown */}
+        {!loadingRestaurants && filteredRestaurants.length > 0 && (
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold text-slate-900">
+                Top Picks for You
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {filteredRestaurants.slice(0, 6).map((restaurant) => {
+                const tasteProfile = currentUser?.taste_profile || {};
+                const isBestMatch = (
+                  (tasteProfile.outdoor_seating && restaurant.has_outdoor) ||
+                  (tasteProfile.kid_friendly && restaurant.is_kid_friendly) ||
+                  (tasteProfile.bar_seating && restaurant.has_bar_seating)
+                );
+
+                return (
+                  <motion.div
+                    key={restaurant.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    whileHover={{ y: -4 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <RestaurantCard
+                      restaurant={restaurant}
+                      isFavorite={favoriteIds.has(restaurant.id)}
+                      onFavoriteToggle={handleFavoriteClick}
+                      onClick={handleRestaurantClick}
+                      showBestMatch={isBestMatch}
+                      distance={restaurant.distance}
+                      reviews={allReviews.filter(r => r.restaurant_id === restaurant.id)}
+                    />
+                  </motion.div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Premium Segmented Toggle for Explore / Mood Boards */}
         {currentUser && (
           <div className="mb-8">
@@ -774,14 +823,6 @@ export default function Home() {
                     />
                   </div>
                 )}
-
-                {/* Recently Viewed - Moved to top */}
-                <RecentlyViewed
-                  currentUser={currentUser}
-                  onFavoriteToggle={handleFavoriteClick}
-                  favoriteIds={favoriteIds}
-                  onClick={handleRestaurantClick}
-                />
               </>
             )}
 
@@ -829,7 +870,8 @@ export default function Home() {
                       </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                      {filteredRestaurants.map((restaurant, index) => {
+                      {filteredRestaurants.slice(6).map((restaurant, index) => {
+                        const actualIndex = index + 6; // Account for first 6 already shown
                         const tasteProfile = currentUser?.taste_profile || {};
                         const isBestMatch = (
                           (tasteProfile.outdoor_seating && restaurant.has_outdoor) ||
@@ -837,11 +879,11 @@ export default function Home() {
                           (tasteProfile.bar_seating && restaurant.has_bar_seating)
                         );
 
-                        // Insert Smart Filters after 6th card if more than 6 restaurants
-                        const shouldShowSmartFilters = index === 6 && filteredRestaurants.length > 6;
+                        // Insert Smart Filters after first card (position 7) if more than 6 restaurants
+                        const shouldShowSmartFilters = index === 0 && filteredRestaurants.length > 6;
                         
-                        // Randomly insert "Feeling adventurous" card
-                        const randomInsertPosition = Math.floor(filteredRestaurants.length / 3);
+                        // Randomly insert "Feeling adventurous" card AFTER position 6
+                        const randomInsertPosition = Math.floor((filteredRestaurants.length - 6) / 3) + 2;
                         const shouldShowAdventurous = currentUser && index === randomInsertPosition;
 
                         return (
