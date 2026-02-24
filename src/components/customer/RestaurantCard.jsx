@@ -69,9 +69,9 @@ export default function RestaurantCard({
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
       className={cn(
-        "bg-white rounded-2xl border overflow-hidden cursor-pointer group",
+        "bg-white/80 backdrop-blur-xl rounded-2xl border overflow-hidden cursor-pointer group",
         "hover:shadow-xl transition-all duration-300",
-        isVerifiedLive ? "border-emerald-200 shadow-md" : "border-slate-100 shadow-sm hover:border-slate-200"
+        isVerifiedLive ? "border-emerald-200 shadow-lg" : "border-slate-100 shadow-md hover:border-slate-200"
       )}
     >
       {/* Image Carousel */}
@@ -110,7 +110,12 @@ export default function RestaurantCard({
 
         {/* Top Left Badges */}
         <div className="absolute top-3 left-3 flex flex-col gap-2">
-          <FreshnessIndicator lastUpdate={restaurant.seating_updated_at} showText={false} />
+          {isVerifiedLive && (
+            <Badge className="bg-emerald-500 text-white border-0 shadow-lg animate-pulse">
+              🔴 LIVE NOW
+            </Badge>
+          )}
+          {!isVerifiedLive && <FreshnessIndicator lastUpdate={restaurant.seating_updated_at} showText={false} />}
           {showBestMatch && !isVerifiedLive && (
             <Badge className="bg-purple-500 text-white border-0">
               ✨ Best for you

@@ -29,6 +29,7 @@ import DiscoverSection from '@/components/customer/DiscoverSection';
 import PersonalizedRecommendations from '@/components/customer/PersonalizedRecommendations';
 import AIConcierge from '@/components/ai/AIConcierge';
 import AICollections from '@/components/home/AICollections';
+import TrendingNearYou from '@/components/home/TrendingNearYou';
 import Leaderboard from '@/components/social/Leaderboard';
 import MoodBoardCreator from '@/components/social/MoodBoardCreator';
 import FriendRecommendations from '@/components/social/FriendRecommendations';
@@ -472,7 +473,7 @@ export default function Home() {
                   onChange={(e) => setSearch(e.target.value)}
                   onFocus={() => setShowAISuggestions(true)}
                   placeholder="Search restaurants, cuisine, vibe…"
-                  className="w-full h-12 px-6 pr-12 rounded-full bg-white border-2 border-slate-200 hover:border-purple-300 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 transition-all shadow-sm text-slate-900 placeholder:text-slate-400"
+                  className="w-full h-12 px-6 pr-12 rounded-full bg-white/80 backdrop-blur-xl border-2 border-slate-200 hover:border-purple-300 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 transition-all shadow-lg text-slate-900 placeholder:text-slate-400"
                 />
                 <button 
                   onClick={() => setShowAISearch(!showAISearch)}
@@ -620,6 +621,15 @@ export default function Home() {
           favoriteIds={favoriteIds}
           onClick={handleRestaurantClick}
         />
+
+        {/* Trending Near You Section */}
+        {!loadingRestaurants && filteredRestaurants.length > 0 && (
+          <TrendingNearYou
+            restaurants={filteredRestaurants}
+            onRestaurantClick={handleRestaurantClick}
+            userLocation={userLocation}
+          />
+        )}
 
         {/* First 6 Restaurant Cards - Always shown */}
         {!loadingRestaurants && filteredRestaurants.length > 0 && (
