@@ -29,6 +29,7 @@ import PreOrderCart from '@/components/customer/PreOrderCart';
 import ReservationConcierge from '@/components/ai/ReservationConcierge';
 import PromotionBanner from '@/components/customer/PromotionBanner';
 import ReservationSuccess from '@/components/customer/ReservationSuccess';
+import BookNowFooter from '@/components/customer/BookNowFooter';
 import LoyaltyCard from '@/components/customer/LoyaltyCard';
 import InstantConfirmBadge from '@/components/customer/InstantConfirmBadge';
 import SocialShare from '@/components/customer/SocialShare';
@@ -305,9 +306,21 @@ export default function RestaurantDetail() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Hero Section with Photo Gallery */}
-      <div className="relative bg-slate-900">
-        <PhotoGallery restaurant={restaurant} />
+      {/* Hero Section with High-Res Cover Image */}
+      <div className="relative bg-slate-900 h-[60vh] min-h-[400px] overflow-hidden">
+        <img
+          src={restaurant.cover_image || `https://images.unsplash.com/photo-${
+            restaurant.cuisine?.toLowerCase() === 'indian' ? '1585937421612-70ac88a3f56e' :
+            restaurant.cuisine?.toLowerCase() === 'italian' ? '1555939594-58d7cb561ad1' :
+            restaurant.cuisine?.toLowerCase() === 'japanese' ? '1579584425555-c3ce17fd4351' :
+            restaurant.cuisine?.toLowerCase() === 'mexican' ? '1565299507177-b0ac66763828' :
+            restaurant.cuisine?.toLowerCase() === 'chinese' ? '1526318472351-c75fcf070305' :
+            '1517248135467-4c7edcad34c4'
+          }?w=1920&q=90`}
+          alt={restaurant.name}
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
         
         {/* Floating Back Button */}
         <Button
@@ -318,6 +331,16 @@ export default function RestaurantDetail() {
         >
           <ArrowLeft className="w-5 h-5" />
         </Button>
+
+        {/* Restaurant Name Overlay */}
+        <div className="absolute bottom-8 left-4 right-4 z-10 text-white">
+          <h1 className="text-4xl md:text-6xl font-bold mb-2 drop-shadow-lg">
+            {restaurant.name}
+          </h1>
+          <p className="text-lg md:text-xl text-white/90 drop-shadow">
+            {restaurant.cuisine} • {restaurant.neighborhood}
+          </p>
+        </div>
 
         {/* Floating Action Buttons */}
         <div className="absolute top-4 right-4 z-10 flex gap-2">
@@ -712,6 +735,12 @@ export default function RestaurantDetail() {
         reservation={completedReservation}
         restaurantName={restaurant?.name}
         instantConfirmed={restaurant?.instant_confirm_enabled}
+      />
+
+      {/* Mobile Sticky Footer */}
+      <BookNowFooter
+        onBookClick={() => setActiveTab('reserve')}
+        onAIClick={() => setActiveTab('reserve')}
       />
     </div>
   );
