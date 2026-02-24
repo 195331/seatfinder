@@ -557,6 +557,16 @@ export default function Home() {
                   {chip.label}
                 </button>
               ))}
+              
+              {/* Smart Filters inline */}
+              {currentUser && (
+                <SmartFilters
+                  restaurants={restaurants}
+                  onFilteredResults={(filtered) => {}}
+                  currentUser={currentUser}
+                  inline
+                />
+              )}
             </div>
 
             {/* AI Actions */}
