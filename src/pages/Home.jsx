@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { List, Map, Heart, Zap, ChefHat, MapPin, Sparkles } from 'lucide-react';
@@ -64,6 +64,8 @@ export default function Home() {
   const [sortBy, setSortBy] = useState('verified'); // 'verified', 'distance', 'rating'
   const [showSurpriseMe, setShowSurpriseMe] = useState(false);
   const [showFilterPanel, setShowFilterPanel] = useState(false);
+  const [showAISuggestions, setShowAISuggestions] = useState(false);
+  const mapRef = useRef(null);
 
   // Fetch current user
   useEffect(() => {
@@ -468,6 +470,7 @@ export default function Home() {
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
+                  onFocus={() => setShowAISuggestions(true)}
                   placeholder="Search restaurants, cuisine, vibe…"
                   className="w-full h-12 px-6 pr-12 rounded-full bg-white border-2 border-slate-200 hover:border-purple-300 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 transition-all shadow-sm text-slate-900 placeholder:text-slate-400"
                 />
@@ -477,6 +480,18 @@ export default function Home() {
                 >
                   <Zap className="w-4 h-4 text-white" />
                 </button>
+                
+                {/* AI Search Suggestions */}
+                {showAISuggestions && (
+                  <AISearchSuggestions
+                    searchQuery={search}
+                    onSuggestionClick={(suggestion) => {
+                      setSearch(suggestion);
+                      setShowAISuggestions(false);
+                    }}
+                    onClose={() => setShowAISuggestions(false)}
+                  />
+                )}
               </div>
             </div>
 
@@ -494,7 +509,12 @@ export default function Home() {
                   <List className="w-4 h-4" />
                 </button>
                 <button
-                  onClick={() => setView('map')}
+                  onClick={() => {
+                    setView('map');
+                    setTimeout(() => {
+                      mapRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }, 100);
+                  }}
                   className={cn(
                     "px-3 py-1.5 rounded-full text-sm font-medium transition-all",
                     view === 'map' ? "bg-white shadow-sm" : "text-slate-600 hover:text-slate-900"
@@ -968,7 +988,7 @@ export default function Home() {
                     )}
                   </>
                 ) : (
-                  <div className="h-[calc(100vh-280px)] min-h-[500px]">
+                  <div ref={mapRef} className="h-[calc(100vh-280px)] min-h-[500px]">
                     <RestaurantMap
                       restaurants={filteredRestaurants}
                       center={mapCenter}
