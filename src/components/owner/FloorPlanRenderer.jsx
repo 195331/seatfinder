@@ -5,10 +5,10 @@ const COLORS = {
   canvasBg: "#0b1220",
   gridMajor: "rgba(255,255,255,0.06)",
   gridMinor: "rgba(255,255,255,0.03)",
-  text: "rgba(255,255,255,0.92)",
+  text: "#1e293b",
   subtext: "rgba(255,255,255,0.60)",
   accent: "#22c55e",
-  tableFill: "rgba(255,255,255,0.08)",
+  tableFill: "#ffffff",
   tableStroke: "rgba(255,255,255,0.18)",
   wall: "rgba(255,255,255,0.42)",
   roomFill: "rgba(34,197,94,0.10)",
@@ -16,12 +16,13 @@ const COLORS = {
   noteFill: "rgba(59,130,246,0.10)",
   noteStroke: "rgba(59,130,246,0.35)",
   danger: "#ef4444",
-  tableFree: "rgba(16,185,129,0.25)",
-  tableOccupied: "rgba(245,158,11,0.25)",
-  tableReserved: "rgba(59,130,246,0.25)",
-  tableStrokeFree: "rgba(16,185,129,0.6)",
-  tableStrokeOccupied: "rgba(245,158,11,0.6)",
-  tableStrokeReserved: "rgba(59,130,246,0.6)"
+  tableFree: "#ffffff",
+  tableOccupied: "#ffffff",
+  tableReserved: "#ffffff",
+  tableStrokeFree: "#10b981",
+  tableStrokeOccupied: "#ef4444",
+  tableStrokeReserved: "#f97316",
+  chairDot: "rgba(148,163,184,0.8)"
 };
 
 function toFlat(points) {
@@ -30,29 +31,72 @@ function toFlat(points) {
   return out;
 }
 
-// Chair nubs for round tables
-function ChairNubs({ w, h, seats }) {
-  const cx = w / 2;
-  const cy = h / 2;
-  const r = Math.max(w, h) / 2 + 12;
+// Chair dots for tables
+function ChairDots({ w, h, seats, shape }) {
   const count = Math.max(1, Math.min(12, seats || 4));
-  const nubs = [];
-  for (let i = 0; i < count; i++) {
-    const a = (i / count) * Math.PI * 2;
-    nubs.push(
-      <Circle
-        key={i}
-        x={cx + Math.cos(a) * r}
-        y={cy + Math.sin(a) * r}
-        radius={5}
-        fill="rgba(255,255,255,0.18)"
-        stroke="rgba(255,255,255,0.22)"
-        strokeWidth={1}
-        listening={false}
-      />
-    );
+  const dots = [];
+  
+  if (shape === "round") {
+    const cx = w / 2;
+    const cy = h / 2;
+    const r = Math.max(w, h) / 2 + 14;
+    
+    for (let i = 0; i < count; i++) {
+      const a = (i / count) * Math.PI * 2;
+      dots.push(
+        <Circle
+          key={i}
+          x={cx + Math.cos(a) * r}
+          y={cy + Math.sin(a) * r}
+          radius={6}
+          fill={COLORS.chairDot}
+          stroke="none"
+          listening={false}
+        />
+      );
+    }
+  } else {
+    // Rectangular tables - distribute chairs around perimeter
+    const perimeter = 2 * (w + h);
+    const spacing = perimeter / count;
+    
+    for (let i = 0; i < count; i++) {
+      const dist = i * spacing;
+      let x, y;
+      
+      if (dist < w) {
+        // Top edge
+        x = dist;
+        y = -12;
+      } else if (dist < w + h) {
+        // Right edge
+        x = w + 12;
+        y = dist - w;
+      } else if (dist < 2 * w + h) {
+        // Bottom edge
+        x = w - (dist - w - h);
+        y = h + 12;
+      } else {
+        // Left edge
+        x = -12;
+        y = h - (dist - 2 * w - h);
+      }
+      
+      dots.push(
+        <Circle
+          key={i}
+          x={x}
+          y={y}
+          radius={6}
+          fill={COLORS.chairDot}
+          stroke="none"
+          listening={false}
+        />
+      );
+    }
   }
-  return <>{nubs}</>;
+  
+  return <>{dots}</>;
 }
 
 export default function FloorPlanRenderer({
@@ -292,7 +336,15 @@ export default function FloorPlanRenderer({
     listening={true}
   />
 
-  {/* Your pretty table shapes should NOT listen */}
+  {/* Chair dots */}
+  <ChairDots 
+    w={obj.w} 
+    h={obj.h} 
+    seats={obj.seats || 4}
+    shape={obj.shape}
+  />
+
+  {/* Table shape */}
   {obj.shape === "round" ? (
     <Circle
       x={obj.w / 2}
@@ -300,33 +352,43 @@ export default function FloorPlanRenderer({
       radius={obj.w / 2}
       fill={statusFill}
       stroke={statusStroke}
-      strokeWidth={2}
+      strokeWidth={3}
       listening={false}
     />
   ) : (
     <Rect
       width={obj.w}
       height={obj.h}
-      cornerRadius={14}
+      cornerRadius={8}
       fill={statusFill}
       stroke={statusStroke}
-      strokeWidth={2}
+      strokeWidth={3}
       listening={false}
     />
   )}
 
-  {/* Label always visible */}
+  {/* Table label */}
   <Text
     x={0}
-    y={0}
+    y={obj.h / 2 - 16}
     width={obj.w}
-    height={obj.h}
     align="center"
-    verticalAlign="middle"
     text={`T${obj.table_number ?? obj.label ?? ""}`}
-    fill="rgba(255,255,255,0.95)"
-    fontSize={16}
+    fill={COLORS.text}
+    fontSize={15}
     fontStyle="700"
+    listening={false}
+  />
+  
+  {/* Seats label */}
+  <Text
+    x={0}
+    y={obj.h / 2 + 2}
+    width={obj.w}
+    align="center"
+    text={`${obj.seats || 4} seats`}
+    fill="#64748b"
+    fontSize={11}
     listening={false}
   />
 </Group>
