@@ -67,24 +67,30 @@ export default function ReviewCard({ review, currentUser, isOwner }) {
           </div>
 
           {/* Detailed Ratings */}
-          {(review.food_rating || review.service_rating || review.ambiance_rating) && (
-            <div className="flex flex-wrap gap-3 mb-3 text-xs">
+          {(review.food_rating || review.service_rating || review.ambiance_rating || review.value_rating) && (
+            <div className="grid grid-cols-2 gap-2 mb-3 text-xs">
               {review.food_rating && (
                 <div className="flex items-center gap-1">
-                  <span className="text-slate-600">Food:</span>
+                  <span className="text-slate-600 font-medium">Food:</span>
                   {renderStars(review.food_rating)}
                 </div>
               )}
               {review.service_rating && (
                 <div className="flex items-center gap-1">
-                  <span className="text-slate-600">Service:</span>
+                  <span className="text-slate-600 font-medium">Service:</span>
                   {renderStars(review.service_rating)}
                 </div>
               )}
               {review.ambiance_rating && (
                 <div className="flex items-center gap-1">
-                  <span className="text-slate-600">Ambiance:</span>
+                  <span className="text-slate-600 font-medium">Ambiance:</span>
                   {renderStars(review.ambiance_rating)}
+                </div>
+              )}
+              {review.value_rating && (
+                <div className="flex items-center gap-1">
+                  <span className="text-slate-600 font-medium">Value:</span>
+                  {renderStars(review.value_rating)}
                 </div>
               )}
             </div>
@@ -108,24 +114,16 @@ export default function ReviewCard({ review, currentUser, isOwner }) {
           {/* Photos */}
           {review.photos?.length > 0 && (
             <div className="mb-3">
-              <div className="flex gap-2 overflow-x-auto">
-                {review.photos.slice(0, 4).map((photo, idx) => (
+              <div className="flex gap-2 overflow-x-auto pb-2">
+                {review.photos.map((photo, idx) => (
                   <img
                     key={idx}
                     src={photo}
                     alt={`Review photo ${idx + 1}`}
-                    className="w-20 h-20 rounded-lg object-cover cursor-pointer hover:opacity-80"
-                    onClick={() => setShowPhotos(true)}
+                    className="w-24 h-24 rounded-xl object-cover cursor-pointer hover:opacity-80 transition-opacity shadow-sm"
+                    onClick={() => window.open(photo, '_blank')}
                   />
                 ))}
-                {review.photos.length > 4 && (
-                  <button
-                    onClick={() => setShowPhotos(true)}
-                    className="w-20 h-20 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-slate-200"
-                  >
-                    +{review.photos.length - 4}
-                  </button>
-                )}
               </div>
             </div>
           )}

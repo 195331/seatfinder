@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Star, Loader2, CheckCircle } from 'lucide-react';
+import { Star, Loader2, CheckCircle, Camera, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -15,10 +15,38 @@ export default function ReviewSubmissionForm({ reservation, restaurant, onSubmit
     overall: 0,
     food: 0,
     service: 0,
-    ambiance: 0
+    ambiance: 0,
+    value: 0
   });
   const [comment, setComment] = useState('');
+  const [photos, setPhotos] = useState([]);
+  const [uploading, setUploading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+
+  const handlePhotoUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length + photos.length > 5) {
+      toast.error('Maximum 5 photos allowed');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const uploadPromises = files.map(file => 
+        base44.integrations.Core.UploadFile({ file })
+      );
+      const results = await Promise.all(uploadPromises);
+      setPhotos([...photos, ...results.map(r => r.file_url)]);
+      toast.success('Photos uploaded!');
+    } catch (error) {
+      toast.error('Failed to upload photos');
+    }
+    setUploading(false);
+  };
+
+  const removePhoto = (index) => {
+    setPhotos(photos.filter((_, i) => i !== index));
+  };
 
   const submitMutation = useMutation({
     mutationFn: async () => {
@@ -29,10 +57,13 @@ export default function ReviewSubmissionForm({ reservation, restaurant, onSubmit
         user_id: user.id,
         user_name: user.full_name,
         rating: ratings.overall,
+        food_rating: ratings.food,
+        service_rating: ratings.service,
+        ambiance_rating: ratings.ambiance,
+        value_rating: ratings.value,
         comment,
+        photos,
         tags: [],
-        vibe_rating: ratings.ambiance,
-        noise_level: 3,
         is_hidden: false
       });
 
@@ -101,7 +132,7 @@ export default function ReviewSubmissionForm({ reservation, restaurant, onSubmit
           onChange={(val) => setRatings({ ...ratings, overall: val })}
         />
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <RatingStars
             label="Food Quality"
             value={ratings.food}
@@ -117,6 +148,11 @@ export default function ReviewSubmissionForm({ reservation, restaurant, onSubmit
             value={ratings.ambiance}
             onChange={(val) => setRatings({ ...ratings, ambiance: val })}
           />
+          <RatingStars
+            label="Value"
+            value={ratings.value}
+            onChange={(val) => setRatings({ ...ratings, value: val })}
+          />
         </div>
 
         <div>
@@ -127,6 +163,49 @@ export default function ReviewSubmissionForm({ reservation, restaurant, onSubmit
             placeholder="What did you love? What could be better?"
             className="mt-2 min-h-[120px]"
           />
+        </div>
+
+        <div>
+          <Label>Add Photos (Optional)</Label>
+          <div className="mt-2">
+            {photos.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-3">
+                {photos.map((photo, idx) => (
+                  <div key={idx} className="relative">
+                    <img
+                      src={photo}
+                      alt={`Upload ${idx + 1}`}
+                      className="w-20 h-20 rounded-lg object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removePhoto(idx)}
+                      className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {photos.length < 5 && (
+              <label className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-slate-300 rounded-lg cursor-pointer hover:border-slate-400 transition-colors">
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handlePhotoUpload}
+                  className="hidden"
+                  disabled={uploading}
+                />
+                {uploading ? (
+                  <><Loader2 className="w-5 h-5 animate-spin" /> Uploading...</>
+                ) : (
+                  <><Camera className="w-5 h-5 text-slate-500" /> Add Photos ({photos.length}/5)</>
+                )}
+              </label>
+            )}
+          </div>
         </div>
 
         <Button
