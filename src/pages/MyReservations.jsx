@@ -59,14 +59,14 @@ export default function MyReservations() {
   const restaurantIds = [...new Set([
     ...reservations.map(r => r.restaurant_id),
     ...waitlistEntries.map(w => w.restaurant_id)
-  ])];
+  ])].filter(Boolean);
 
   const { data: restaurants = [] } = useQuery({
     queryKey: ['reservationRestaurants', restaurantIds],
     queryFn: async () => {
       if (restaurantIds.length === 0) return [];
       const results = await Promise.all(
-        restaurantIds.map(id => base44.entities.Restaurant.filter({ id }).then(r => r[0]))
+        restaurantIds.map(id => base44.entities.Restaurant.filter({ id }).then(r => Array.isArray(r) ? r[0] : r))
       );
       return results.filter(Boolean);
     },
@@ -94,14 +94,29 @@ export default function MyReservations() {
     }
   });
 
-  // Separate upcoming and past reservations
+  // Separate upcoming, past, and cancelled reservations
   const now = new Date();
-  const upcomingReservations = reservations.filter(r => 
-    r.reservation_date && isAfter(parseISO(r.reservation_date), now) && r.status !== 'cancelled'
-  );
-  const pastReservations = reservations.filter(r => 
-    !r.reservation_date || !isAfter(parseISO(r.reservation_date), now) || r.status === 'cancelled'
-  );
+  const upcomingReservations = reservations.filter(r => {
+    if (r.status === 'cancelled') return false;
+    if (!r.reservation_date) return false;
+    try {
+      return isAfter(parseISO(r.reservation_date), now);
+    } catch {
+      return false;
+    }
+  });
+  
+  const pastReservations = reservations.filter(r => {
+    if (r.status === 'cancelled') return false;
+    if (!r.reservation_date) return true;
+    try {
+      return !isAfter(parseISO(r.reservation_date), now);
+    } catch {
+      return true;
+    }
+  });
+  
+  const cancelledReservations = reservations.filter(r => r.status === 'cancelled');
 
   const activeWaitlist = waitlistEntries.filter(w => ['waiting', 'notified'].includes(w.status));
 
@@ -159,12 +174,15 @@ export default function MyReservations() {
 
         {/* Reservations */}
         <Tabs defaultValue="upcoming">
-          <TabsList className="w-full bg-slate-100 rounded-full p-1">
-            <TabsTrigger value="upcoming" className="flex-1 rounded-full">
+          <TabsList className="w-full bg-slate-100 rounded-full p-1 grid grid-cols-3">
+            <TabsTrigger value="upcoming" className="rounded-full">
               Upcoming ({upcomingReservations.length})
             </TabsTrigger>
-            <TabsTrigger value="past" className="flex-1 rounded-full">
+            <TabsTrigger value="past" className="rounded-full">
               Past ({pastReservations.length})
+            </TabsTrigger>
+            <TabsTrigger value="cancelled" className="rounded-full">
+              Cancelled ({cancelledReservations.length})
             </TabsTrigger>
           </TabsList>
 
@@ -207,6 +225,25 @@ export default function MyReservations() {
             ) : (
               <div className="space-y-3">
                 {pastReservations.map((reservation) => (
+                  <ReservationCard
+                    key={reservation.id}
+                    reservation={reservation}
+                    restaurant={restaurantMap[reservation.restaurant_id]}
+                  />
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="cancelled" className="mt-4">
+            {cancelledReservations.length === 0 ? (
+              <div className="text-center py-12">
+                <Clock className="w-12 h-12 mx-auto mb-3 text-slate-300" />
+                <p className="text-slate-500">No cancelled reservations</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {cancelledReservations.map((reservation) => (
                   <ReservationCard
                     key={reservation.id}
                     reservation={reservation}

@@ -230,8 +230,8 @@ export default function ProfileDrawer({ currentUser, onLogout }) {
           )}
 
           {/* Tabs */}
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-            <TabsList className="mx-4 mt-4 bg-slate-100">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
+            <TabsList className="mx-4 mt-4 bg-slate-100 shrink-0">
               <TabsTrigger value="profile" className="flex-1">Profile</TabsTrigger>
               <TabsTrigger value="reservations" className="flex-1">
                 Reservations
@@ -242,8 +242,8 @@ export default function ProfileDrawer({ currentUser, onLogout }) {
               <TabsTrigger value="rewards" className="flex-1">Rewards</TabsTrigger>
             </TabsList>
 
-            <ScrollArea className="flex-1">
-              <TabsContent value="profile" className="p-4 space-y-2 m-0">
+            <div className="flex-1 overflow-y-auto">
+              <TabsContent value="profile" className="p-4 space-y-2 m-0 h-full">
                 {/* User Role Badge */}
                 <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-xl mb-2">
                   <span className="text-sm text-slate-500">Role:</span>
@@ -322,7 +322,7 @@ export default function ProfileDrawer({ currentUser, onLogout }) {
                 </div>
               </TabsContent>
 
-              <TabsContent value="reservations" className="p-4 space-y-4 m-0">
+              <TabsContent value="reservations" className="p-4 space-y-4 m-0 h-full">
                 {/* Active Waitlist */}
                 {waitlistEntries.length > 0 && (
                   <div>
@@ -415,9 +415,25 @@ export default function ProfileDrawer({ currentUser, onLogout }) {
                     ))}
                   </div>
                 )}
+                
+                {/* View All Link */}
+                {reservations.length > 0 && (
+                  <div className="pt-4">
+                    <Button 
+                      variant="outline" 
+                      className="w-full"
+                      onClick={() => {
+                        setOpen(false);
+                        navigate(createPageUrl('MyReservations'));
+                      }}
+                    >
+                      View All Reservations
+                    </Button>
+                  </div>
+                )}
               </TabsContent>
 
-              <TabsContent value="rewards" className="p-4 space-y-4 m-0">
+              <TabsContent value="rewards" className="p-4 space-y-4 m-0 h-full">
                 {loyaltyMemberships.length === 0 ? (
                   <Card className="border-dashed">
                     <CardContent className="py-8 text-center">
@@ -483,7 +499,7 @@ export default function ProfileDrawer({ currentUser, onLogout }) {
                   })
                 )}
               </TabsContent>
-            </ScrollArea>
+            </div>
           </Tabs>
         </div>
       </SheetContent>
