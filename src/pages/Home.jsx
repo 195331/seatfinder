@@ -887,7 +887,7 @@ export default function Home() {
                         const shouldShowAdventurous = currentUser && index === randomInsertPosition;
 
                         return (
-                          <React.Fragment key={restaurant.id}>
+                          <div key={restaurant.id} className="contents">
                             {shouldShowSmartFilters && (
                               <div className="md:col-span-2 lg:col-span-3">
                                 <SmartFilters
@@ -952,7 +952,7 @@ export default function Home() {
                                 reviews={allReviews.filter(r => r.restaurant_id === restaurant.id)}
                               />
                             </motion.div>
-                          </React.Fragment>
+                          </div>
                         );
                       })}
                     </div>
