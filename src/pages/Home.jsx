@@ -468,7 +468,6 @@ export default function Home() {
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  onFocus={() => setShowAISearch(true)}
                   placeholder="Search restaurants, cuisine, vibe…"
                   className="w-full h-12 px-6 pr-12 rounded-full bg-white border-2 border-slate-200 hover:border-purple-300 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 transition-all shadow-sm text-slate-900 placeholder:text-slate-400"
                 />
@@ -479,10 +478,9 @@ export default function Home() {
                   <Zap className="w-4 h-4 text-white" />
                 </button>
                 <AISearchSuggestions 
-                  show={showAISearch && !search} 
+                  show={!showAISearch && search.length > 0} 
                   onSelect={(query) => {
                     setSearch(query);
-                    setShowAISearch(false);
                   }}
                 />
               </div>
@@ -809,21 +807,21 @@ export default function Home() {
               </>
             )}
 
+            {/* AI Search - Always at Top when Active */}
+            {showAISearch && (
+              <div className="mb-8">
+                <DinerAI
+                  restaurants={filteredRestaurants}
+                  currentUser={currentUser}
+                  onResultsClick={handleRestaurantClick}
+                  onFiltersApply={(filters) => setFilters(prev => ({ ...prev, ...filters }))}
+                />
+              </div>
+            )}
+
             {/* All Restaurants View */}
             {exploreView === 'all' && (
-              <>
-                {/* AI Search Results */}
-                {showAISearch && (
-                  <div className="mb-8">
-                    <DinerAI
-                      restaurants={filteredRestaurants}
-                      currentUser={currentUser}
-                      onResultsClick={handleRestaurantClick}
-                      onFiltersApply={(filters) => setFilters(prev => ({ ...prev, ...filters }))}
-                    />
-                  </div>
-                )}
-              </>
+              <></>
             )}
 
             {exploreView === 'all' && (
