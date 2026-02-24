@@ -522,7 +522,11 @@ export default function RestaurantDetail() {
                         {Object.entries(restaurant.opening_hours).map(([day, hours]) => (
                           <div key={day} className="flex justify-between">
                             <span className="capitalize">{day}</span>
-                            <span>{hours || 'Closed'}</span>
+                            <span>
+                              {typeof hours === 'object' && hours?.open && hours?.close
+                                ? `${hours.open} - ${hours.close}`
+                                : hours || 'Closed'}
+                            </span>
                           </div>
                         ))}
                       </div>
