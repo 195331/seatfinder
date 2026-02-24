@@ -477,12 +477,6 @@ export default function Home() {
                 >
                   <Zap className="w-4 h-4 text-white" />
                 </button>
-                <AISearchSuggestions 
-                  show={!showAISearch && search.length > 0} 
-                  onSelect={(query) => {
-                    setSearch(query);
-                  }}
-                />
               </div>
             </div>
 
