@@ -42,8 +42,8 @@ export default function LiveSeatingFloor({
     const boxW = (maxX - minX) + pad * 2;
     const boxH = (maxY - minY) + pad * 2;
 
-    const viewW = 1180;
-    const viewH = 690;
+    const viewW = 800;
+    const viewH = 500;
 
     const scale = clampScale(Math.min(viewW / boxW, viewH / boxH));
     const x = -(minX - pad) * scale + 20;
@@ -126,11 +126,11 @@ export default function LiveSeatingFloor({
         </div>
 
         {/* Canvas - with clipping */}
-        <div className="bg-slate-900 rounded-xl mx-auto border-2 border-slate-700 relative" style={{ width: 1180, height: 690, overflow: 'hidden', pointerEvents: 'auto' }}>
+        <div className="bg-slate-900 rounded-xl mx-auto border-2 border-slate-700 relative" style={{ width: 800, height: 500, overflow: 'hidden', pointerEvents: 'auto' }}>
           <FloorPlanRenderer
             stageRef={stageRef}
-            width={1180}
-            height={690}
+            width={800}
+            height={500}
             camera={camera}
             roomData={currentRoom}
             showGrid={true}
