@@ -890,15 +890,6 @@ export default function Home() {
 
                         return (
                           <div key={restaurant.id} className="contents">
-                            {shouldShowSmartFilters && (
-                              <div className="md:col-span-2 lg:col-span-3">
-                                <SmartFilters
-                                  restaurants={restaurants}
-                                  onFilteredResults={(filtered) => {}}
-                                  currentUser={currentUser}
-                                />
-                              </div>
-                            )}
                             
                             {shouldShowAdventurous && (
                               <motion.div

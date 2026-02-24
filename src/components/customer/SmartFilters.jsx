@@ -17,7 +17,7 @@ const SMART_FILTERS = [
 { id: 'hidden_gems', label: 'Hidden Gems', icon: '💎' }];
 
 
-export default function SmartFilters({ restaurants, onFilteredResults, currentUser }) {
+export default function SmartFilters({ restaurants, onFilteredResults, currentUser, inline = false }) {
   const [activeFilters, setActiveFilters] = useState([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
@@ -114,6 +114,28 @@ Return an array of restaurant IDs that match ANY of the selected filters:
       onFilteredResults(restaurants); // Reset
     }
   };
+
+  if (inline) {
+    return (
+      <>
+        {SMART_FILTERS.map((filter) => (
+          <button
+            key={filter.id}
+            onClick={() => handleFilterToggle(filter.id)}
+            disabled={isAnalyzing}
+            className={`px-4 py-2 rounded-full border text-sm font-medium whitespace-nowrap transition-all shrink-0 ${
+              activeFilters.includes(filter.id)
+                ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white border-transparent shadow-lg shadow-purple-500/30'
+                : 'bg-white text-slate-600 border-slate-200 hover:border-purple-300 hover:shadow-md'
+            }`}
+          >
+            <span className="mr-1.5">{filter.icon}</span>
+            {filter.label}
+          </button>
+        ))}
+      </>
+    );
+  }
 
   return (
     <div className="bg-white my-8 px-4 py-4 rounded-2xl border border-slate-200 shadow-sm">
