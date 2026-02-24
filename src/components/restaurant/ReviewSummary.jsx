@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
-export default function ReviewSummary({ reviews, restaurantName }) {
+export default function ReviewSummary({ reviews, restaurantName, restaurantId, currentUser, expanded }) {
   const [summary, setSummary] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
 
@@ -93,7 +93,7 @@ Return JSON:
           <Sparkles className="w-5 h-5 text-indigo-600" />
           AI Review Summary
           <Badge variant="outline" className="ml-auto text-xs">
-            Based on {reviews.length} reviews • {summary.confidence_level} confidence
+            Based on {reviews.length} reviews • {summary.confidence_level || 'High'} confidence
           </Badge>
         </CardTitle>
       </CardHeader>
