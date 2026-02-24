@@ -545,7 +545,7 @@ export default function OwnerDashboard() {
 
             {/* Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="mb-6 bg-white shadow-sm rounded-full p-1 flex-wrap">
+              <TabsList className="mb-6 bg-white shadow-sm rounded-full p-1 flex-wrap min-h-fit">
                 <TabsTrigger value="seating" className="rounded-full gap-1.5">
                   <LayoutGrid className="w-4 h-4" />
                   Live Seating
