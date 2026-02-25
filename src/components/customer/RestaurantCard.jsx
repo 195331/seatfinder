@@ -34,9 +34,25 @@ export default function RestaurantCard({
     enabled: !!restaurant?.id && isHovering
   });
 
+  // Cuisine-specific placeholder logic
+  const getCuisinePlaceholder = (cuisine) => {
+    const cuisineMap = {
+      'indian': 'photo-1585937421612-70ac88a3f56e',
+      'italian': 'photo-1555939594-58d7cb561ad1',
+      'japanese': 'photo-1579584425555-c3ce17fd4351',
+      'mexican': 'photo-1565299507177-b0ac66763828',
+      'chinese': 'photo-1526318472351-c75fcf070305',
+      'thai': 'photo-1559314809-0d155014e29e',
+      'french': 'photo-1514933651103-005eec06c04b',
+      'american': 'photo-1550547660-d9450f859349'
+    };
+    const photoId = cuisineMap[cuisine?.toLowerCase()] || '1517248135467-4c7edcad34c4';
+    return `https://images.unsplash.com/photo-${photoId}?w=600&q=90`;
+  };
+
   const displayImages = images.length > 0 
     ? images 
-    : [{ url: restaurant.cover_image || `https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&q=80`, is_cover: true }];
+    : [{ url: restaurant.cover_image || getCuisinePlaceholder(restaurant.cuisine), is_cover: true }];
 
   useEffect(() => {
     if (isHovering && displayImages.length > 1) {

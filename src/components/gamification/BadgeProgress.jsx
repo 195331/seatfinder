@@ -101,8 +101,8 @@ export default function BadgeProgress({ userId }) {
                       )}
                       
                       <div className={cn(
-                        "text-4xl mb-2 text-center",
-                        !isUnlocked && "opacity-30 grayscale"
+                        "text-4xl mb-2 text-center transition-all",
+                        !isUnlocked && "opacity-30 grayscale filter saturate-0"
                       )}>
                         {badge.icon}
                       </div>

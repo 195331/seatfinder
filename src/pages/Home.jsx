@@ -30,6 +30,8 @@ import PersonalizedRecommendations from '@/components/customer/PersonalizedRecom
 import AIConcierge from '@/components/ai/AIConcierge';
 import AICollections from '@/components/home/AICollections';
 import TrendingNearYou from '@/components/home/TrendingNearYou';
+import HorizontalRestaurantRow from '@/components/home/HorizontalRestaurantRow';
+import FloatingFood3D from '@/components/landing/FloatingFood3D';
 import Leaderboard from '@/components/social/Leaderboard';
 import MoodBoardCreator from '@/components/social/MoodBoardCreator';
 import FriendRecommendations from '@/components/social/FriendRecommendations';
@@ -408,8 +410,39 @@ export default function Home() {
     return chips;
   }, [activePreset, onlyVerifiedLive, userLocation, sortBy]);
 
+  // Filter restaurants with valid images
+  const restaurantsWithImages = useMemo(() => {
+    return filteredRestaurants.filter(r => {
+      if (r.cover_image) return true;
+      // Has a cuisine for placeholder
+      return !!r.cuisine;
+    });
+  }, [filteredRestaurants]);
+
+  // Category restaurants for horizontal rows
+  const dateNightSpots = useMemo(() => {
+    return restaurantsWithImages
+      .filter(r => r.price_level >= 3 && r.average_rating >= 4)
+      .slice(0, 12);
+  }, [restaurantsWithImages]);
+
+  const hiddenGems = useMemo(() => {
+    return restaurantsWithImages
+      .filter(r => r.view_count < 50 && r.average_rating >= 4.2)
+      .slice(0, 12);
+  }, [restaurantsWithImages]);
+
+  const topRated = useMemo(() => {
+    return restaurantsWithImages
+      .filter(r => r.average_rating >= 4.5)
+      .sort((a, b) => (b.average_rating || 0) - (a.average_rating || 0))
+      .slice(0, 12);
+  }, [restaurantsWithImages]);
+
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900 relative overflow-hidden">
+      {/* Floating 3D Food Elements */}
+      <FloatingFood3D size="large" />
       {/* Announcement Banner */}
       {showAnnouncement && (
         <div className="relative bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 text-white py-3 px-4 z-50">
@@ -613,29 +646,69 @@ export default function Home() {
       </div>
 
       {/* Content */}
-      <main className="max-w-7xl mx-auto px-4 py-8 relative z-10">
-        {/* Recently Viewed - Always at top */}
-        <RecentlyViewed
-          currentUser={currentUser}
-          onFavoriteToggle={handleFavoriteClick}
-          favoriteIds={favoriteIds}
-          onClick={handleRestaurantClick}
-        />
+      <main className="max-w-7xl mx-auto py-8 relative z-10">
+        {/* Horizontal Scrolling Rows - Netflix Style */}
+        {!loadingRestaurants && restaurantsWithImages.length > 0 && (
+          <div className="space-y-8">
+            {/* Trending Near You */}
+            {restaurantsWithImages.slice(0, 12).length > 0 && (
+              <HorizontalRestaurantRow
+                title="Trending Near You"
+                icon="🔥"
+                restaurants={restaurantsWithImages.slice(0, 12)}
+                onRestaurantClick={handleRestaurantClick}
+                onFavoriteToggle={handleFavoriteClick}
+                favoriteIds={favoriteIds}
+                allReviews={allReviews}
+              />
+            )}
 
-        {/* Trending Near You Section */}
-        {!loadingRestaurants && filteredRestaurants.length > 0 && (
-          <TrendingNearYou
-            restaurants={filteredRestaurants}
-            onRestaurantClick={handleRestaurantClick}
-            userLocation={userLocation}
-          />
+            {/* Best Date Night Spots */}
+            {dateNightSpots.length > 0 && (
+              <HorizontalRestaurantRow
+                title="Best Date Night Spots"
+                icon="💕"
+                restaurants={dateNightSpots}
+                onRestaurantClick={handleRestaurantClick}
+                onFavoriteToggle={handleFavoriteClick}
+                favoriteIds={favoriteIds}
+                allReviews={allReviews}
+              />
+            )}
+
+            {/* Hidden Gems */}
+            {hiddenGems.length > 0 && (
+              <HorizontalRestaurantRow
+                title="Hidden Gems"
+                icon="💎"
+                restaurants={hiddenGems}
+                onRestaurantClick={handleRestaurantClick}
+                onFavoriteToggle={handleFavoriteClick}
+                favoriteIds={favoriteIds}
+                allReviews={allReviews}
+              />
+            )}
+
+            {/* Top Rated */}
+            {topRated.length > 0 && (
+              <HorizontalRestaurantRow
+                title="Top Rated"
+                icon="⭐"
+                restaurants={topRated}
+                onRestaurantClick={handleRestaurantClick}
+                onFavoriteToggle={handleFavoriteClick}
+                favoriteIds={favoriteIds}
+                allReviews={allReviews}
+              />
+            )}
+          </div>
         )}
 
-        {/* First 6 Restaurant Cards - Always shown */}
-        {!loadingRestaurants && filteredRestaurants.length > 0 && (
+        {/* Old content removed - moving to new layout */}
+        {!loadingRestaurants && filteredRestaurants.length > 0 && false && (
           <div className="mb-8">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-slate-900">
+              <h2 className="text-xl font-semibold text-white">
                 Top Picks for You
               </h2>
             </div>
@@ -672,8 +745,11 @@ export default function Home() {
           </div>
         )}
 
+        {/* Spacing */}
+        <div className="h-12" />
+
         {/* Premium Segmented Toggle for Explore / Mood Boards */}
-        {currentUser && (
+        {currentUser && false && (
           <div className="mb-8">
             <div className="inline-flex bg-white rounded-full p-1.5 border border-slate-200 shadow-sm">
               <button
@@ -733,7 +809,7 @@ export default function Home() {
         {(!currentUser || activeSection === 'explore') && (
           <>
             {/* Explore View Tabs */}
-            {currentUser && (
+            {currentUser && false && (
               <div className="mb-8">
                 <div className="inline-flex bg-white rounded-full p-1.5 border border-slate-200 shadow-sm">
                   <button
