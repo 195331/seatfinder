@@ -23,28 +23,16 @@ export default function RestaurantImageManager({ restaurant }) {
     mutationFn: async (file) => {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       const maxOrder = Math.max(0, ...images.map(i => i.sort_order || 0));
-      const isCover = images.length === 0;
-      
-      const newImage = await base44.entities.RestaurantImage.create({
+      return base44.entities.RestaurantImage.create({
         restaurant_id: restaurant.id,
         url: file_url,
         sort_order: maxOrder + 1,
-        is_cover: isCover,
+        is_cover: images.length === 0,
         alt: `${restaurant.name} photo`
       });
-      
-      // Update restaurant cover_image if this is the first image
-      if (isCover) {
-        await base44.entities.Restaurant.update(restaurant.id, { 
-          cover_image: file_url 
-        });
-      }
-      
-      return newImage;
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['restaurantImages']);
-      queryClient.invalidateQueries(['restaurants']);
       toast.success('Image uploaded');
     }
   });

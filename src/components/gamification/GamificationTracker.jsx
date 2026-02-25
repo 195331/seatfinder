@@ -183,22 +183,11 @@ async function checkAndAwardBadges(userId, userEmail, userName, stats) {
     const badge = BADGES[badgeType];
     if (!badge) continue;
 
-    // CHECK: Prevent duplicate badge awards
-    const existingAchievement = await base44.entities.Achievement.filter({
-      user_id: userId,
-      badge_type: badgeType
-    });
-    
-    if (existingAchievement && existingAchievement.length > 0) {
-      continue; // Skip if badge already exists
-    }
-
-    const achievement = await base44.entities.Achievement.create({
+    await base44.entities.Achievement.create({
       user_id: userId,
       badge_type: badgeType,
       badge_name: badge.name,
       badge_icon: badge.icon,
-      points_awarded: badge.points,
       earned_at: new Date().toISOString()
     });
 
@@ -207,10 +196,10 @@ async function checkAndAwardBadges(userId, userEmail, userName, stats) {
       total_points: stats.total_points + badge.points
     });
 
-    // Dispatch achievement event for popup
-    window.dispatchEvent(new CustomEvent('achievement:unlocked', {
-      detail: { userId, achievement }
-    }));
+    toast.success(`🏆 New Badge: ${badge.icon} ${badge.name}!`, {
+      description: `+${badge.points} bonus points`,
+      duration: 5000
+    });
   }
 }
 

@@ -29,9 +29,6 @@ import DiscoverSection from '@/components/customer/DiscoverSection';
 import PersonalizedRecommendations from '@/components/customer/PersonalizedRecommendations';
 import AIConcierge from '@/components/ai/AIConcierge';
 import AICollections from '@/components/home/AICollections';
-import TrendingNearYou from '@/components/home/TrendingNearYou';
-import HorizontalRestaurantRow from '@/components/home/HorizontalRestaurantRow';
-import FloatingFood3D from '@/components/landing/FloatingFood3D';
 import Leaderboard from '@/components/social/Leaderboard';
 import MoodBoardCreator from '@/components/social/MoodBoardCreator';
 import FriendRecommendations from '@/components/social/FriendRecommendations';
@@ -410,39 +407,8 @@ export default function Home() {
     return chips;
   }, [activePreset, onlyVerifiedLive, userLocation, sortBy]);
 
-  // Filter restaurants with valid images
-  const restaurantsWithImages = useMemo(() => {
-    return filteredRestaurants.filter(r => {
-      if (r.cover_image) return true;
-      // Has a cuisine for placeholder
-      return !!r.cuisine;
-    });
-  }, [filteredRestaurants]);
-
-  // Category restaurants for horizontal rows
-  const dateNightSpots = useMemo(() => {
-    return restaurantsWithImages
-      .filter(r => r.price_level >= 3 && r.average_rating >= 4)
-      .slice(0, 12);
-  }, [restaurantsWithImages]);
-
-  const hiddenGems = useMemo(() => {
-    return restaurantsWithImages
-      .filter(r => r.view_count < 50 && r.average_rating >= 4.2)
-      .slice(0, 12);
-  }, [restaurantsWithImages]);
-
-  const topRated = useMemo(() => {
-    return restaurantsWithImages
-      .filter(r => r.average_rating >= 4.5)
-      .sort((a, b) => (b.average_rating || 0) - (a.average_rating || 0))
-      .slice(0, 12);
-  }, [restaurantsWithImages]);
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900 relative overflow-hidden">
-      {/* Floating 3D Food Elements */}
-      <FloatingFood3D size="large" />
+    <div className="min-h-screen bg-white">
       {/* Announcement Banner */}
       {showAnnouncement && (
         <div className="relative bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 text-white py-3 px-4 z-50">
@@ -506,7 +472,7 @@ export default function Home() {
                   onChange={(e) => setSearch(e.target.value)}
                   onFocus={() => setShowAISuggestions(true)}
                   placeholder="Search restaurants, cuisine, vibe…"
-                  className="w-full h-12 px-6 pr-12 rounded-full bg-white/80 backdrop-blur-xl border-2 border-slate-200 hover:border-purple-300 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 transition-all shadow-lg text-slate-900 placeholder:text-slate-400"
+                  className="w-full h-12 px-6 pr-12 rounded-full bg-white border-2 border-slate-200 hover:border-purple-300 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 transition-all shadow-sm text-slate-900 placeholder:text-slate-400"
                 />
                 <button 
                   onClick={() => setShowAISearch(!showAISearch)}
@@ -646,69 +612,20 @@ export default function Home() {
       </div>
 
       {/* Content */}
-      <main className="max-w-7xl mx-auto py-8 relative z-10">
-        {/* Horizontal Scrolling Rows - Netflix Style */}
-        {!loadingRestaurants && restaurantsWithImages.length > 0 && (
-          <div className="space-y-8">
-            {/* Trending Near You */}
-            {restaurantsWithImages.slice(0, 12).length > 0 && (
-              <HorizontalRestaurantRow
-                title="Trending Near You"
-                icon="🔥"
-                restaurants={restaurantsWithImages.slice(0, 12)}
-                onRestaurantClick={handleRestaurantClick}
-                onFavoriteToggle={handleFavoriteClick}
-                favoriteIds={favoriteIds}
-                allReviews={allReviews}
-              />
-            )}
+      <main className="max-w-7xl mx-auto px-4 py-8 relative z-10">
+        {/* Recently Viewed - Always at top */}
+        <RecentlyViewed
+          currentUser={currentUser}
+          onFavoriteToggle={handleFavoriteClick}
+          favoriteIds={favoriteIds}
+          onClick={handleRestaurantClick}
+        />
 
-            {/* Best Date Night Spots */}
-            {dateNightSpots.length > 0 && (
-              <HorizontalRestaurantRow
-                title="Best Date Night Spots"
-                icon="💕"
-                restaurants={dateNightSpots}
-                onRestaurantClick={handleRestaurantClick}
-                onFavoriteToggle={handleFavoriteClick}
-                favoriteIds={favoriteIds}
-                allReviews={allReviews}
-              />
-            )}
-
-            {/* Hidden Gems */}
-            {hiddenGems.length > 0 && (
-              <HorizontalRestaurantRow
-                title="Hidden Gems"
-                icon="💎"
-                restaurants={hiddenGems}
-                onRestaurantClick={handleRestaurantClick}
-                onFavoriteToggle={handleFavoriteClick}
-                favoriteIds={favoriteIds}
-                allReviews={allReviews}
-              />
-            )}
-
-            {/* Top Rated */}
-            {topRated.length > 0 && (
-              <HorizontalRestaurantRow
-                title="Top Rated"
-                icon="⭐"
-                restaurants={topRated}
-                onRestaurantClick={handleRestaurantClick}
-                onFavoriteToggle={handleFavoriteClick}
-                favoriteIds={favoriteIds}
-                allReviews={allReviews}
-              />
-            )}
-          </div>
-        )}
-
-        {/* Old content removed - moving to new layout */}
-        {!loadingRestaurants && filteredRestaurants.length > 0 && false && (
+        {/* First 6 Restaurant Cards - Always shown */}
+        {!loadingRestaurants && filteredRestaurants.length > 0 && (
           <div className="mb-8">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-white">
+              <h2 className="text-xl font-semibold text-slate-900">
                 Top Picks for You
               </h2>
             </div>
@@ -745,11 +662,8 @@ export default function Home() {
           </div>
         )}
 
-        {/* Spacing */}
-        <div className="h-12" />
-
         {/* Premium Segmented Toggle for Explore / Mood Boards */}
-        {currentUser && false && (
+        {currentUser && (
           <div className="mb-8">
             <div className="inline-flex bg-white rounded-full p-1.5 border border-slate-200 shadow-sm">
               <button
@@ -809,7 +723,7 @@ export default function Home() {
         {(!currentUser || activeSection === 'explore') && (
           <>
             {/* Explore View Tabs */}
-            {currentUser && false && (
+            {currentUser && (
               <div className="mb-8">
                 <div className="inline-flex bg-white rounded-full p-1.5 border border-slate-200 shadow-sm">
                   <button

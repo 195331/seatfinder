@@ -8,7 +8,6 @@ import { cn } from "@/lib/utils";
 
 import MacBookDemo from '@/components/landing/MacBookDemo';
 import FloatingFood from '@/components/landing/FloatingFood';
-import FloatingFood3D from '@/components/landing/FloatingFood3D';
 import FeatureCards from '@/components/landing/FeatureCards';
 import SplitSection from '@/components/landing/SplitSection';
 import LivingBackground from '@/components/landing/LivingBackground';
@@ -117,8 +116,8 @@ export default function Landing() {
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-pink-500/20 blur-[120px] rounded-full pointer-events-none" />
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-gradient-to-br from-purple-500/30 to-blue-500/30 blur-[100px] rounded-full pointer-events-none animate-pulse" />
 
-        {/* Floating 3D Food Images */}
-        {!shouldReduceMotion && <FloatingFood3D size="large" />}
+        {/* Floating Food Images - Bigger */}
+        {!shouldReduceMotion && <FloatingFood size="large" />}
 
         <div className="max-w-6xl mx-auto px-4 w-full relative z-10">
           <div className="text-center space-y-8">
