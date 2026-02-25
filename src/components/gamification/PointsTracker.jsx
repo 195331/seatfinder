@@ -1,12 +1,32 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { awardPoints } from './GamificationTracker';
+import AchievementPopup from './AchievementPopup';
 
 /**
  * Wrapper component to automatically track points for user actions
  * Usage: Wrap around components where you want to track actions
  */
 export default function PointsTracker({ children, currentUser }) {
+  const [latestAchievement, setLatestAchievement] = useState(null);
+
+  useEffect(() => {
+    if (!currentUser) return;
+
+    // Listen for achievement unlocked events
+    const handleAchievementUnlocked = (event) => {
+      if (event.detail?.userId === currentUser.id) {
+        setLatestAchievement(event.detail.achievement);
+      }
+    };
+
+    window.addEventListener('achievement:unlocked', handleAchievementUnlocked);
+
+    return () => {
+      window.removeEventListener('achievement:unlocked', handleAchievementUnlocked);
+    };
+  }, [currentUser]);
+
   useEffect(() => {
     if (!currentUser) return;
 
@@ -86,7 +106,15 @@ export default function PointsTracker({ children, currentUser }) {
     };
   }, [currentUser]);
 
-  return children;
+  return (
+    <>
+      {children}
+      <AchievementPopup 
+        achievement={latestAchievement}
+        onClose={() => setLatestAchievement(null)}
+      />
+    </>
+  );
 }
 
 // Helper functions to dispatch events
