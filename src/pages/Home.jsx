@@ -28,7 +28,7 @@ import SurpriseMe from '@/components/ai/SurpriseMe';
 import DiscoverSection from '@/components/customer/DiscoverSection';
 import PersonalizedRecommendations from '@/components/customer/PersonalizedRecommendations';
 import AIConcierge from '@/components/ai/AIConcierge';
-import AICollections from '@/components/home/AICollections';
+import NetflixCollections from '@/components/home/NetflixCollections';
 import Leaderboard from '@/components/social/Leaderboard';
 import MoodBoardCreator from '@/components/social/MoodBoardCreator';
 import FriendRecommendations from '@/components/social/FriendRecommendations';
@@ -776,12 +776,6 @@ export default function Home() {
             {/* Discover Section */}
             {currentUser && exploreView === 'discover' && (
               <>
-                <AICollections
-                  restaurants={restaurants}
-                  userLocation={userLocation}
-                  onRestaurantClick={handleRestaurantClick}
-                />
-                
                 {/* Social Feed */}
                 <div className="mt-8">
                   <SocialFeed currentUser={currentUser} />
@@ -833,11 +827,21 @@ export default function Home() {
               </div>
             )}
 
-            {/* All Restaurants View */}
-            {exploreView === 'all' && (
-              <></>
+            {/* Netflix-style Collections - Always shown on All view */}
+            {exploreView === 'all' && !loadingRestaurants && filteredRestaurants.length > 6 && (
+              <div className="mb-12">
+                <NetflixCollections
+                  restaurants={filteredRestaurants}
+                  userLocation={userLocation}
+                  onRestaurantClick={handleRestaurantClick}
+                  onFavoriteToggle={handleFavoriteClick}
+                  favoriteIds={favoriteIds}
+                  allReviews={allReviews}
+                />
+              </div>
             )}
 
+            {/* All Restaurants View */}
             {exploreView === 'all' && (
               <>
                 {loadingRestaurants ? (

@@ -52,21 +52,21 @@ import ConfirmWaitlist from './pages/ConfirmWaitlist';
 import CreateRestaurant from './pages/CreateRestaurant';
 import Favorites from './pages/Favorites';
 import ForgotPassword from './pages/ForgotPassword';
-import Home from './pages/Home';
 import Inbox from './pages/Inbox';
 import KitchenView from './pages/KitchenView';
-import Landing from './pages/Landing';
 import MealPlanner from './pages/MealPlanner';
 import MyLoyalty from './pages/MyLoyalty';
 import MyReservations from './pages/MyReservations';
 import OwnerAnalytics from './pages/OwnerAnalytics';
 import OwnerDashboard from './pages/OwnerDashboard';
 import Profile from './pages/Profile';
-import RestaurantDetail from './pages/RestaurantDetail';
 import RestaurantSettings from './pages/RestaurantSettings';
 import ReviewSubmission from './pages/ReviewSubmission';
 import Settings from './pages/Settings';
 import UserProfile from './pages/UserProfile';
+import RestaurantDetail from './pages/RestaurantDetail';
+import Home from './pages/Home';
+import Landing from './pages/Landing';
 import __Layout from './Layout.jsx';
 
 
@@ -76,21 +76,21 @@ export const PAGES = {
     "CreateRestaurant": CreateRestaurant,
     "Favorites": Favorites,
     "ForgotPassword": ForgotPassword,
-    "Home": Home,
     "Inbox": Inbox,
     "KitchenView": KitchenView,
-    "Landing": Landing,
     "MealPlanner": MealPlanner,
     "MyLoyalty": MyLoyalty,
     "MyReservations": MyReservations,
     "OwnerAnalytics": OwnerAnalytics,
     "OwnerDashboard": OwnerDashboard,
     "Profile": Profile,
-    "RestaurantDetail": RestaurantDetail,
     "RestaurantSettings": RestaurantSettings,
     "ReviewSubmission": ReviewSubmission,
     "Settings": Settings,
     "UserProfile": UserProfile,
+    "RestaurantDetail": RestaurantDetail,
+    "Home": Home,
+    "Landing": Landing,
 }
 
 export const pagesConfig = {
