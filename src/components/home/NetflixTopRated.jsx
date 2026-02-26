@@ -41,7 +41,7 @@ export default function NetflixTopRated({ restaurants, onRestaurantClick, favori
             return (
               <motion.div
                 key={restaurant.id}
-                className="snap-start snap-always flex-shrink-0 first:ml-0 last:mr-4"
+                className="snap-start snap-always flex-shrink-0 first:ml-0 last:mr-4 mr-16"
                 initial={{ opacity: 0, x: 50 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.05 }}
