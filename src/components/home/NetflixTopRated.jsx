@@ -50,13 +50,13 @@ export default function NetflixTopRated({ restaurants, onRestaurantClick, favori
                 <div className="relative flex items-center">
                   {/* Giant Rank Number - Behind Card, Centered */}
                   <div 
-                    className="absolute -left-20 top-1/2 -translate-y-1/2 z-0 select-none pointer-events-none"
+                    className="absolute -left-10 top-1/2 -translate-y-1/2 z-0 select-none pointer-events-none"
                     style={{
                       fontSize: '320px',
                       lineHeight: '1',
                       fontWeight: '900',
                       fontFamily: 'system-ui, -apple-system, sans-serif',
-                      WebkitTextStroke: '3px rgba(168, 85, 247, 0.6)',
+                      WebkitTextStroke: '2px rgba(168, 85, 247, 0.6)',
                       WebkitTextFillColor: 'transparent',
                       textShadow: '0 0 60px rgba(168, 85, 247, 0.5)',
                     }}
@@ -68,7 +68,7 @@ export default function NetflixTopRated({ restaurants, onRestaurantClick, favori
                   <motion.div
                     whileHover={{ scale: 1.02, y: -4 }}
                     onClick={() => onRestaurantClick(restaurant)}
-                    className="relative w-[220px] cursor-pointer group z-10 ml-32"
+                    className="relative w-[220px] cursor-pointer group z-10 ml-24"
                   >
                     {/* Main Card */}
                     <div className="relative bg-white rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all border border-slate-200">
