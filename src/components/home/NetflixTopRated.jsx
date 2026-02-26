@@ -123,7 +123,7 @@ export default function NetflixTopRated({ restaurants, onRestaurantClick, favori
                     </div>
 
                     {/* Rank Badge - Popping Out at Top */}
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-12 h-12 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full flex items-center justify-center shadow-xl border-3 border-white z-20">
+                    <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-12 h-12 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full flex items-center justify-center shadow-xl border-3 border-white z-20">
                       <span className="text-white font-black text-base">{getRankLabel(rank)}</span>
                     </div>
                   </motion.div>
