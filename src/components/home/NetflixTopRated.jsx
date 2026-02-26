@@ -28,10 +28,11 @@ export default function NetflixTopRated({ restaurants, onRestaurantClick, favori
       {/* Horizontal Scroll Container */}
       <div className="relative -mx-4 px-4">
         <div 
-          className="flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-4"
+          className="flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-4 pt-8"
           style={{
             scrollSnapType: 'x mandatory',
-            scrollPaddingLeft: '16px',
+            scrollPaddingLeft: '80px',
+            paddingLeft: '80px'
           }}
         >
           {topRestaurants.map((restaurant, index) => {
