@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { TrendingUp, Star, Sparkles, MapPin, Trophy, Award } from 'lucide-react';
@@ -9,15 +9,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { motion } from 'framer-motion';
 import { cn } from "@/lib/utils";
 
-const FOOD_IMAGES = [
-  { url: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c', title: 'Gourmet Salad', desc: 'Fresh, organic ingredients with premium dressings' },
-  { url: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38', title: 'Artisan Pizza', desc: 'Wood-fired perfection with authentic Italian flavors' },
-  { url: 'https://images.unsplash.com/photo-1565958011703-44f9829ba187', title: 'Juicy Burger', desc: 'Grass-fed beef with signature house sauce' },
-  { url: 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445', title: 'Creamy Pasta', desc: 'Handmade pasta in rich, savory sauce' },
-  { url: 'https://images.unsplash.com/photo-1563379926898-05f4575a45d8', title: 'Seafood Platter', desc: 'Ocean-fresh catches prepared to perfection' },
-  { url: 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe', title: 'Breakfast Bowl', desc: 'Energizing start with superfoods and proteins' }
-];
-
 export default function DiscoverSection({ 
   currentUser, 
   onRestaurantClick, 
@@ -26,6 +17,12 @@ export default function DiscoverSection({
   userLocation 
 }) {
   const [hoveredImage, setHoveredImage] = useState(null);
+
+  // Fetch menu items with images
+  const { data: allMenuItems = [] } = useQuery({
+    queryKey: ['menuItemsForDiscover'],
+    queryFn: () => base44.entities.MenuItem.list('-created_date', 200),
+  });
   const { data: restaurants = [], isLoading } = useQuery({
     queryKey: ['allRestaurants'],
     queryFn: () => base44.entities.Restaurant.filter({ status: 'approved' }),
@@ -120,6 +117,58 @@ export default function DiscoverSection({
   const uniqueBadges = Array.from(new Set(userAchievements.map(a => a.badge_type)))
     .map(type => userAchievements.find(a => a.badge_type === type));
 
+  // Select diverse menu items with images
+  const featuredDishes = useMemo(() => {
+    const itemsWithImages = allMenuItems.filter(item => item.image_url && item.is_available);
+    
+    // Group by category to ensure variety
+    const byCategory = {};
+    itemsWithImages.forEach(item => {
+      const cat = item.category || 'Other';
+      if (!byCategory[cat]) byCategory[cat] = [];
+      byCategory[cat].push(item);
+    });
+
+    // Pick one from each category
+    const selected = [];
+    const categories = Object.keys(byCategory).sort(() => Math.random() - 0.5);
+    
+    for (const cat of categories) {
+      if (selected.length >= 6) break;
+      const items = byCategory[cat];
+      const randomItem = items[Math.floor(Math.random() * items.length)];
+      selected.push(randomItem);
+    }
+
+    // If we don't have 6 yet, fill with random items
+    while (selected.length < 6 && itemsWithImages.length > selected.length) {
+      const remaining = itemsWithImages.filter(i => !selected.includes(i));
+      if (remaining.length === 0) break;
+      selected.push(remaining[Math.floor(Math.random() * remaining.length)]);
+    }
+
+    return selected.slice(0, 6);
+  }, [allMenuItems]);
+
+  // Get restaurant data for featured dishes
+  const restaurantIds = [...new Set(featuredDishes.map(d => d.restaurant_id))];
+  const { data: featuredRestaurants = [] } = useQuery({
+    queryKey: ['featuredRestaurants', restaurantIds],
+    queryFn: async () => {
+      if (restaurantIds.length === 0) return [];
+      const promises = restaurantIds.map(id => 
+        base44.entities.Restaurant.filter({ id }).catch(() => [])
+      );
+      const results = await Promise.all(promises);
+      return results.flat();
+    },
+    enabled: restaurantIds.length > 0,
+  });
+
+  const getRestaurantForItem = (item) => {
+    return featuredRestaurants.find(r => r.id === item.restaurant_id);
+  };
+
   return (
     <div className="space-y-16">
       {/* Hero Food Gallery */}
@@ -130,33 +179,60 @@ export default function DiscoverSection({
             <p className="text-slate-600 text-lg">Explore flavors that inspire your next dining adventure</p>
           </div>
           
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {FOOD_IMAGES.map((food, idx) => (
-              <motion.div
-                key={idx}
-                className="relative aspect-[4/3] rounded-2xl overflow-hidden cursor-pointer group"
-                onMouseEnter={() => setHoveredImage(idx)}
-                onMouseLeave={() => setHoveredImage(null)}
-                whileHover={{ scale: 1.05 }}
-                transition={{ duration: 0.3 }}
-              >
-                <img
-                  src={food.url}
-                  alt={food.title}
-                  className="w-full h-full object-cover"
-                />
-                <div className={cn(
-                  "absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent transition-opacity duration-300",
-                  hoveredImage === idx ? "opacity-100" : "opacity-0"
-                )}>
-                  <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-                    <h3 className="font-bold text-xl mb-2">{food.title}</h3>
-                    <p className="text-sm text-white/90">{food.desc}</p>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+          {featuredDishes.length > 0 ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {featuredDishes.map((dish, idx) => {
+                const restaurant = getRestaurantForItem(dish);
+                
+                return (
+                  <motion.div
+                    key={dish.id}
+                    className="relative aspect-[4/3] rounded-2xl overflow-hidden cursor-pointer group"
+                    onMouseEnter={() => setHoveredImage(idx)}
+                    onMouseLeave={() => setHoveredImage(null)}
+                    onClick={() => restaurant && onRestaurantClick(restaurant)}
+                    whileHover={{ scale: 1.05 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <img
+                      src={dish.image_url}
+                      alt={dish.name}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className={cn(
+                      "absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent transition-opacity duration-300",
+                      hoveredImage === idx ? "opacity-100" : "opacity-0"
+                    )}>
+                      <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+                        <h3 className="font-bold text-xl mb-2">{dish.name}</h3>
+                        {dish.description && (
+                          <p className="text-sm text-white/90 mb-2">{dish.description}</p>
+                        )}
+                        {restaurant && (
+                          <div className="flex items-center gap-2 mt-3">
+                            <Badge className="bg-white/20 text-white border-white/30">
+                              {restaurant.name}
+                            </Badge>
+                            {dish.price && (
+                              <Badge className="bg-white/20 text-white border-white/30">
+                                ${dish.price.toFixed(2)}
+                              </Badge>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <Skeleton key={i} className="aspect-[4/3] rounded-2xl" />
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
