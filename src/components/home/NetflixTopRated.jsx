@@ -7,10 +7,18 @@ import { cn } from "@/lib/utils";
 export default function NetflixTopRated({ restaurants, onRestaurantClick, favoriteIds }) {
   if (!restaurants || restaurants.length === 0) return null;
 
+  const scrollContainerRef = React.useRef(null);
   const topRestaurants = restaurants.slice(0, 10);
 
   const getRankLabel = (rank) => {
     return `#${rank}`;
+  };
+
+  const handleScrollMore = () => {
+    if (scrollContainerRef.current) {
+      const scrollAmount = scrollContainerRef.current.scrollWidth / 4;
+      scrollContainerRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
   };
 
   return (
@@ -28,6 +36,7 @@ export default function NetflixTopRated({ restaurants, onRestaurantClick, favori
       {/* Horizontal Scroll Container */}
       <div className="relative -mx-4 px-4">
         <div 
+          ref={scrollContainerRef}
           className="flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-4 pt-8"
           style={{
             scrollSnapType: 'x mandatory',
@@ -142,12 +151,15 @@ export default function NetflixTopRated({ restaurants, onRestaurantClick, favori
         </div>
 
         {/* Custom Scrollbar Hint */}
-        <div className="flex items-center justify-center gap-2 mt-4">
+        <button 
+          onClick={handleScrollMore}
+          className="flex items-center justify-center gap-2 mt-4 mx-auto hover:opacity-70 transition-opacity cursor-pointer"
+        >
           <div className="h-1 w-20 bg-slate-200 rounded-full overflow-hidden">
             <div className="h-full w-1/3 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full" />
           </div>
           <span className="text-xs text-slate-400">Scroll for more →</span>
-        </div>
+        </button>
       </div>
 
       <style jsx>{`
