@@ -9,11 +9,14 @@ export default function NetflixTopRated({ restaurants, onRestaurantClick, favori
 
   const topRestaurants = restaurants.slice(0, 10);
 
-  const getBadgeText = (rank, restaurant) => {
-    if (rank === 1) return 'Trending #1';
-    if (rank <= 3) return 'Top Rated';
-    if (restaurant.view_count > 150) return 'Must Try';
-    return 'Featured';
+  const getRankLabel = (rank) => {
+    if (rank === 1) return '#1 Trending';
+    if (rank === 2) return '#2 Trending';
+    if (rank === 3) return '#3 Trending';
+    if (rank <= 5) return `#${rank} Best Date Night`;
+    if (rank <= 7) return `#${rank} Hidden Gem`;
+    if (rank <= 9) return `#${rank} Local Favorite`;
+    return `#${rank} Top Pick`;
   };
 
   return (
@@ -50,17 +53,18 @@ export default function NetflixTopRated({ restaurants, onRestaurantClick, favori
                 transition={{ delay: index * 0.05 }}
               >
                 {/* Number + Card Group */}
-                <div className="relative flex items-start pt-4">
-                  {/* Giant Rank Number - Behind Card, Visible */}
+                <div className="relative flex items-center">
+                  {/* Giant Rank Number - Behind Card, Centered */}
                   <div 
-                    className="absolute -left-4 top-0 z-0 select-none pointer-events-none"
+                    className="absolute left-0 top-1/2 -translate-y-1/2 z-0 select-none pointer-events-none"
                     style={{
-                      fontSize: '200px',
-                      lineHeight: '0.85',
+                      fontSize: '320px',
+                      lineHeight: '1',
                       fontWeight: '900',
                       fontFamily: 'system-ui, -apple-system, sans-serif',
-                      color: 'rgba(30, 41, 59, 0.85)',
-                      textShadow: '4px 4px 0 rgba(0, 0, 0, 0.1)',
+                      WebkitTextStroke: '8px rgba(168, 85, 247, 0.5)',
+                      WebkitTextFillColor: 'transparent',
+                      textShadow: '0 0 50px rgba(168, 85, 247, 0.4)',
                     }}
                   >
                     {rank}
@@ -70,7 +74,7 @@ export default function NetflixTopRated({ restaurants, onRestaurantClick, favori
                   <motion.div
                     whileHover={{ scale: 1.02, y: -4 }}
                     onClick={() => onRestaurantClick(restaurant)}
-                    className="relative w-[220px] cursor-pointer group z-10 ml-16"
+                    className="relative w-[220px] cursor-pointer group z-10 ml-24"
                   >
                     {/* Main Card */}
                     <div className="relative bg-white rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all border border-slate-200">
@@ -87,19 +91,6 @@ export default function NetflixTopRated({ restaurants, onRestaurantClick, favori
                         
                         {/* 3D Breaking Border Effect - Food Asset Placeholder */}
                         <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full blur-2xl opacity-60 group-hover:opacity-100 transition-opacity" />
-                        
-                        {/* Trending Badge */}
-                        <motion.div
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          transition={{ delay: index * 0.1 + 0.2 }}
-                          className="absolute top-3 right-3"
-                        >
-                          <Badge className="bg-gradient-to-r from-purple-600 to-pink-600 text-white border-0 shadow-lg backdrop-blur-sm">
-                            <Flame className="w-3 h-3 mr-1" />
-                            {getBadgeText(rank, restaurant)}
-                          </Badge>
-                        </motion.div>
 
                         {/* Rating Indicator */}
                         {restaurant.average_rating > 0 && (
@@ -137,9 +128,9 @@ export default function NetflixTopRated({ restaurants, onRestaurantClick, favori
                            style={{ boxShadow: '0 0 30px rgba(168, 85, 247, 0.5)' }} />
                     </div>
 
-                    {/* Rank Badge - Popping Out at Top */}
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-12 h-12 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full flex items-center justify-center shadow-xl border-3 border-white z-20">
-                      <span className="text-white font-black text-base">#{rank}</span>
+                    {/* Rank Badge - Popping Out at Top with Label */}
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-2 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full flex items-center justify-center shadow-xl border-3 border-white z-20 whitespace-nowrap">
+                      <span className="text-white font-black text-sm">{getRankLabel(rank)}</span>
                     </div>
                   </motion.div>
                 </div>
