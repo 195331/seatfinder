@@ -8,6 +8,7 @@ export default function NetflixTopRated({ restaurants, onRestaurantClick, favori
   if (!restaurants || restaurants.length === 0) return null;
 
   const scrollContainerRef = React.useRef(null);
+  const [scrollProgress, setScrollProgress] = React.useState(0);
   const topRestaurants = restaurants.slice(0, 10);
 
   const getRankLabel = (rank) => {
@@ -20,6 +21,24 @@ export default function NetflixTopRated({ restaurants, onRestaurantClick, favori
       scrollContainerRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
     }
   };
+
+  const handleScroll = () => {
+    if (scrollContainerRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
+      const maxScroll = scrollWidth - clientWidth;
+      const progress = maxScroll > 0 ? (scrollLeft / maxScroll) * 100 : 0;
+      setScrollProgress(progress);
+    }
+  };
+
+  React.useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (container) {
+      container.addEventListener('scroll', handleScroll);
+      handleScroll(); // Initial calculation
+      return () => container.removeEventListener('scroll', handleScroll);
+    }
+  }, []);
 
   return (
     <div className="mb-12">
@@ -156,7 +175,10 @@ export default function NetflixTopRated({ restaurants, onRestaurantClick, favori
           className="flex items-center justify-center gap-2 mt-4 mx-auto hover:opacity-70 transition-opacity cursor-pointer"
         >
           <div className="h-1 w-20 bg-slate-200 rounded-full overflow-hidden">
-            <div className="h-full w-1/3 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full" />
+            <div 
+              className="h-full bg-gradient-to-r from-purple-600 to-pink-600 rounded-full transition-all duration-150" 
+              style={{ width: `${Math.max(33, scrollProgress)}%` }}
+            />
           </div>
           <span className="text-xs text-slate-400">Scroll for more →</span>
         </button>
