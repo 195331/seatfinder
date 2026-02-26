@@ -151,9 +151,13 @@ export default function DiscoverSection({
   }, [allMenuItems]);
 
   // Get restaurant data for featured dishes
-  const restaurantIds = [...new Set(featuredDishes.map(d => d.restaurant_id))];
+  const restaurantIds = useMemo(() => 
+    [...new Set(featuredDishes.map(d => d.restaurant_id))],
+    [featuredDishes]
+  );
+  
   const { data: featuredRestaurants = [] } = useQuery({
-    queryKey: ['featuredRestaurants', restaurantIds],
+    queryKey: ['featuredRestaurants', restaurantIds.join(',')],
     queryFn: async () => {
       if (restaurantIds.length === 0) return [];
       const promises = restaurantIds.map(id => 
