@@ -106,16 +106,41 @@ export default function DiscoverSection({
     }
   ];
 
-  // Get unique achievements for the current user
+  // Define all possible badges
+  const allBadgeDefinitions = [
+    { type: 'first_review', name: 'First Review', icon: '✍️', color: 'from-yellow-400 to-amber-500' },
+    { type: 'review_master_5', name: '5 Reviews', icon: '⭐', color: 'from-blue-400 to-cyan-500' },
+    { type: 'review_master_10', name: '10 Reviews', icon: '🌟', color: 'from-purple-400 to-pink-500' },
+    { type: 'frequent_diner_5', name: 'Regular', icon: '🍽️', color: 'from-green-400 to-emerald-500' },
+    { type: 'frequent_diner_10', name: 'Foodie', icon: '🍕', color: 'from-orange-400 to-red-500' },
+    { type: 'social_butterfly', name: 'Social', icon: '🦋', color: 'from-pink-400 to-rose-500' },
+    { type: 'explorer', name: 'Explorer', icon: '🧭', color: 'from-teal-400 to-cyan-500' },
+    { type: 'night_owl', name: 'Night Owl', icon: '🦉', color: 'from-indigo-400 to-purple-500' },
+    { type: 'early_bird', name: 'Early Bird', icon: '🐦', color: 'from-yellow-400 to-orange-500' },
+    { type: 'weekend_warrior', name: 'Weekend', icon: '🎉', color: 'from-purple-400 to-fuchsia-500' },
+    { type: 'photo_enthusiast', name: 'Photographer', icon: '📸', color: 'from-blue-400 to-indigo-500' },
+    { type: 'globe_trotter', name: 'Globe Trotter', icon: '✈️', color: 'from-sky-400 to-blue-500' },
+    { type: 'cuisine_explorer', name: 'Cuisine Expert', icon: '🌮', color: 'from-lime-400 to-green-500' },
+    { type: 'local_hero', name: 'Local Hero', icon: '🏆', color: 'from-amber-400 to-yellow-500' },
+    { type: 'taste_maker', name: 'Taste Maker', icon: '👨‍🍳', color: 'from-red-400 to-pink-500' }
+  ];
+
+  // Get user achievements
   const { data: userAchievements = [] } = useQuery({
     queryKey: ['userAchievements', currentUser?.id],
     queryFn: () => base44.entities.Achievement.filter({ user_id: currentUser.id }, '-earned_at'),
     enabled: !!currentUser,
   });
 
-  // Get unique badge types
-  const uniqueBadges = Array.from(new Set(userAchievements.map(a => a.badge_type)))
-    .map(type => userAchievements.find(a => a.badge_type === type));
+  // Get unique earned badge types
+  const earnedBadgeTypes = new Set(userAchievements.map(a => a.badge_type));
+
+  // Create badge display list with earned status
+  const badgesDisplay = allBadgeDefinitions.map(badge => ({
+    ...badge,
+    earned: earnedBadgeTypes.has(badge.type),
+    earnedDate: userAchievements.find(a => a.badge_type === badge.type)?.earned_at
+  }));
 
   // Select diverse menu items with images
   const featuredDishes = useMemo(() => {
@@ -241,7 +266,7 @@ export default function DiscoverSection({
       </div>
 
       {/* Achievements Section */}
-      {currentUser && uniqueBadges.length > 0 && (
+      {currentUser && (
         <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-purple-600 via-pink-600 to-orange-600 p-1">
           <div className="bg-white rounded-[22px] p-8">
             <div className="flex items-center gap-4 mb-8">
@@ -249,22 +274,42 @@ export default function DiscoverSection({
                 <Trophy className="w-7 h-7 text-white" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-slate-900">Your Achievements</h2>
-                <p className="text-slate-600">Unlock more badges by exploring and reviewing</p>
+                <h2 className="text-2xl font-bold text-slate-900">Achievements ({earnedBadgeTypes.size})</h2>
+                <p className="text-slate-600">Unlock {15 - earnedBadgeTypes.size} more by exploring and reviewing</p>
               </div>
             </div>
             
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              {uniqueBadges.map((achievement) => (
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              {badgesDisplay.map((badge) => (
                 <motion.div
-                  key={achievement.id}
-                  whileHover={{ scale: 1.05, y: -5 }}
+                  key={badge.type}
+                  whileHover={{ scale: badge.earned ? 1.05 : 1.02 }}
                   className="relative group"
                 >
-                  <div className="aspect-square rounded-2xl bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200 p-4 flex flex-col items-center justify-center text-center hover:border-purple-400 transition-all shadow-md hover:shadow-xl">
-                    <div className="text-5xl mb-2">{achievement.badge_icon}</div>
-                    <p className="font-bold text-slate-900 text-sm">{achievement.badge_name}</p>
+                  <div className={cn(
+                    "aspect-square rounded-2xl p-4 flex flex-col items-center justify-center text-center transition-all shadow-md",
+                    badge.earned 
+                      ? `bg-gradient-to-br ${badge.color} border-2 border-white hover:shadow-xl` 
+                      : "bg-slate-100 border-2 border-slate-200 grayscale opacity-50"
+                  )}>
+                    <div className={cn(
+                      "text-5xl mb-2",
+                      badge.earned ? "" : "opacity-40"
+                    )}>
+                      {badge.icon}
+                    </div>
+                    <p className={cn(
+                      "font-bold text-sm",
+                      badge.earned ? "text-white" : "text-slate-400"
+                    )}>
+                      {badge.name}
+                    </p>
                   </div>
+                  {badge.earned && (
+                    <div className="absolute -top-2 -right-2 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center border-2 border-white shadow-md">
+                      <span className="text-white text-xs">✓</span>
+                    </div>
+                  )}
                 </motion.div>
               ))}
             </div>
