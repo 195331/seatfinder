@@ -50,18 +50,17 @@ export default function NetflixTopRated({ restaurants, onRestaurantClick, favori
                 transition={{ delay: index * 0.05 }}
               >
                 {/* Number + Card Group */}
-                <div className="relative flex items-center">
-                  {/* Giant Rank Number - Behind Card */}
+                <div className="relative flex items-start pt-4">
+                  {/* Giant Rank Number - Behind Card, Visible */}
                   <div 
-                    className="absolute -left-8 top-1/2 -translate-y-1/2 z-0 select-none pointer-events-none"
+                    className="absolute -left-4 top-0 z-0 select-none pointer-events-none"
                     style={{
-                      fontSize: '240px',
-                      lineHeight: '1',
+                      fontSize: '200px',
+                      lineHeight: '0.85',
                       fontWeight: '900',
                       fontFamily: 'system-ui, -apple-system, sans-serif',
-                      WebkitTextStroke: '6px rgba(168, 85, 247, 0.4)',
-                      WebkitTextFillColor: 'transparent',
-                      textShadow: '0 0 40px rgba(168, 85, 247, 0.3)',
+                      color: 'rgba(30, 41, 59, 0.85)',
+                      textShadow: '4px 4px 0 rgba(0, 0, 0, 0.1)',
                     }}
                   >
                     {rank}
@@ -71,7 +70,7 @@ export default function NetflixTopRated({ restaurants, onRestaurantClick, favori
                   <motion.div
                     whileHover={{ scale: 1.02, y: -4 }}
                     onClick={() => onRestaurantClick(restaurant)}
-                    className="relative w-[240px] cursor-pointer group z-10"
+                    className="relative w-[220px] cursor-pointer group z-10 ml-16"
                   >
                     {/* Main Card */}
                     <div className="relative bg-white rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all border border-slate-200">
@@ -138,9 +137,9 @@ export default function NetflixTopRated({ restaurants, onRestaurantClick, favori
                            style={{ boxShadow: '0 0 30px rgba(168, 85, 247, 0.5)' }} />
                     </div>
 
-                    {/* Rank Badge - Small Corner */}
-                    <div className="absolute -top-2 -left-2 w-10 h-10 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full flex items-center justify-center shadow-lg border-2 border-white z-20">
-                      <span className="text-white font-black text-sm">#{rank}</span>
+                    {/* Rank Badge - Popping Out at Top */}
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-12 h-12 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full flex items-center justify-center shadow-xl border-3 border-white z-20">
+                      <span className="text-white font-black text-base">#{rank}</span>
                     </div>
                   </motion.div>
                 </div>
