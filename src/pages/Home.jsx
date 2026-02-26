@@ -29,6 +29,7 @@ import DiscoverSection from '@/components/customer/DiscoverSection';
 import PersonalizedRecommendations from '@/components/customer/PersonalizedRecommendations';
 import AIConcierge from '@/components/ai/AIConcierge';
 import NetflixCollections from '@/components/home/NetflixCollections';
+import NetflixTopRated from '@/components/home/NetflixTopRated';
 import Leaderboard from '@/components/social/Leaderboard';
 import MoodBoardCreator from '@/components/social/MoodBoardCreator';
 import FriendRecommendations from '@/components/social/FriendRecommendations';
@@ -825,6 +826,15 @@ export default function Home() {
                   onFiltersApply={(filters) => setFilters(prev => ({ ...prev, ...filters }))}
                 />
               </div>
+            )}
+
+            {/* Netflix-style Top Rated Section */}
+            {exploreView === 'all' && !loadingRestaurants && filteredRestaurants.length > 0 && (
+              <NetflixTopRated
+                restaurants={filteredRestaurants.filter(r => r.average_rating >= 4.0).sort((a, b) => (b.average_rating || 0) - (a.average_rating || 0))}
+                onRestaurantClick={handleRestaurantClick}
+                favoriteIds={favoriteIds}
+              />
             )}
 
             {/* Netflix-style Collections - Always shown on All view */}
