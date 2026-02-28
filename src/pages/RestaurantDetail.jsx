@@ -557,11 +557,18 @@ export default function RestaurantDetail() {
               />
             )}
 
-            {/* Review Preview */}
-            <ReviewSummary 
-              reviews={reviews}
-              onViewAll={() => setActiveTab('reviews')}
-            />
+            {/* Review Preview — no AI summary here, just a quick button */}
+            {reviews.length > 0 && (
+              <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
+                <span className="text-sm text-slate-600">
+                  <Star className="w-4 h-4 inline text-yellow-400 fill-yellow-400 mr-1" />
+                  {restaurant.average_rating?.toFixed(1) || 0} · {reviews.length} review{reviews.length !== 1 ? 's' : ''}
+                </span>
+                <Button size="sm" variant="outline" onClick={() => setActiveTab('reviews')}>
+                  View All Reviews
+                </Button>
+              </div>
+            )}
           </TabsContent>
 
           {/* Menu Tab */}
