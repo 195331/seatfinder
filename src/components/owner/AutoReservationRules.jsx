@@ -29,29 +29,7 @@ export default function AutoReservationRules({ restaurantId }) {
     enabled: !!restaurantId,
   });
 
-  // Create default rules if none exist
-  React.useEffect(() => {
-    if (rules.length === 0 && restaurantId) {
-      const defaultRule = {
-        restaurant_id: restaurantId,
-        name: 'Weeknight small parties (auto-approve)',
-        action: 'auto_approve',
-        is_active: true,
-        priority: 0,
-        conditions: {
-          days_of_week: [1, 2, 3, 4], // Mon-Thu
-          time_slots: ['17:00-19:00', '20:30-22:00'],
-          min_party_size: 1,
-          max_party_size: 4,
-          min_advance_hours: 2,
-          max_advance_days: 14
-        }
-      };
-      base44.entities.ReservationRule.create(defaultRule).then(() => {
-        queryClient.invalidateQueries(['reservationRules']);
-      });
-    }
-  }, [rules.length, restaurantId]);
+  // (No auto-seeding of default rules — owners create their own)
 
   // Mutations
   const createMutation = useMutation({
