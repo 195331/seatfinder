@@ -13,11 +13,16 @@ export default function DinerAI({
   restaurants, 
   currentUser, 
   onResultsClick,
-  onFiltersApply 
+  onFiltersApply,
+  embeddedMode = false,
+  externalQuery = '',
+  externalTrigger = 0,
 }) {
   const [query, setQuery] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [results, setResults] = useState(null);
+
+  const activeQuery = embeddedMode ? externalQuery : query;
 
   const analyzeQuery = async () => {
     if (!query.trim()) return;
