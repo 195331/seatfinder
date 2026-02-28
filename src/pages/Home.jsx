@@ -469,31 +469,58 @@ export default function Home() {
             {/* Center: Hero Search */}
             <div className="flex-1 max-w-2xl mx-auto">
               <div className="relative">
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  onFocus={() => setShowAISuggestions(true)}
-                  placeholder="Search restaurants, cuisine, vibe…"
-                  className="w-full h-12 px-6 pr-12 rounded-full bg-white border-2 border-slate-200 hover:border-purple-300 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 transition-all shadow-sm text-slate-900 placeholder:text-slate-400"
-                />
-                <button 
-                  onClick={() => setShowAISearch(!showAISearch)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 flex items-center justify-center hover:shadow-lg hover:shadow-purple-500/30 transition-all"
-                >
-                  <Zap className="w-4 h-4 text-white" />
-                </button>
-                
-                {/* AI Search Suggestions */}
-                {showAISuggestions && (
-                  <AISearchSuggestions
-                    searchQuery={search}
-                    onSuggestionClick={(suggestion) => {
-                      setSearch(suggestion);
-                      setShowAISuggestions(false);
-                    }}
-                    onClose={() => setShowAISuggestions(false)}
-                  />
+                {showAISearch ? (
+                  <>
+                    <Sparkles className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-purple-500 pointer-events-none" />
+                    <input
+                      type="text"
+                      value={aiSearchQuery}
+                      onChange={(e) => setAISearchQuery(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') setAITrigger(t => t + 1);
+                      }}
+                      placeholder="Ask AI: 'romantic Italian spot' or 'kid-friendly brunch'…"
+                      autoFocus
+                      className="w-full h-12 px-6 pl-10 pr-12 rounded-full bg-purple-50 border-2 border-purple-400 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 transition-all shadow-sm text-slate-900 placeholder:text-purple-300"
+                    />
+                    <button 
+                      onClick={() => {
+                        if (aiSearchQuery.trim()) setAITrigger(t => t + 1);
+                        else { setShowAISearch(false); setAISearchQuery(''); }
+                      }}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 flex items-center justify-center hover:shadow-lg hover:shadow-purple-500/30 transition-all"
+                    >
+                      <Zap className="w-4 h-4 text-white" />
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <input
+                      type="text"
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      onFocus={() => setShowAISuggestions(true)}
+                      placeholder="Search restaurants, cuisine, vibe…"
+                      className="w-full h-12 px-6 pr-12 rounded-full bg-white border-2 border-slate-200 hover:border-purple-300 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 transition-all shadow-sm text-slate-900 placeholder:text-slate-400"
+                    />
+                    <button 
+                      onClick={() => { setShowAISearch(true); setSearch(''); setShowAISuggestions(false); }}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 flex items-center justify-center hover:shadow-lg hover:shadow-purple-500/30 transition-all"
+                    >
+                      <Zap className="w-4 h-4 text-white" />
+                    </button>
+                    {/* AI Search Suggestions */}
+                    {showAISuggestions && (
+                      <AISearchSuggestions
+                        searchQuery={search}
+                        onSuggestionClick={(suggestion) => {
+                          setSearch(suggestion);
+                          setShowAISuggestions(false);
+                        }}
+                        onClose={() => setShowAISuggestions(false)}
+                      />
+                    )}
+                  </>
                 )}
               </div>
             </div>
