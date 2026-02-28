@@ -407,7 +407,7 @@ export default function ReservationManagerPremium({ reservations = [], restauran
               <div className="p-3 bg-slate-50 rounded-lg">
                 <p className="font-medium">{rescheduleDialog.reservation?.user_name}</p>
                 <p className="text-sm text-slate-600">
-                  Originally: {moment(rescheduleDialog.reservation?.reservation_date).format('MMM D')} at {rescheduleDialog.reservation?.reservation_time}
+                  Originally: {moment(rescheduleDialog.reservation?.reservation_date).format('MMM D')} at {formatTime(rescheduleDialog.reservation?.reservation_time)}
                 </p>
               </div>
 
