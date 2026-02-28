@@ -241,48 +241,50 @@ Return JSON format:
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-2 items-start">
-        <div className="relative flex-1">
-          <Sparkles className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-purple-500" />
-          <Input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && analyzeQuery()}
-            placeholder="Ask AI: 'romantic Italian spot with outdoor seating' or 'kid-friendly brunch place'"
-            className="pl-10 pr-4 h-12 text-base border-purple-200 focus:border-purple-400"
-            disabled={isProcessing}
-          />
-        </div>
-        <Button
-          onClick={analyzeQuery}
-          disabled={!query.trim() || isProcessing}
-          className="h-12 px-6 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
-        >
-          {isProcessing ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Searching...
-            </>
-          ) : (
-            <>
-              <Sparkles className="w-4 h-4 mr-2" />
-              Ask AI
-            </>
-          )}
-        </Button>
-        <a 
-          href={base44.agents.getWhatsAppConnectURL('seatfinder_ai')} 
-          target="_blank"
-          rel="noopener noreferrer"
-        >
+      {!embeddedMode && (
+        <div className="flex gap-2 items-start">
+          <div className="relative flex-1">
+            <Sparkles className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-purple-500" />
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && analyzeQuery()}
+              placeholder="Ask AI: 'romantic Italian spot with outdoor seating' or 'kid-friendly brunch place'"
+              className="pl-10 pr-4 h-12 text-base border-purple-200 focus:border-purple-400"
+              disabled={isProcessing}
+            />
+          </div>
           <Button
-            variant="outline"
-            className="h-12 px-4 border-green-500 text-green-700 hover:bg-green-50"
+            onClick={() => analyzeQuery()}
+            disabled={!query.trim() || isProcessing}
+            className="h-12 px-6 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
           >
-            💬 WhatsApp
+            {isProcessing ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Searching...
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-4 h-4 mr-2" />
+                Ask AI
+              </>
+            )}
           </Button>
-        </a>
-      </div>
+          <a 
+            href={base44.agents.getWhatsAppConnectURL('seatfinder_ai')} 
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Button
+              variant="outline"
+              className="h-12 px-4 border-green-500 text-green-700 hover:bg-green-50"
+            >
+              💬 WhatsApp
+            </Button>
+          </a>
+        </div>
+      )}
 
       {results && (
         <Card className="border-purple-200 bg-gradient-to-br from-purple-50 to-indigo-50">
