@@ -556,34 +556,12 @@ export default function OwnerDashboard() {
                   Floor Plan Builder
                 </TabsTrigger>
 
-                <TabsTrigger value="waitlist" className="rounded-full">
-                  Waitlist
-                  {waitingCount > 0 && (
-                    <Badge className="ml-2 bg-emerald-600">{waitingCount}</Badge>
+                <TabsTrigger value="guests" className="rounded-full gap-1.5">
+                  <Users className="w-4 h-4" />
+                  Guest Management
+                  {(waitingCount + pendingReservationsCount) > 0 && (
+                    <Badge className="ml-2 bg-amber-500">{waitingCount + pendingReservationsCount}</Badge>
                   )}
-                </TabsTrigger>
-
-                <TabsTrigger value="reservations" className="rounded-full">
-                  Reservations
-                  {pendingReservationsCount > 0 && (
-                    <Badge className="ml-2 bg-amber-500">{pendingReservationsCount}</Badge>
-                  )}
-                </TabsTrigger>
-
-                <TabsTrigger value="calendar" className="rounded-full gap-1.5">
-                  <svg
-                    className="w-4 h-4"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                    <line x1="16" y1="2" x2="16" y2="6" />
-                    <line x1="8" y1="2" x2="8" y2="6" />
-                    <line x1="3" y1="10" x2="21" y2="10" />
-                  </svg>
-                  Calendar
                 </TabsTrigger>
 
                 <TabsTrigger value="ai" className="rounded-full gap-1.5">
