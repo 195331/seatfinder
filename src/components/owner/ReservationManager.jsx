@@ -8,6 +8,14 @@ import { Check, X, Clock, Users, Calendar, MessageSquare, UtensilsCrossed, Chevr
 import { toast } from "sonner";
 import moment from 'moment';
 
+const formatTime = (time) => {
+  if (!time) return '';
+  const [h, m] = time.split(':').map(Number);
+  const period = h >= 12 ? 'PM' : 'AM';
+  const hour = h % 12 || 12;
+  return `${hour}:${String(m).padStart(2, '0')} ${period}`;
+};
+
 export default function ReservationManager({ reservations, restaurantName }) {
   const queryClient = useQueryClient();
   const [expandedOrders, setExpandedOrders] = useState(new Set());
