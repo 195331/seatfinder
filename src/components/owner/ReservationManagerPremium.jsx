@@ -259,7 +259,7 @@ export default function ReservationManagerPremium({ reservations = [], restauran
                     <div className="flex flex-wrap gap-4 mb-4 text-sm">
                       <div className="flex items-center gap-1.5 text-slate-600">
                         <CalendarIcon className="w-4 h-4" />
-                        {moment(reservation.reservation_date).format('ddd, MMM D')} at {reservation.reservation_time}
+                        {moment(reservation.reservation_date).format('ddd, MMM D')} at {formatTime(reservation.reservation_time)}
                       </div>
                       <div className="flex items-center gap-1.5 text-slate-600">
                        <Users className="w-4 h-4" />
