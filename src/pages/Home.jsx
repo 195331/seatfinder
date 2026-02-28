@@ -617,18 +617,6 @@ export default function Home() {
                   Meal Planner
                 </button>
               </Link>
-              <button
-                onClick={() => setShowAISearch(!showAISearch)}
-                className={cn(
-                  "px-4 py-2 rounded-full border text-sm font-medium transition-all hover:shadow-md",
-                  showAISearch
-                    ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white border-transparent shadow-lg shadow-purple-500/30"
-                    : "bg-white text-slate-700 border-slate-200 hover:border-purple-300"
-                )}
-              >
-                <Zap className="w-4 h-4 inline mr-1.5" />
-                Ask AI
-              </button>
             </div>
           </div>
         </div>
