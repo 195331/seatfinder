@@ -186,13 +186,54 @@ export default function RestaurantDetail() {
         return { skipToast: true };
       }
 
+      // Check reservation rules to determine auto-status
+      let autoStatus = restaurant?.instant_confirm_enabled ? 'approved' : 'pending';
+      
+      try {
+        const rules = await base44.entities.ReservationRule.filter({ restaurant_id: restaurantId, is_active: true });
+        if (rules.length > 0 && payload.reservation_date && payload.reservation_time) {
+          const reservationDate = new Date(payload.reservation_date);
+          const dayOfWeek = reservationDate.getDay(); // 0=Sun
+          const reservationTime = payload.reservation_time;
+          const partySize = payload.party_size || 2;
+          const advanceHours = (reservationDate - new Date()) / (1000 * 60 * 60);
+          const advanceDays = advanceHours / 24;
+
+          // Sort rules by priority descending (higher priority first)
+          const sortedRules = [...rules].sort((a, b) => (b.priority || 0) - (a.priority || 0));
+          
+          const matchedRule = sortedRules.find(rule => {
+            const c = rule.conditions || {};
+            if (c.days_of_week?.length > 0 && !c.days_of_week.includes(dayOfWeek)) return false;
+            if (c.time_slots?.length > 0) {
+              const inSlot = c.time_slots.some(slot => {
+                const [start, end] = slot.split('-');
+                return reservationTime >= start && reservationTime <= end;
+              });
+              if (!inSlot) return false;
+            }
+            if (c.min_party_size && partySize < c.min_party_size) return false;
+            if (c.max_party_size && partySize > c.max_party_size) return false;
+            if (c.min_advance_hours && advanceHours < c.min_advance_hours) return false;
+            if (c.max_advance_days && advanceDays > c.max_advance_days) return false;
+            return true;
+          });
+
+          if (matchedRule) {
+            if (matchedRule.action === 'auto_approve') autoStatus = 'approved';
+            else if (matchedRule.action === 'auto_decline') autoStatus = 'declined';
+            else autoStatus = 'pending'; // flag_review
+          }
+        }
+      } catch {}
+
       // Create reservation with pre-order if cart has items
       const reservationData = {
         restaurant_id: restaurantId,
         user_id: currentUser.id,
         user_name: currentUser.full_name,
         user_email: currentUser.email,
-        status: restaurant?.instant_confirm_enabled ? 'approved' : 'pending',
+        status: autoStatus,
         ...payload
       };
 
