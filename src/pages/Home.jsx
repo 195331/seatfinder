@@ -610,8 +610,9 @@ export default function Home() {
             {/* AI Actions */}
             <div className="hidden lg:flex items-center gap-2 shrink-0">
               <Link to={createPageUrl('MealPlanner')}>
-                <button className="px-4 py-2 rounded-full bg-white border border-slate-200 hover:border-orange-300 text-sm font-medium text-slate-700 hover:text-orange-600 transition-all hover:shadow-md">
-                  <ChefHat className="w-4 h-4 inline mr-1.5" />
+                <button className="flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-slate-200 hover:border-orange-300 text-sm font-medium text-slate-700 hover:text-orange-600 transition-all hover:shadow-md">
+                  <span className="text-xs font-semibold text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full border border-purple-200 whitespace-nowrap">New Beta Feature</span>
+                  <ChefHat className="w-4 h-4" />
                   Meal Planner
                 </button>
               </Link>
