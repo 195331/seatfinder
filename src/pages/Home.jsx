@@ -841,6 +841,9 @@ export default function Home() {
                   currentUser={currentUser}
                   onResultsClick={handleRestaurantClick}
                   onFiltersApply={(filters) => setFilters(prev => ({ ...prev, ...filters }))}
+                  embeddedMode={true}
+                  externalQuery={aiSearchQuery}
+                  externalTrigger={aiTrigger}
                 />
               </div>
             )}
