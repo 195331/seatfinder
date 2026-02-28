@@ -24,8 +24,15 @@ export default function DinerAI({
 
   const activeQuery = embeddedMode ? externalQuery : query;
 
-  const analyzeQuery = async () => {
-    if (!query.trim()) return;
+  React.useEffect(() => {
+    if (embeddedMode && externalTrigger > 0 && externalQuery.trim()) {
+      analyzeQuery(externalQuery);
+    }
+  }, [externalTrigger]);
+
+  const analyzeQuery = async (overrideQuery) => {
+    const q = overrideQuery || (embeddedMode ? externalQuery : query);
+    if (!q.trim()) return;
 
     setIsProcessing(true);
     try {
