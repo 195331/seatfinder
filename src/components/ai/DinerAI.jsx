@@ -79,7 +79,7 @@ export default function DinerAI({
 
       // Build context for AI
       const context = {
-        query,
+        query: q,
         restaurants: restaurants.map(r => ({
           id: r.id,
           name: r.name,
