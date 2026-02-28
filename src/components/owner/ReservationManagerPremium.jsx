@@ -375,8 +375,9 @@ export default function ReservationManagerPremium({ reservations = [], restauran
                     <div className="flex-1">
                       <p className="font-medium text-slate-900">{reservation.user_name}</p>
                       <p className="text-sm text-slate-600">
-                        {reservation.reservation_time} • {reservation.party_size} guests • Table {tableLabel}
+                       {moment(reservation.reservation_date).format('MMM D')} at {formatTime(reservation.reservation_time)} • {reservation.party_size} guests • Table {tableLabel}
                       </p>
+                      <p className="text-xs text-slate-400">Reserved on {moment(reservation.created_date).format('MMM D, YYYY [at] h:mm A')}</p>
                       {preOrder && (
                         <div className="flex items-center gap-2 mt-1">
                           <Badge variant="outline" className="text-xs border-emerald-500 text-emerald-700">
