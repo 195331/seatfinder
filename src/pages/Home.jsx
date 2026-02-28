@@ -59,6 +59,8 @@ export default function Home() {
   const [showExpressSetup, setShowExpressSetup] = useState(false);
   const [onlyVerifiedLive, setOnlyVerifiedLive] = useState(false);
   const [showAISearch, setShowAISearch] = useState(false);
+  const [aiSearchQuery, setAISearchQuery] = useState('');
+  const [aiTrigger, setAITrigger] = useState(0);
   const [activeSection, setActiveSection] = useState('explore');
   const [exploreView, setExploreView] = useState('all'); // 'all', 'discover', 'foryou'
   const [userLocation, setUserLocation] = useState(null);
