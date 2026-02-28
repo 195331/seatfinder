@@ -112,7 +112,7 @@ export default function DinerAI({
 
       const prompt = `You are SeatFinder AI, helping users find the perfect restaurant.
 
-User Query: "${query}"
+User Query: "${q}"
 
 Available Restaurants: ${JSON.stringify(context.restaurants, null, 2)}
 
