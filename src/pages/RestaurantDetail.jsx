@@ -629,15 +629,10 @@ export default function RestaurantDetail() {
 
           {/* Reviews Tab */}
           <TabsContent value="reviews" className="space-y-6">
-            <AIReviewSummary 
+            <ReviewsTab
+              restaurant={restaurant}
               reviews={reviews}
-              restaurantName={restaurant.name}
-            />
-            <ReviewSummary 
-              reviews={reviews}
-              restaurantId={restaurantId}
               currentUser={currentUser}
-              expanded
             />
           </TabsContent>
         </Tabs>
