@@ -484,11 +484,9 @@ export default function Home() {
                       className="w-full h-12 px-6 pl-10 pr-12 rounded-full bg-purple-50 border-2 border-purple-400 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 transition-all shadow-sm text-slate-900 placeholder:text-purple-300"
                     />
                     <button 
-                      onClick={() => {
-                        if (aiSearchQuery.trim()) setAITrigger(t => t + 1);
-                        else { setShowAISearch(false); setAISearchQuery(''); }
-                      }}
+                      onClick={() => { setShowAISearch(false); setAISearchQuery(''); }}
                       className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 flex items-center justify-center hover:shadow-lg hover:shadow-purple-500/30 transition-all"
+                      title="Close AI search"
                     >
                       <Zap className="w-4 h-4 text-white" />
                     </button>
