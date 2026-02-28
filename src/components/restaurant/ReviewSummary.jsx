@@ -64,12 +64,16 @@ Return JSON:
   };
 
   React.useEffect(() => {
-    if (reviews && reviews.length >= 3 && !summary) {
+    // Only auto-generate when there are REAL reviews with actual comments
+    const reviewsWithComments = reviews?.filter(r => r.comment && r.comment.trim().length > 5) || [];
+    if (reviewsWithComments.length >= 3 && !summary) {
       generateSummary();
     }
   }, [reviews]);
 
-  if (reviews.length < 3) {
+  // Don't show if fewer than 3 reviews with actual comments
+  const reviewsWithComments = reviews?.filter(r => r.comment && r.comment.trim().length > 5) || [];
+  if (reviewsWithComments.length < 3) {
     return null;
   }
 
