@@ -656,78 +656,109 @@ export default function OwnerDashboard() {
                 />
               </TabsContent>
 
-              <TabsContent value="waitlist">
-                <FeatureGate
-                  restaurantId={selectedRestaurantId}
-                  feature="waitlist"
-                  requiredPlan="pro"
-                  title="Waitlist Management"
-                  description="Upgrade to Pro to manage your waitlist with AI-powered features."
-                >
-                  <div className="grid lg:grid-cols-2 gap-6">
-                    <div className="space-y-6">
-                      <WaitlistManager
-                        entries={waitlist}
-                        onSeat={(entry) => seatEntryMutation.mutate(entry)}
-                        onCancel={(entry) => cancelEntryMutation.mutate(entry)}
-                        isUpdating={seatEntryMutation.isPending || cancelEntryMutation.isPending}
-                        restaurantId={selectedRestaurantId}
-                      />
-
-                      {featureAccess?.isPlus && waitingCount > 0 && (
-                        <AITableAssigner
-                          restaurantId={selectedRestaurantId}
-                          waitlistEntries={waitlist}
-                          tables={tables}
-                          onAssignmentMade={() =>
-                            queryClient.invalidateQueries({ queryKey: ["waitlist"] })
-                          }
-                        />
+              <TabsContent value="guests">
+                <div className="space-y-8">
+                  {/* Reservations Section */}
+                  <div>
+                    <h3 className="text-base font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                      <svg className="w-4 h-4 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                        <line x1="16" y1="2" x2="16" y2="6" />
+                        <line x1="8" y1="2" x2="8" y2="6" />
+                        <line x1="3" y1="10" x2="21" y2="10" />
+                      </svg>
+                      Reservations
+                      {pendingReservationsCount > 0 && (
+                        <Badge className="bg-amber-500">{pendingReservationsCount} pending</Badge>
                       )}
+                    </h3>
+                    <div className="space-y-4">
+                      <AdvancedReservationRules restaurantId={selectedRestaurantId} />
+                      <div className="grid lg:grid-cols-2 gap-6">
+                        <ReservationManagerPremium
+                          reservations={reservations}
+                          restaurantId={selectedRestaurantId}
+                          restaurantName={currentRestaurant?.name}
+                        />
+                        <FeatureGate
+                          restaurantId={selectedRestaurantId}
+                          feature="aiReservations"
+                          requiredPlan="plus"
+                          title="AI Reservation Manager"
+                          description="Let AI automatically handle reservations based on your rules."
+                        >
+                          <AIReservationManager
+                            restaurantId={selectedRestaurantId}
+                            restaurantName={currentRestaurant?.name}
+                            reservations={reservations}
+                            tables={tables}
+                          />
+                        </FeatureGate>
+                      </div>
                     </div>
+                  </div>
 
-                    <WaitlistSMSManager
+                  {/* Calendar Section */}
+                  <div>
+                    <h3 className="text-base font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                      <svg className="w-4 h-4 text-blue-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                        <line x1="16" y1="2" x2="16" y2="6" />
+                        <line x1="8" y1="2" x2="8" y2="6" />
+                        <line x1="3" y1="10" x2="21" y2="10" />
+                      </svg>
+                      Calendar View
+                    </h3>
+                    <ReservationCalendar
                       restaurantId={selectedRestaurantId}
                       restaurantName={currentRestaurant?.name}
                     />
                   </div>
-                </FeatureGate>
-              </TabsContent>
 
-              <TabsContent value="reservations">
-                <div className="space-y-6">
-                  <AdvancedReservationRules restaurantId={selectedRestaurantId} />
-
-                  <div className="grid lg:grid-cols-2 gap-6">
-                    <ReservationManagerPremium
-                      reservations={reservations}
-                      restaurantId={selectedRestaurantId}
-                      restaurantName={currentRestaurant?.name}
-                    />
-
+                  {/* Waitlist Section */}
+                  <div>
+                    <h3 className="text-base font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                      <Users className="w-4 h-4 text-purple-500" />
+                      Waitlist
+                      {waitingCount > 0 && (
+                        <Badge className="bg-emerald-600">{waitingCount} waiting</Badge>
+                      )}
+                    </h3>
                     <FeatureGate
                       restaurantId={selectedRestaurantId}
-                      feature="aiReservations"
-                      requiredPlan="plus"
-                      title="AI Reservation Manager"
-                      description="Let AI automatically handle reservations based on your rules."
+                      feature="waitlist"
+                      requiredPlan="pro"
+                      title="Waitlist Management"
+                      description="Upgrade to Pro to manage your waitlist with AI-powered features."
                     >
-                      <AIReservationManager
-                        restaurantId={selectedRestaurantId}
-                        restaurantName={currentRestaurant?.name}
-                        reservations={reservations}
-                        tables={tables}
-                      />
+                      <div className="grid lg:grid-cols-2 gap-6">
+                        <div className="space-y-6">
+                          <WaitlistManager
+                            entries={waitlist}
+                            onSeat={(entry) => seatEntryMutation.mutate(entry)}
+                            onCancel={(entry) => cancelEntryMutation.mutate(entry)}
+                            isUpdating={seatEntryMutation.isPending || cancelEntryMutation.isPending}
+                            restaurantId={selectedRestaurantId}
+                          />
+                          {featureAccess?.isPlus && waitingCount > 0 && (
+                            <AITableAssigner
+                              restaurantId={selectedRestaurantId}
+                              waitlistEntries={waitlist}
+                              tables={tables}
+                              onAssignmentMade={() =>
+                                queryClient.invalidateQueries({ queryKey: ["waitlist"] })
+                              }
+                            />
+                          )}
+                        </div>
+                        <WaitlistSMSManager
+                          restaurantId={selectedRestaurantId}
+                          restaurantName={currentRestaurant?.name}
+                        />
+                      </div>
                     </FeatureGate>
                   </div>
                 </div>
-              </TabsContent>
-
-              <TabsContent value="calendar">
-                <ReservationCalendar
-                  restaurantId={selectedRestaurantId}
-                  restaurantName={currentRestaurant?.name}
-                />
               </TabsContent>
 
               <TabsContent value="ai">
