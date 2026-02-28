@@ -65,11 +65,16 @@ export default function NetflixTopRated({ restaurants, onRestaurantClick, favori
             touchAction: 'pan-x',
           }}
           onWheel={(e) => {
-            if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
-              // horizontal scroll — let it handle natively
+            const container = scrollContainerRef.current;
+            if (!container) return;
+            const isHorizontal = Math.abs(e.deltaX) > Math.abs(e.deltaY);
+            if (isHorizontal) {
+              // Let native horizontal scroll work
               return;
             }
-            // vertical scroll — don't consume, let page scroll
+            // Vertical scroll: do NOT consume — let the page scroll
+            // We just prevent the container from intercepting it
+            e.stopPropagation();
           }}
         >
           {topRestaurants.map((restaurant, index) => {
