@@ -367,9 +367,11 @@ Return JSON format:
         </Card>
       )}
 
-      <div className="text-xs text-slate-500 text-center">
-        💡 Try: "Italian date night spots", "quick lunch under $20", "family-friendly with outdoor seating"
-      </div>
+      {!embeddedMode && (
+        <div className="text-xs text-slate-500 text-center">
+          💡 Try: "Italian date night spots", "quick lunch under $20", "family-friendly with outdoor seating"
+        </div>
+      )}
     </div>
   );
 }
