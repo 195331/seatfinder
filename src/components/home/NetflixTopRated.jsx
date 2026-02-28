@@ -60,7 +60,16 @@ export default function NetflixTopRated({ restaurants, onRestaurantClick, favori
           style={{
             scrollSnapType: 'x mandatory',
             scrollPaddingLeft: '80px',
-            paddingLeft: '80px'
+            paddingLeft: '80px',
+            overflowY: 'hidden',
+            touchAction: 'pan-x',
+          }}
+          onWheel={(e) => {
+            if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+              // horizontal scroll — let it handle natively
+              return;
+            }
+            // vertical scroll — don't consume, let page scroll
           }}
         >
           {topRestaurants.map((restaurant, index) => {
