@@ -442,7 +442,7 @@ export default function ReservationManagerPremium({ reservations = [], restauran
                       onClick={() => setNewTime(time)}
                       className={cn(newTime === time && "bg-emerald-600")}
                     >
-                      {time}
+                      {formatTime(time)}
                     </Button>
                   ))}
                 </div>
