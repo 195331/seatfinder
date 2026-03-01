@@ -668,8 +668,16 @@ export default function RestaurantDetail() {
                   floorPlanData={floorPlanData}
                   tables={tables}
                   isSubmitting={reserveMutation.isPending}
-                  onReserveTable={(payload) => reserveMutation.mutate(payload)}
+                  onReserveTable={(payload) => {
+                    if (payload.wants_pre_order && restaurant?.enable_preorder) {
+                      // trigger pre-order flow
+                      reserveMutation.mutate(payload);
+                    } else {
+                      reserveMutation.mutate({ ...payload, skipPreOrder: true });
+                    }
+                  }}
                   currentUser={currentUser}
+                  restaurant={restaurant}
                 />
               </CardContent>
             </Card>
