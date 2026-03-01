@@ -184,9 +184,36 @@ export default function DiscoverSection({
     enabled: restaurantIds.length > 0,
   });
 
+  // Get unique earned badge types
+  const earnedBadgeTypes = new Set(userAchievements.map(a => a.badge_type));
+
+  // Create badge display list with earned status
+  const badgesDisplay = allBadgeDefinitions.map(badge => ({
+    ...badge,
+    earned: earnedBadgeTypes.has(badge.type),
+    earnedDate: userAchievements.find(a => a.badge_type === badge.type)?.earned_at
+  }));
+
   const getRestaurantForItem = (item) => {
     return featuredRestaurants.find(r => r.id === item.restaurant_id);
   };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-8">
+        {[1, 2, 3].map(i => (
+          <div key={i}>
+            <Skeleton className="h-8 w-48 mb-4" />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {[1, 2, 3].map(j => (
+                <Skeleton key={j} className="h-64 rounded-3xl" />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-16">
