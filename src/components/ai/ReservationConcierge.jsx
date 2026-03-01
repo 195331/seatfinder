@@ -30,6 +30,7 @@ export default function ReservationConcierge({
     preferredTime: '19:00',
     specialRequests: '',
     seatingPreference: '',
+    seatingPreferenceOther: '',
     dietaryNeeds: [],
     occasion: 'none'
   });
