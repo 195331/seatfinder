@@ -23,12 +23,13 @@ const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
 const clampScale = (s) => clamp(s, 0.35, 2.4);
 
 export default function FloorPlanViewPremium({
-  restaurantId,          // ✅ add this prop from parent if possible
+  restaurantId,
   floorPlanData,
   tables = [],
   onReserveTable,
   isSubmitting,
-  currentUser
+  currentUser,
+  restaurant = null
 }) {
   const wrapRef = useRef(null);
 
