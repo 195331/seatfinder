@@ -255,13 +255,33 @@ export default function DiscoverSection({
                 );
               })}
             </div>
-          ) : (
+          ) : restaurants.length > 0 ? (
+            /* Fallback: show restaurant cover images when no menu item photos exist */
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <Skeleton key={i} className="aspect-[4/3] rounded-2xl" />
+              {restaurants.filter(r => r.cover_image).slice(0, 6).map((r, idx) => (
+                <motion.div
+                  key={r.id}
+                  className="relative aspect-[4/3] rounded-2xl overflow-hidden cursor-pointer"
+                  onMouseEnter={() => setHoveredImage(idx)}
+                  onMouseLeave={() => setHoveredImage(null)}
+                  onClick={() => onRestaurantClick(r)}
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <img src={r.cover_image} alt={r.name} className="w-full h-full object-cover" />
+                  <div className={cn(
+                    "absolute inset-0 bg-gradient-to-t from-black/80 to-transparent transition-opacity duration-300",
+                    hoveredImage === idx ? "opacity-100" : "opacity-60"
+                  )}>
+                    <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+                      <h3 className="font-bold text-lg">{r.name}</h3>
+                      <p className="text-sm text-white/80">{r.cuisine} · {r.neighborhood}</p>
+                    </div>
+                  </div>
+                </motion.div>
               ))}
             </div>
-          )}
+          ) : null}
         </div>
       </div>
 
