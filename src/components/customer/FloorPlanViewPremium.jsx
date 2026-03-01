@@ -522,6 +522,23 @@ export default function FloorPlanViewPremium({
               />
             </div>
 
+            {/* Pre-Order Option */}
+            {restaurant?.enable_preorder && (
+              <label className="flex items-center gap-3 p-3 rounded-lg border border-orange-200 bg-orange-50 cursor-pointer hover:bg-orange-100 transition-colors">
+                <Checkbox
+                  checked={reservationData.wantsPreOrder}
+                  onCheckedChange={(checked) => setReservationData((prev) => ({ ...prev, wantsPreOrder: !!checked }))}
+                />
+                <div className="flex items-center gap-2">
+                  <ShoppingBag className="w-4 h-4 text-orange-600" />
+                  <div>
+                    <p className="text-sm font-medium text-orange-900">Add a pre-order</p>
+                    <p className="text-xs text-orange-700">Order food before you arrive</p>
+                  </div>
+                </div>
+              </label>
+            )}
+
             <Button
               onClick={handleSubmitReservation}
               disabled={!reservationData.date || !reservationData.time || isSubmitting}
