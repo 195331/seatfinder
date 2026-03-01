@@ -179,8 +179,8 @@ export default function RestaurantDetail() {
         return;
       }
       
-      // If pre-order enabled, show pre-order flow first
-      if (restaurant?.enable_preorder && !payload.skipPreOrder) {
+      // If pre-order enabled and user opted in, show pre-order flow first
+      if (restaurant?.enable_preorder && !payload.skipPreOrder && payload.wants_pre_order !== false) {
         setPendingReservation(payload);
         setShowPreOrderFlow(true);
         return { skipToast: true };
