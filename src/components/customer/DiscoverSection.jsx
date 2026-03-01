@@ -122,16 +122,6 @@ export default function DiscoverSection({
     enabled: !!currentUser,
   });
 
-  // Get unique earned badge types
-  const earnedBadgeTypes = new Set(userAchievements.map(a => a.badge_type));
-
-  // Create badge display list with earned status
-  const badgesDisplay = allBadgeDefinitions.map(badge => ({
-    ...badge,
-    earned: earnedBadgeTypes.has(badge.type),
-    earnedDate: userAchievements.find(a => a.badge_type === badge.type)?.earned_at
-  }));
-
   // Select diverse menu items with images
   const featuredDishes = useMemo(() => {
     const itemsWithImages = allMenuItems.filter(item => item.image_url && item.is_available);
