@@ -210,14 +210,15 @@ export default function FloorPlanViewPremium({
       notes,
       special_requests: reservationData.specialRequests,
       dietary_needs: reservationData.dietaryNeeds,
-      occasion: reservationData.occasion
+      occasion: reservationData.occasion,
+      wants_pre_order: reservationData.wantsPreOrder
     });
 
     setShowReserveDialog(false);
     setSelectedTable(null);
     setReservationData({
       date: null, time: "", partySize: 2, notes: "",
-      seatingPreference: "", specialRequests: "", dietaryNeeds: [], occasion: "none"
+      seatingPreference: "", specialRequests: "", dietaryNeeds: [], occasion: "none", wantsPreOrder: false
     });
   };
 
