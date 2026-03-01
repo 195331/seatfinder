@@ -76,7 +76,8 @@ export default function FloorPlanViewPremium({
     seatingPreference: "",
     specialRequests: "",
     dietaryNeeds: [],
-    occasion: "none"
+    occasion: "none",
+    wantsPreOrder: false
   });
 
   // --- HARD FIX: hit-test in WORLD COORDS (not Konva events) ---
