@@ -151,8 +151,14 @@ export default function ShiftModePanel({ restaurant }) {
             </div>
           )}
 
-          {/* Quick Update Controls */}
+          {/* Manual Override Controls */}
           <div className="space-y-3">
+            <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
+              <p className="text-xs text-orange-700 font-medium flex items-center gap-1.5">
+                <SlidersHorizontal className="w-3 h-3" />
+                Manual Adjustment — logged separately from system automations
+              </p>
+            </div>
             <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
               <div>
                 <p className="font-semibold text-lg">{restaurant.available_seats} / {restaurant.total_seats}</p>
