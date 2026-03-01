@@ -28,22 +28,12 @@ export default function DiscoverSection({
     queryFn: () => base44.entities.Restaurant.filter({ status: 'approved' }),
   });
 
-  if (isLoading) {
-    return (
-      <div className="space-y-8">
-        {[1, 2, 3].map(i => (
-          <div key={i}>
-            <Skeleton className="h-8 w-48 mb-4" />
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {[1, 2, 3].map(j => (
-                <Skeleton key={j} className="h-64 rounded-3xl" />
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  }
+  // Get user achievements — must be before any early returns
+  const { data: userAchievements = [] } = useQuery({
+    queryKey: ['userAchievements', currentUser?.id],
+    queryFn: () => base44.entities.Achievement.filter({ user_id: currentUser.id }, '-earned_at'),
+    enabled: !!currentUser,
+  });
 
   // Calculate distance
   const restaurantsWithDistance = (restaurants || []).map(r => ({
