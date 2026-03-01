@@ -54,16 +54,32 @@ export default function ShiftModePanel({ restaurant }) {
   });
 
   const quickUpdateMutation = useMutation({
-    mutationFn: (seatsChange) => base44.entities.Restaurant.update(restaurant.id, {
-      available_seats: Math.max(0, Math.min(restaurant.total_seats, restaurant.available_seats + seatsChange)),
-      seating_updated_at: new Date().toISOString(),
-      last_shift_nudge: new Date().toISOString()
-    }),
+    mutationFn: async (seatsChange) => {
+      const newAvailable = Math.max(0, Math.min(restaurant.total_seats, restaurant.available_seats + seatsChange));
+      await base44.entities.Restaurant.update(restaurant.id, {
+        available_seats: newAvailable,
+        seating_updated_at: new Date().toISOString(),
+        last_shift_nudge: new Date().toISOString()
+      });
+      // Audit log — tagged as manual adjustment
+      await base44.entities.AuditLog.create({
+        restaurant_id: restaurant.id,
+        action_type: 'seating_manual_adjustment',
+        source: 'manual_adjustment',
+        entity_type: 'restaurant',
+        entity_id: restaurant.id,
+        performed_by: 'owner',
+        performed_by_name: 'Manual Override (Shift Mode)',
+        old_value: { available_seats: restaurant.available_seats },
+        new_value: { available_seats: newAvailable },
+        reason: `Manual adjustment of ${seatsChange > 0 ? '+' : ''}${seatsChange} seats via Shift Mode override`,
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['ownedRestaurants']);
       queryClient.invalidateQueries(['staffRestaurants']);
       setShowNudge(false);
-      toast.success('Seating updated');
+      toast.success('Manual adjustment saved');
     }
   });
 
