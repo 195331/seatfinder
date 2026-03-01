@@ -107,11 +107,12 @@ export default function ShiftModePanel({ restaurant }) {
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
-            <Zap className={cn(
+            <SlidersHorizontal className={cn(
               "w-5 h-5",
-              restaurant.shift_mode_active ? "text-emerald-600" : "text-slate-400"
+              restaurant.shift_mode_active ? "text-orange-500" : "text-slate-400"
             )} />
-            Shift Mode
+            Manual Override
+            <Badge variant="outline" className="text-xs font-normal text-slate-500 ml-1">Shift Mode</Badge>
           </CardTitle>
           <Switch
             checked={restaurant.shift_mode_active}
