@@ -115,13 +115,6 @@ export default function DiscoverSection({
     { type: 'taste_maker', name: 'Taste Maker', icon: '👨‍🍳', color: 'from-red-400 to-pink-500' }
   ];
 
-  // Get user achievements
-  const { data: userAchievements = [] } = useQuery({
-    queryKey: ['userAchievements', currentUser?.id],
-    queryFn: () => base44.entities.Achievement.filter({ user_id: currentUser.id }, '-earned_at'),
-    enabled: !!currentUser,
-  });
-
   // Select diverse menu items with images
   const featuredDishes = useMemo(() => {
     const itemsWithImages = allMenuItems.filter(item => item.image_url && item.is_available);
