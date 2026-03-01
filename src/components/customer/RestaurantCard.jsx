@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
-import { Heart, MapPin, Clock, Zap, AlertTriangle, Award } from 'lucide-react';
+import { Heart, MapPin, Clock, Zap, AlertTriangle, Award, ShoppingBag } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import OccupancyBadge from "@/components/ui/OccupancyBadge";
