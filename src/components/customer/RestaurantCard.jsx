@@ -175,6 +175,18 @@ export default function RestaurantCard({
           )}
         </div>
 
+        {/* Feature Badges */}
+        {(restaurant.enable_preorder || restaurant.instant_confirm_enabled) && (
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            {restaurant.enable_preorder && (
+              <Badge variant="outline" className="text-xs gap-1 border-orange-200 text-orange-700 bg-orange-50">
+                <ShoppingBag className="w-3 h-3" />
+                Pre-Order
+              </Badge>
+            )}
+          </div>
+        )}
+
         {/* Seating Status */}
         <div className="flex items-center justify-between pt-3 border-t border-slate-100">
           {!isStale ? (
