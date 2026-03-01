@@ -48,25 +48,34 @@ export default function ReservationConcierge({
   const getAISuggestions = async () => {
     setIsLoading(true);
     try {
-      // Get available tables
-      const availableTables = tables.filter(t => t.status === 'free');
-      
+      // Split tables: free vs unavailable (occupied/reserved)
+      const freeTables = tables.filter(t => t.status === 'free');
+      const unavailableTables = tables.filter(t => t.status !== 'free');
+
+      const effectiveSeatingPref = request.seatingPreference === 'other'
+        ? request.seatingPreferenceOther
+        : request.seatingPreference;
+
       // Build context
       const userPrefs = currentUser?.preferences || {};
-      const tasteProfile = currentUser?.taste_profile || {};
       
-      const prompt = `You are a restaurant reservation AI concierge. Help find the best reservation time and table.
+      const prompt = `You are a restaurant reservation AI concierge. Help find the best reservation time and specific table.
 
 Restaurant: ${restaurant.name}
-Available tables: ${availableTables.length} tables (capacities: ${availableTables.map(t => t.capacity).join(', ')})
 Restaurant features: ${restaurant.has_outdoor ? 'outdoor seating, ' : ''}${restaurant.has_bar_seating ? 'bar seating, ' : ''}${restaurant.is_kid_friendly ? 'kid-friendly' : ''}
+
+AVAILABLE (free) tables right now:
+${freeTables.length > 0 ? freeTables.map(t => `- Table "${t.label}" (ID: ${t.id}): ${t.capacity} seats, shape: ${t.shape || 'standard'}${t.zone_type ? ', zone: ' + t.zone_type : ''}${t.layer ? ', area: ' + t.layer : ''}`).join('\n') : 'None currently free'}
+
+UNAVAILABLE tables (occupied or reserved — do NOT suggest these):
+${unavailableTables.length > 0 ? unavailableTables.map(t => `- Table "${t.label}" (ID: ${t.id}): ${t.capacity} seats [${t.status}]`).join('\n') : 'None'}
 
 User request:
 - Party size: ${request.partySize}
 - Preferred date: ${request.preferredDate}
 - Preferred time: ${request.preferredTime}
+- Seating preference: ${effectiveSeatingPref || 'None'}
 - Special requests: ${request.specialRequests || 'None'}
-- Seating preference: ${request.seatingPreference || 'None'}
 - Dietary needs: ${request.dietaryNeeds.length > 0 ? request.dietaryNeeds.join(', ') : 'None'}
 - Occasion: ${request.occasion !== 'none' ? request.occasion : 'None'}
 
@@ -75,32 +84,36 @@ User preferences:
 - Dietary restrictions: ${userPrefs.dietary_restrictions?.join(', ') || 'None'}
 
 Instructions:
-1. Suggest the best available table based on party size and preferences
-2. If the preferred time is unavailable, suggest 2-3 alternative times on the same date
-3. If the date is fully booked, suggest alternative dates within the next 3 days
-4. Consider special requests (window seat, quiet corner, etc.) when matching tables
-5. If it's a special occasion, suggest appropriate seating and timing
-6. Be conversational and helpful
+1. Pick the SPECIFIC best free table by its exact label (e.g., "T3", "Bar 2") and ID. Never suggest an unavailable table.
+2. Match table capacity as closely as possible to party size (don't seat 2 at a 10-person table).
+3. Honor the seating preference: match zone_type or label hints (e.g., "quiet" → quiet zone, "bar" → bar label/zone, "outdoor" → outdoor area/layer).
+4. If no free table fits perfectly, suggest the closest alternative and explain why.
+5. Suggest 2 alternative time slots on the same date if tables could free up.
+6. If it's a special occasion, prioritize ambiance-appropriate tables.
 
-Return a JSON with this structure:
+Return JSON:
 {
   "primary_suggestion": {
     "date": "YYYY-MM-DD",
     "time": "HH:MM",
+    "table_id": "exact table ID from the list above",
+    "table_label": "exact table label",
     "table_capacity": number,
-    "seating_area": "description",
-    "reasoning": "why this is perfect"
+    "seating_area": "brief area description",
+    "reasoning": "specific reason this table and time are the best match"
   },
   "alternatives": [
     {
       "date": "YYYY-MM-DD",
       "time": "HH:MM",
+      "table_id": "exact table ID or null",
+      "table_label": "table label or null",
       "table_capacity": number,
       "reasoning": "brief reason"
     }
   ],
-  "special_notes": "any special considerations or tips",
-  "pre_order_suggestion": "if pre-order is available, suggest whether they should consider it"
+  "special_notes": "any tips or considerations",
+  "pre_order_suggestion": "suggestion about pre-ordering if applicable"
 }`;
 
       const response = await base44.integrations.Core.InvokeLLM({
