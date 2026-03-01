@@ -126,6 +126,8 @@ Return JSON:
               properties: {
                 date: { type: 'string' },
                 time: { type: 'string' },
+                table_id: { type: 'string' },
+                table_label: { type: 'string' },
                 table_capacity: { type: 'number' },
                 seating_area: { type: 'string' },
                 reasoning: { type: 'string' }
@@ -138,6 +140,8 @@ Return JSON:
                 properties: {
                   date: { type: 'string' },
                   time: { type: 'string' },
+                  table_id: { type: 'string' },
+                  table_label: { type: 'string' },
                   table_capacity: { type: 'number' },
                   reasoning: { type: 'string' }
                 }
