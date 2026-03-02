@@ -844,7 +844,7 @@ export default function Home() {
 
             {/* AI Search - Always at Top when Active */}
             {showAISearch && (
-              <div className="mb-8">
+              <div ref={aiResultsRef} className="mb-8">
                 <DinerAI
                   restaurants={filteredRestaurants}
                   currentUser={currentUser}
