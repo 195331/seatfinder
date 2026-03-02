@@ -478,7 +478,7 @@ export default function Home() {
                       value={aiSearchQuery}
                       onChange={(e) => setAISearchQuery(e.target.value)}
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter' && aiSearchQuery.trim()) setAITrigger(t => t + 1);
+                        if (e.key === 'Enter' && aiSearchQuery.trim()) { setAITrigger(t => t + 1); setTimeout(() => aiResultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300); }
                       }}
                       placeholder="Ask AI: 'romantic Italian spot' or 'kid-friendly brunch'…"
                       autoFocus
