@@ -61,6 +61,7 @@ export default function Home() {
   const [showAISearch, setShowAISearch] = useState(false);
   const [aiSearchQuery, setAISearchQuery] = useState('');
   const [aiTrigger, setAITrigger] = useState(0);
+  const aiResultsRef = useRef(null);
   const [activeSection, setActiveSection] = useState('explore');
   const [exploreView, setExploreView] = useState('all'); // 'all', 'discover', 'foryou'
   const [userLocation, setUserLocation] = useState(null);
