@@ -38,7 +38,8 @@ export default function MenuBuilder({ restaurantId }) {
     is_vegan: false,
     is_gluten_free: false,
     calories: '',
-    is_available: true
+    is_available: true,
+    dietary_tags: []
   });
 
   const { data: menuItems = [], isLoading } = useQuery({
