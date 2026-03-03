@@ -307,6 +307,12 @@ export default function MenuBuilder({ restaurantId }) {
                     />
                   </div>
                 </div>
+                <DietaryTagSelector
+                  selectedTags={newItem.dietary_tags || []}
+                  onChange={(tags) => setNewItem({ ...newItem, dietary_tags: tags })}
+                  dishName={newItem.name}
+                  description={newItem.description}
+                />
                 <Button
                   onClick={() => createItemMutation.mutate(newItem)}
                   disabled={!newItem.name || !newItem.price || createItemMutation.isPending}
