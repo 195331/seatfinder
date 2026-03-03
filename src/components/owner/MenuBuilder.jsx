@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import AIMenuHelper from '@/components/ai/AIMenuHelper';
 import AIMenuSuggestions from '@/components/ai/AIMenuSuggestions';
+import DietaryTagSelector from '@/components/owner/DietaryTagSelector';
 
 const DEFAULT_CATEGORIES = ['Appetizers', 'Mains', 'Desserts', 'Drinks'];
 
