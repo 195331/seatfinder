@@ -4,20 +4,29 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Info, Sparkles } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
-const DIETARY_OPTIONS = [
+// Single source of truth for all dietary options across the app
+export const DIETARY_OPTIONS = [
   'Vegetarian',
   'Vegan',
   'Gluten-Free',
   'Dairy-Free',
   'Nut Allergy',
   'Shellfish Allergy',
+  'Fish Allergy',
+  'Egg Allergy',
+  'Soy Allergy',
   'Kosher',
   'Halal',
   'Low-Sodium',
-  'Diabetic-Friendly'
+  'Diabetic-Friendly',
+  'Pescatarian',
+  'Keto',
+  'Mediterranean',
+  'Fruitarian',
+  'Jain',
 ];
 
 const OCCASIONS = [
