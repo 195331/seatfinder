@@ -709,6 +709,7 @@ export default function RestaurantDetail() {
             <PreOrderCart 
               menuItems={menuItems}
               cart={cart}
+              userDietaryNeeds={pendingReservation?.dietary_needs || currentUser?.dietary_needs || []}
               onAddToCart={(item) => {
                 setCart(prev => [...prev, { 
                   menu_item_id: item.id, 
