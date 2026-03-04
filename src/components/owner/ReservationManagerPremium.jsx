@@ -378,7 +378,15 @@ export default function ReservationManagerPremium({ reservations = [], restauran
                       <p className="text-sm text-slate-600">
                        {moment(reservation.reservation_date).format('MMM D')} at {formatTime(reservation.reservation_time)} • {reservation.party_size} guests • Table {tableLabel}
                       </p>
-                      <p className="text-xs text-slate-400">Reserved on {moment(reservation.created_date).format('MMM D, YYYY [at] h:mm A')}</p>
+                        <p className="text-xs text-slate-400">Reserved on {moment(reservation.created_date).format('MMM D, YYYY [at] h:mm A')}</p>
+                      {(reservation.status === 'arrived_early' || reservation.status === 'checked_in') && (
+                        <Badge className={cn(
+                          "mt-1 text-xs",
+                          reservation.status === 'arrived_early' ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'
+                        )}>
+                          {reservation.status === 'arrived_early' ? '🚶 Arrived Early' : '✅ Checked In'}
+                        </Badge>
+                      )}
                       {preOrder && (
                         <div className="flex items-center gap-2 mt-1">
                           <Badge variant="outline" className="text-xs border-emerald-500 text-emerald-700">
