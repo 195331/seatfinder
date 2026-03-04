@@ -88,6 +88,7 @@ export default function OwnerDashboard() {
   const [currentUser, setCurrentUser] = useState(null);
   const [selectedRestaurant, setSelectedRestaurant] = useState(null);
   const [activeTab, setActiveTab] = useState("seating");
+  const [showProfileDrawer, setShowProfileDrawer] = useState(false);
 
   // ---- Auth / role check ----
   useEffect(() => {
