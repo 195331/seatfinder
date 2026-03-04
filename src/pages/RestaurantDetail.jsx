@@ -44,7 +44,8 @@ export default function RestaurantDetail() {
   const restaurantId = urlParams.get('id') || urlParams.get('restaurantId');
 
   const [currentUser, setCurrentUser] = useState(null);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState(() => urlParams.get('tab') || 'overview');
+  const [highlightItemId] = useState(() => urlParams.get('highlightItem') || null);
   const [showShareDialog, setShowShareDialog] = useState(false);
 
   // Fetch current user
