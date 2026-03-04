@@ -251,6 +251,31 @@ export default function MenuBuilder({ restaurantId }) {
                   />
                 </div>
                 
+                {/* Food Photo Upload */}
+                <div>
+                  <Label className="flex items-center gap-1.5">
+                    <ImagePlus className="w-4 h-4 text-purple-500" />
+                    Food Photo
+                  </Label>
+                  <div className="mt-1.5 flex items-center gap-3">
+                    {newItem.image_url ? (
+                      <div className="relative">
+                        <img src={newItem.image_url} alt="preview" className="w-20 h-20 rounded-lg object-cover border" />
+                        <button
+                          onClick={() => setNewItem(prev => ({ ...prev, image_url: '' }))}
+                          className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center"
+                        >×</button>
+                      </div>
+                    ) : (
+                      <label className="flex flex-col items-center justify-center w-20 h-20 border-2 border-dashed border-purple-200 rounded-lg cursor-pointer hover:border-purple-400 hover:bg-purple-50 transition-all">
+                        {uploadingImage ? <Loader2 className="w-5 h-5 animate-spin text-purple-400" /> : <ImagePlus className="w-5 h-5 text-purple-300" />}
+                        <input type="file" accept="image/*" className="hidden" onChange={e => handleImageUpload(e.target.files[0], 'new')} />
+                      </label>
+                    )}
+                    <p className="text-xs text-slate-400">Upload a photo of this dish. It will appear in the menu and on the discover page.</p>
+                  </div>
+                </div>
+
                 {/* AI Helper */}
                 <AIMenuHelper
                   dishName={newItem.name}
