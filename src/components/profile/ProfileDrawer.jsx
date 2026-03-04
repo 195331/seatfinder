@@ -41,11 +41,18 @@ const FOOD_AVATARS = [
   { id: 'cupcake', emoji: '🧁' },
 ];
 
-export default function ProfileDrawer({ currentUser, onLogout }) {
+export default function ProfileDrawer({ currentUser, onLogout, open: controlledOpen, onOpenChange }) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
+
+  // Support both controlled and uncontrolled usage
+  const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
+  const setOpen = (val) => {
+    setInternalOpen(val);
+    onOpenChange?.(val);
+  };
   const [editingAvatar, setEditingAvatar] = useState(false);
   const [selectedAvatar, setSelectedAvatar] = useState(currentUser?.avatar);
 
