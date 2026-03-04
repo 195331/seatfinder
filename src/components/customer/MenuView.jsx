@@ -125,11 +125,17 @@ export default function MenuView({ items = [], restaurantName, highlightItemId }
 
       {/* Menu Items */}
       <div className="space-y-3">
-        {filteredItems.map((item) => (
+        {filteredItems.map((item) => {
+          const isHighlighted = item.id === highlightItemId;
+          return (
           <div
             key={item.id}
+            ref={isHighlighted ? highlightRef : null}
             className={cn(
-              "relative flex gap-4 p-3 bg-white rounded-xl border border-slate-100 hover:shadow-md transition-all",
+              "relative flex gap-4 p-3 rounded-xl border hover:shadow-md transition-all",
+              isHighlighted
+                ? "bg-purple-50 border-purple-400 ring-2 ring-purple-400 shadow-lg shadow-purple-100"
+                : "bg-white border-slate-100",
               selectedFilters.length > 0 && !item._matches && "opacity-50"
             )}
           >
