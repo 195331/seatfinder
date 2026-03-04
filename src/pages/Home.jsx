@@ -935,8 +935,8 @@ export default function Home() {
                         );
 
                         // Insert Smart Filters after first card (position 7) if more than 6 restaurants
-                        const shouldShowSmartFilters = index === 0 && filteredRestaurants.length > 6;
-                        
+                        const shouldShowSmartFilters = false; // replaced by FoodDiscoveryGrid
+
                         // Randomly insert "Feeling adventurous" card AFTER position 6
                         const randomInsertPosition = Math.floor((filteredRestaurants.length - 6) / 3) + 2;
                         const shouldShowAdventurous = currentUser && index === randomInsertPosition;
