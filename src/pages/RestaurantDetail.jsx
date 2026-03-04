@@ -784,6 +784,29 @@ export default function RestaurantDetail() {
         />
       )}
 
+      {/* Table Conflict Dialog */}
+      <Dialog open={showConflictDialog} onOpenChange={setShowConflictDialog}>
+        <DialogContent className="max-w-sm text-center">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">😬 Oops!</DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-3">
+            <p className="text-slate-700 font-medium text-base">
+              Someone just reserved this table before you!
+            </p>
+            <p className="text-slate-500 text-sm">
+              It happens — the table is now taken. Please pick a different table or try another time.
+            </p>
+          </div>
+          <Button
+            className="w-full"
+            onClick={() => setShowConflictDialog(false)}
+          >
+            Choose Another Table
+          </Button>
+        </DialogContent>
+      </Dialog>
+
       {/* Success Dialog */}
       <ReservationSuccess
         open={showSuccessDialog}
