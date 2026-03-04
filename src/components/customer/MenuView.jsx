@@ -206,9 +206,14 @@ export default function MenuView({ items = [], restaurantName, highlightItemId }
               {item.calories && (
                 <p className="text-xs text-slate-400 mt-1">{item.calories} cal</p>
               )}
+              {isHighlighted && (
+                <span className="inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-600 text-white">
+                  ✦ Featured Dish
+                </span>
+              )}
             </div>
           </div>
-        ))}
+        );})}
       </div>
     </div>
   );
