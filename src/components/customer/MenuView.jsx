@@ -213,7 +213,8 @@ export default function MenuView({ items = [], restaurantName, highlightItemId }
               )}
             </div>
           </div>
-        );})}
+          );
+        })}
       </div>
     </div>
   );
