@@ -433,6 +433,24 @@ export default function MenuBuilder({ restaurantId }) {
                                           onChange={(e) => setEditingItem({ ...editingItem, price: e.target.value })}
                                           placeholder="Price"
                                         />
+                                        {/* Image upload in edit mode */}
+                                        <div className="flex items-center gap-2">
+                                          {editingItem.image_url ? (
+                                            <div className="relative">
+                                              <img src={editingItem.image_url} alt="preview" className="w-14 h-14 rounded-lg object-cover border" />
+                                              <button
+                                                onClick={() => setEditingItem(prev => ({ ...prev, image_url: '' }))}
+                                                className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full text-xs flex items-center justify-center"
+                                              >×</button>
+                                            </div>
+                                          ) : (
+                                            <label className="flex items-center justify-center w-14 h-14 border-2 border-dashed border-purple-200 rounded-lg cursor-pointer hover:border-purple-400 transition-all">
+                                              {uploadingImage ? <Loader2 className="w-4 h-4 animate-spin text-purple-400" /> : <ImagePlus className="w-4 h-4 text-purple-300" />}
+                                              <input type="file" accept="image/*" className="hidden" onChange={e => handleImageUpload(e.target.files[0], 'edit')} />
+                                            </label>
+                                          )}
+                                          <span className="text-xs text-slate-400">Photo</span>
+                                        </div>
                                         <div className="flex gap-2">
                                           <Button
                                             size="sm"
