@@ -101,9 +101,22 @@ export default function MenuBuilder({ restaurantId }) {
       is_gluten_free: false,
       calories: '',
       is_available: true,
-      dietary_tags: []
+      dietary_tags: [],
+      image_url: ''
     });
     setNewCategory('');
+  };
+
+  const handleImageUpload = async (file, target) => {
+    if (!file) return;
+    setUploadingImage(true);
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    if (target === 'new') {
+      setNewItem(prev => ({ ...prev, image_url: file_url }));
+    } else {
+      setEditingItem(prev => ({ ...prev, image_url: file_url }));
+    }
+    setUploadingImage(false);
   };
 
   const toggleCategory = (cat) => {
