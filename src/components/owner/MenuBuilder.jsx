@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { 
   Plus, Trash2, GripVertical, Pencil, Check, X, Loader2,
-  ChevronDown, ChevronRight, Leaf, Star
+  ChevronDown, ChevronRight, Leaf, Star, ImagePlus
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

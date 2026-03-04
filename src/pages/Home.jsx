@@ -35,7 +35,7 @@ import MoodBoardCreator from '@/components/social/MoodBoardCreator';
 import FriendRecommendations from '@/components/social/FriendRecommendations';
 import SocialFeed from '@/components/social/SocialFeed';
 import RestaurantLeaderboard from '@/components/social/RestaurantLeaderboard';
-import SmartFilters from '@/components/customer/SmartFilters';
+import FoodDiscoveryGrid from '@/components/home/FoodDiscoveryGrid';
 import { getIsVerifiedLive, getIsStale } from '@/components/ui/FreshnessIndicator';
 import { Switch } from "@/components/ui/switch";
 

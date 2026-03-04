@@ -48,6 +48,7 @@
  * The mainPage value must match a key in the PAGES object exactly.
  */
 import AdminDashboard from './pages/AdminDashboard';
+import CheckIn from './pages/CheckIn';
 import ConfirmWaitlist from './pages/ConfirmWaitlist';
 import CreateRestaurant from './pages/CreateRestaurant';
 import Favorites from './pages/Favorites';
@@ -67,12 +68,12 @@ import RestaurantSettings from './pages/RestaurantSettings';
 import ReviewSubmission from './pages/ReviewSubmission';
 import Settings from './pages/Settings';
 import UserProfile from './pages/UserProfile';
-import CheckIn from './pages/CheckIn';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
     "AdminDashboard": AdminDashboard,
+    "CheckIn": CheckIn,
     "ConfirmWaitlist": ConfirmWaitlist,
     "CreateRestaurant": CreateRestaurant,
     "Favorites": Favorites,
@@ -92,7 +93,6 @@ export const PAGES = {
     "ReviewSubmission": ReviewSubmission,
     "Settings": Settings,
     "UserProfile": UserProfile,
-    "CheckIn": CheckIn,
 }
 
 export const pagesConfig = {
