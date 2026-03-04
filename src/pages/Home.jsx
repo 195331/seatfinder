@@ -866,6 +866,11 @@ export default function Home() {
               />
             )}
 
+            {/* Food Discovery Grid - replaces SmartFilters */}
+            {exploreView === 'all' && !loadingRestaurants && filteredRestaurants.length > 0 && (
+              <FoodDiscoveryGrid restaurants={filteredRestaurants} />
+            )}
+
             {/* Netflix-style Collections - Always shown on All view */}
             {exploreView === 'all' && !loadingRestaurants && filteredRestaurants.length > 6 && (
               <div className="mb-12">
