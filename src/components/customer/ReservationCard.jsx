@@ -131,7 +131,7 @@ export default function ReservationCard({ reservation, restaurant, onCancel, onM
               )}
 
               {canModify && (
-                <div className="flex gap-2 mt-3">
+                <div className="flex gap-2 mt-3 flex-wrap">
                   <Button 
                     variant="outline" 
                     size="sm" 
@@ -141,6 +141,21 @@ export default function ReservationCard({ reservation, restaurant, onCancel, onM
                     <Edit3 className="w-3 h-3" />
                     Modify
                   </Button>
+                  {reservation.check_in_token && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs gap-2 text-emerald-700 border-emerald-300 hover:bg-emerald-50"
+                      onClick={() => {
+                        const url = `${window.location.origin}${createPageUrl('CheckIn')}?token=${reservation.check_in_token}`;
+                        navigator.clipboard?.writeText(url).catch(() => {});
+                        window.open(url, '_blank');
+                      }}
+                    >
+                      <QrCode className="w-3 h-3" />
+                      Check-In Link
+                    </Button>
+                  )}
                   <Button 
                     variant="ghost" 
                     size="sm" 
