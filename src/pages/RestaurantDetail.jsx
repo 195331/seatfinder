@@ -93,13 +93,16 @@ export default function RestaurantDetail() {
     enabled: !!restaurantId
   });
 
-  // Fetch tables
+  // Fetch tables — poll every 5s so status updates are near real-time
   const { data: tables = [], refetch: refetchTables } = useQuery({
     queryKey: ['tables', restaurantId],
     queryFn: () => base44.entities.Table.filter({ restaurant_id: restaurantId }),
     enabled: !!restaurantId,
-    refetchInterval: 15000
+    refetchInterval: 5000
   });
+
+  // "Table already taken" conflict dialog state
+  const [showConflictDialog, setShowConflictDialog] = useState(false);
 
   // Fetch menu items
   const { data: menuItems = [] } = useQuery({
