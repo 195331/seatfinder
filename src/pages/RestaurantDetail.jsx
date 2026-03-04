@@ -278,6 +278,11 @@ export default function RestaurantDetail() {
       return reservation;
     },
     onSuccess: (result) => {
+      if (result?.conflict) {
+        setShowConflictDialog(true);
+        refetchTables();
+        return;
+      }
       if (result?.skipToast) return;
       
       setCompletedReservation(result);
