@@ -69,6 +69,7 @@ import AIMenuSuggestions from "@/components/ai/AIMenuSuggestions";
 import OwnerMessages from "@/components/messaging/OwnerMessages";
 import MenuOptimizationEngine from "@/components/ai/MenuOptimizationEngine";
 import StaffNotifications from '@/components/owner/StaffNotifications';
+import ProfileDrawer from '@/components/profile/ProfileDrawer';
 
 /**
  * Normalize anything into an array (prevents undefined.map crashes)
