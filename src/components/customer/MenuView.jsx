@@ -23,10 +23,25 @@ function getFilteredMenu(items, selectedFilters) {
   });
 }
 
-export default function MenuView({ items = [], restaurantName }) {
+export default function MenuView({ items = [], restaurantName, highlightItemId }) {
   const categories = [...new Set(items.map(i => i.category || 'Other'))];
   const [activeCategory, setActiveCategory] = useState(categories[0] || 'All');
   const [selectedFilters, setSelectedFilters] = useState([]);
+  const highlightRef = useRef(null);
+
+  // Auto-scroll to highlighted item
+  useEffect(() => {
+    if (!highlightItemId) return;
+    const targetItem = items.find(i => i.id === highlightItemId);
+    if (targetItem) {
+      // Switch to the item's category
+      setActiveCategory(targetItem.category || categories[0]);
+      // Scroll after a brief delay for category switch to render
+      setTimeout(() => {
+        highlightRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 150);
+    }
+  }, [highlightItemId, items]);
 
   const toggleFilter = (tag) => {
     setSelectedFilters(prev =>
