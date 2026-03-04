@@ -181,7 +181,23 @@ export default function RestaurantDetail() {
         base44.auth.redirectToLogin(window.location.href);
         return;
       }
-      
+
+      // --- Race condition guard: re-fetch table status before proceeding ---
+      if (payload.table_id) {
+        const freshTables = await base44.entities.Table.filter({ restaurant_id: restaurantId });
+        const freshTable = freshTables.find(t => t.id === payload.table_id);
+        if (freshTable && freshTable.status !== 'free') {
+          // Invalidate local cache so UI reflects reality instantly
+          queryClient.setQueryData(['tables', restaurantId], freshTables);
+          return { conflict: true };
+        }
+        // Also mark table as reserved immediately so others see it
+        await base44.entities.Table.update(payload.table_id, { status: 'reserved' }).catch(() => {});
+        queryClient.setQueryData(['tables', restaurantId], (old = []) =>
+          old.map(t => t.id === payload.table_id ? { ...t, status: 'reserved' } : t)
+        );
+      }
+
       // If pre-order enabled and user opted in, show pre-order flow first
       if (restaurant?.enable_preorder && !payload.skipPreOrder && payload.wants_pre_order !== false) {
         setPendingReservation(payload);
