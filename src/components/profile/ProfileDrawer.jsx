@@ -147,21 +147,24 @@ export default function ProfileDrawer({ currentUser, onLogout, open: controlledO
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
-        <button className="w-10 h-10 rounded-xl overflow-hidden bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center hover:opacity-90 transition-opacity">
-          {hasProfileImage ? (
-            <img 
-              src={currentUser.profile_image} 
-              alt={currentUser.full_name || 'Profile'} 
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <span className="text-xl text-white">
-              {getUserAvatar()}
-            </span>
-          )}
-        </button>
-      </SheetTrigger>
+      {/* Only render the trigger if not externally controlled */}
+      {controlledOpen === undefined && (
+        <SheetTrigger asChild>
+          <button className="w-10 h-10 rounded-xl overflow-hidden bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center hover:opacity-90 transition-opacity">
+            {hasProfileImage ? (
+              <img 
+                src={currentUser.profile_image} 
+                alt={currentUser.full_name || 'Profile'} 
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <span className="text-xl text-white">
+                {getUserAvatar()}
+              </span>
+            )}
+          </button>
+        </SheetTrigger>
+      )}
       <SheetContent side="left" className="w-full sm:max-w-md p-0">
         <div className="flex flex-col h-full">
           {/* Profile Header */}
