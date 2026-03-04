@@ -648,6 +648,7 @@ export default function RestaurantDetail() {
                 <MenuView
                   items={menuItems}
                   restaurantName={restaurant.name}
+                  highlightItemId={highlightItemId}
                 />
               </CardContent>
             </Card>
