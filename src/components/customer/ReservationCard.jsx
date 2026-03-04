@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Calendar, Clock, Users, MapPin, X, CheckCircle, AlertCircle, Edit3 } from 'lucide-react';
+import { Calendar, Clock, Users, MapPin, X, CheckCircle, AlertCircle, Edit3, QrCode } from 'lucide-react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
