@@ -39,8 +39,10 @@ export default function MenuBuilder({ restaurantId }) {
     is_gluten_free: false,
     calories: '',
     is_available: true,
-    dietary_tags: []
+    dietary_tags: [],
+    image_url: ''
   });
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const { data: menuItems = [], isLoading } = useQuery({
     queryKey: ['menuItems', restaurantId],
