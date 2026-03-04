@@ -171,7 +171,7 @@ export default function ReservationManagerPremium({ reservations = [], restauran
   });
 
   const pendingReservations = (reservations || []).filter(r => r.status === 'pending');
-  const confirmedReservations = (reservations || []).filter(r => r.status === 'approved');
+  const confirmedReservations = (reservations || []).filter(r => ['approved', 'arrived_early', 'checked_in'].includes(r.status));
 
   const handleApprove = (reservation) => {
     updateReservationMutation.mutate({
