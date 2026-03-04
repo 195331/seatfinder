@@ -38,6 +38,7 @@ export default function ReservationManagerPremium({ reservations = [], restauran
   ];
 
   // Fetch pre-orders
+  // Fetch pre-orders (with 5-second polling for dashboard awareness)
   const { data: preOrders = [] } = useQuery({
     queryKey: ['preOrders', (reservations || []).map(r => r.id)],
     queryFn: async () => {

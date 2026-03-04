@@ -237,6 +237,10 @@ export default function RestaurantDetail() {
         ...payload
       };
 
+      // Generate a unique check-in token
+      const checkInToken = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now().toString(36);
+      reservationData.check_in_token = checkInToken;
+
       const reservation = await base44.entities.Reservation.create(reservationData);
 
       // Create pre-order if cart has items
