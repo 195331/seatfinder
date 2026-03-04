@@ -403,14 +403,28 @@ export default function OwnerDashboard() {
   return (
     <div className="min-h-screen bg-slate-50">
       <StaffNotifications restaurant={selectedRestaurant} />
+
+      {/* Profile Drawer */}
+      {currentUser && (
+        <ProfileDrawer
+          currentUser={currentUser}
+          onLogout={() => base44.auth.logout(createPageUrl('Home'))}
+          open={showProfileDrawer}
+          onOpenChange={setShowProfileDrawer}
+        />
+      )}
+
       {/* Header */}
       <header className="bg-white border-b sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center">
+              <button
+                onClick={() => setShowProfileDrawer(true)}
+                className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center hover:opacity-80 transition-opacity"
+              >
                 <Store className="w-5 h-5 text-white" />
-              </div>
+              </button>
               <div>
                 <h1 className="font-bold text-lg text-slate-900">Owner Dashboard</h1>
                 <p className="text-sm text-slate-500">
