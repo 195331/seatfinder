@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Star, Heart, MessageCircle, TrendingUp, Users, Award } from 'lucide-react';
+import { Star, Heart, MessageCircle, TrendingUp, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { cn } from "@/lib/utils";
@@ -124,10 +124,7 @@ export default function SocialFeed({ currentUser }) {
                 <TrendingUp className="w-4 h-4" />
                 Trending
               </TabsTrigger>
-              <TabsTrigger value="achievements" className="flex-1 gap-2">
-                <Award className="w-4 h-4" />
-                Achievements
-              </TabsTrigger>
+
             </TabsList>
 
             <TabsContent value="following" className="space-y-3 mt-4">
@@ -151,37 +148,7 @@ export default function SocialFeed({ currentUser }) {
               {allReviews.slice(0, 10).map(renderReview)}
             </TabsContent>
 
-            <TabsContent value="achievements" className="space-y-3 mt-4">
-              {achievements.length === 0 ? (
-                <div className="text-center py-12">
-                  <Award className="w-12 h-12 mx-auto text-slate-300 mb-3" />
-                  <p className="text-slate-600">No recent achievements</p>
-                </div>
-              ) : (
-                achievements.map((achievement) => (
-                  <Card key={achievement.id}>
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-3">
-                        <div className="text-4xl">{achievement.badge_icon}</div>
-                        <div className="flex-1">
-                          <p className="font-semibold text-slate-900">{achievement.badge_name}</p>
-                          <p className="text-sm text-slate-600 mt-1">
-                            Earned on {new Date(achievement.earned_at).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => navigate(createPageUrl('UserProfile') + `?id=${achievement.user_id}`)}
-                        >
-                          View Profile
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
-              )}
-            </TabsContent>
+
           </Tabs>
         </CardContent>
       </Card>
