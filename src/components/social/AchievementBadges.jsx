@@ -47,7 +47,7 @@ export default function AchievementBadges({ userId, variant = 'compact' }) {
     });
   }, [rawAchievements]);
 
-  const earnedTypes = new Set(achievements.map(a => a.badge_type));
+  const earnedTypes = useMemo(() => new Set(achievements.map(a => a.badge_type)), [achievements]);
 
   const { data: reviews = [] } = useQuery({
     queryKey: ['userReviewsForBadges', userId],
