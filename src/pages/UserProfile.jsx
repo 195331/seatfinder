@@ -146,6 +146,7 @@ export default function UserProfile() {
             <div className="mt-6">
               <AchievementBadges userId={userId} variant="full" />
             </div>
+
           </CardContent>
         </Card>
 
