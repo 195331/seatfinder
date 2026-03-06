@@ -36,7 +36,9 @@ export default function FollowButton({ currentUser, targetUserId, targetUserName
     }
   });
 
-  if (!currentUser || currentUser.id === targetUserId) return null;
+  if (!currentUser) return null;
+  // Allow following any userId (real user or bot) except yourself
+  if (currentUser.id === targetUserId) return null;
 
   return (
     <Button
