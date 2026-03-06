@@ -3,7 +3,6 @@ import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Star, Heart, MessageCircle, TrendingUp, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -41,11 +40,7 @@ export default function SocialFeed({ currentUser }) {
     queryFn: () => base44.entities.Review.filter({ is_hidden: false }, '-created_date', 50),
   });
 
-  // Get achievements
-  const { data: achievements = [] } = useQuery({
-    queryKey: ['recentAchievements'],
-    queryFn: () => base44.entities.Achievement.list('-earned_at', 20),
-  });
+
 
   const renderReview = (review) => (
     <Card key={review.id} className="hover:shadow-md transition-shadow">
