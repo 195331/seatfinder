@@ -212,11 +212,11 @@ export default function OwnerDashboard() {
 
   const selectedRestaurantId = selectedRestaurant?.id || null;
 
-  // Tables — poll every 5s for real-time check-in status updates
+  // Tables — poll every 3s for real-time check-in status updates
   const { data: tablesRaw } = useQuery({
     queryKey: ["tables", selectedRestaurantId],
     enabled: !!selectedRestaurantId,
-    refetchInterval: 5000,
+    refetchInterval: 3000,
     queryFn: async () => {
       return base44.entities.Table.filter({ restaurant_id: selectedRestaurantId });
     },
