@@ -250,11 +250,11 @@ export default function OwnerDashboard() {
   });
   const recentEvents = useMemo(() => norm(recentEventsRaw), [recentEventsRaw]);
 
-  // Reservations — poll every 5s for real-time dashboard awareness
+  // Reservations — poll every 3s for real-time dashboard awareness
   const { data: reservationsRaw } = useQuery({
     queryKey: ["reservations", selectedRestaurantId],
     enabled: !!selectedRestaurantId,
-    refetchInterval: 5000,
+    refetchInterval: 3000,
     queryFn: async () => {
       return base44.entities.Reservation.filter(
         { restaurant_id: selectedRestaurantId },
