@@ -25,8 +25,6 @@ const CUISINES = [
   'Vietnamese', 'Spanish', 'Greek', 'Middle Eastern'
 ];
 
-import { DIETARY_OPTIONS as DIETARY_RESTRICTIONS } from '@/components/customer/SpecialRequestsForm';
-
 const AMENITIES = [
   { id: 'outdoor', label: 'Outdoor Seating', icon: '🌳' },
   { id: 'bar', label: 'Bar Seating', icon: '🍸' },
