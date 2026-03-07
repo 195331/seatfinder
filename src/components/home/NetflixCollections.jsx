@@ -34,6 +34,24 @@ const COLLECTION_CONFIGS = [
     title: 'New Restaurants', 
     icon: Utensils, 
     gradient: 'from-blue-600 to-cyan-600'
+  },
+  {
+    id: 'dine_again',
+    title: 'Dine Again',
+    icon: RotateCcw,
+    gradient: 'from-violet-600 to-purple-600'
+  },
+  {
+    id: 'ambience_kings',
+    title: 'Ambience Kings',
+    icon: Smile,
+    gradient: 'from-rose-500 to-pink-600'
+  },
+  {
+    id: 'family_friendly',
+    title: 'For the Whole Family',
+    icon: Baby,
+    gradient: 'from-green-500 to-emerald-600'
   }
 ];
 
