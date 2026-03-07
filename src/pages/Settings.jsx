@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import TasteProfile from '@/components/profile/TasteProfile';
+import { DIETARY_OPTIONS as DIETARY_RESTRICTIONS } from '@/components/customer/SpecialRequestsForm';
 
 const CUISINES = [
   'Italian', 'Chinese', 'Japanese', 'Mexican', 'Indian', 
