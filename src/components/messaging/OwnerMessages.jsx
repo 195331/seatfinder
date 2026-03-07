@@ -33,8 +33,15 @@ export default function OwnerMessages({ restaurantId, currentUser }) {
     return unsub;
   }, [restaurantId, queryClient]);
 
+  // Auto-scroll when thread dialog is open
+  useEffect(() => {
+    if (selectedThread) {
+      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+    }
+  }, [selectedThread?.messages?.length]);
+
   // Group by thread
-  const threads = React.useMemo(() => {
+  const threads = useMemo(() => {
     const grouped = {};
     messages.forEach(msg => {
       if (!grouped[msg.thread_id]) {
@@ -61,9 +68,9 @@ export default function OwnerMessages({ restaurantId, currentUser }) {
     mutationFn: async ({ threadId, message }) => {
       await base44.entities.Message.create({
         restaurant_id: restaurantId,
-        sender_id: 'restaurant',
-        sender_name: 'Restaurant',
-        sender_email: 'restaurant@seatfinder.com',
+        sender_id: currentUser?.id || 'restaurant',
+        sender_name: currentUser?.full_name || 'Restaurant',
+        sender_email: currentUser?.email || '',
         message,
         is_from_restaurant: true,
         thread_id: threadId,
