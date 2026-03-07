@@ -103,12 +103,25 @@ export default function LoyaltyProgramManager({ restaurantId, restaurantName }) 
     updateField('rewards', formData.rewards.filter((_, i) => i !== index));
   };
 
+  // Deduplicate members by user_id (keep the most recent record per user)
+  const uniqueMembers = React.useMemo(() => {
+    const seen = new Map();
+    (members || []).forEach(m => {
+      if (!m?.user_id) return;
+      const existing = seen.get(m.user_id);
+      if (!existing || new Date(m.created_date) > new Date(existing.created_date)) {
+        seen.set(m.user_id, m);
+      }
+    });
+    return Array.from(seen.values());
+  }, [members]);
+
   // Analytics
-  const totalMembers = (members || []).length;
-  const totalPointsIssued = (members || []).reduce((sum, m) => sum + (m?.lifetime_points || 0), 0);
+  const totalMembers = uniqueMembers.length;
+  const totalPointsIssued = uniqueMembers.reduce((sum, m) => sum + (m?.lifetime_points || 0), 0);
   const tierDistribution = (DEFAULT_TIERS || []).map(t => ({
     ...t,
-    count: (members || []).filter(m => m?.current_tier === t?.name).length
+    count: uniqueMembers.filter(m => m?.current_tier === t?.name).length
   }));
 
   if (isLoading || !formData) {

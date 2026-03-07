@@ -24,9 +24,22 @@ export default function LoyaltyAnalytics({ restaurantId }) {
     enabled: !!restaurantId,
   });
 
-  const totalMembers = loyaltyMembers.length;
-  const totalPointsIssued = loyaltyMembers.reduce((sum, m) => sum + (m.points_earned || 0), 0);
-  const totalPointsRedeemed = loyaltyMembers.reduce((sum, m) => sum + (m.points_redeemed || 0), 0);
+  // Deduplicate by user_id (keep most recent per user)
+  const uniqueMembers = useMemo(() => {
+    const seen = new Map();
+    loyaltyMembers.forEach(m => {
+      if (!m?.user_id) return;
+      const existing = seen.get(m.user_id);
+      if (!existing || new Date(m.created_date) > new Date(existing.created_date)) {
+        seen.set(m.user_id, m);
+      }
+    });
+    return Array.from(seen.values());
+  }, [loyaltyMembers]);
+
+  const totalMembers = uniqueMembers.length;
+  const totalPointsIssued = uniqueMembers.reduce((sum, m) => sum + (m.points_earned || 0), 0);
+  const totalPointsRedeemed = uniqueMembers.reduce((sum, m) => sum + (m.points_redeemed || 0), 0);
   const redemptionRate = totalPointsIssued > 0 ? (totalPointsRedeemed / totalPointsIssued * 100).toFixed(1) : 0;
 
   // Member growth over time
@@ -39,7 +52,7 @@ export default function LoyaltyAnalytics({ restaurantId }) {
       last30Days[date] = { date, members: 0 };
     }
 
-    loyaltyMembers.forEach(member => {
+    uniqueMembers.forEach(member => {
       const date = moment(member.created_date).format('MMM D');
       if (last30Days[date]) {
         last30Days[date].members += 1;
@@ -57,7 +70,7 @@ export default function LoyaltyAnalytics({ restaurantId }) {
   // Tier distribution
   const tierDistribution = useMemo(() => {
     const tiers = {};
-    loyaltyMembers.forEach(member => {
+    uniqueMembers.forEach(member => {
       const tier = member.current_tier || 'Bronze';
       tiers[tier] = (tiers[tier] || 0) + 1;
     });
