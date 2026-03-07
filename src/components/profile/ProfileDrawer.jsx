@@ -71,11 +71,24 @@ export default function ProfileDrawer({ currentUser, onLogout, open: controlledO
   });
 
   // Fetch loyalty memberships
-  const { data: loyaltyMemberships = [] } = useQuery({
+  const { data: loyaltyMembershipsRaw = [] } = useQuery({
     queryKey: ['myLoyalty', currentUser?.id],
     queryFn: () => base44.entities.CustomerLoyalty.filter({ user_id: currentUser.id }),
     enabled: !!currentUser && open,
   });
+
+  // Deduplicate by restaurant_id (keep the most recent per restaurant)
+  const loyaltyMemberships = React.useMemo(() => {
+    const seen = new Map();
+    loyaltyMembershipsRaw.forEach(m => {
+      if (!m?.restaurant_id) return;
+      const existing = seen.get(m.restaurant_id);
+      if (!existing || new Date(m.created_date) > new Date(existing.created_date)) {
+        seen.set(m.restaurant_id, m);
+      }
+    });
+    return Array.from(seen.values());
+  }, [loyaltyMembershipsRaw]);
 
   // Fetch restaurants for loyalty display
   const { data: restaurants = [] } = useQuery({
