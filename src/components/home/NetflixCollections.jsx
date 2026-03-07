@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Heart, TrendingUp, Gem, MapPin, Star, Utensils } from 'lucide-react';
+import { Heart, TrendingUp, Gem, Star, Utensils, RotateCcw, Smile, Baby } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from "@/lib/utils";
 import RestaurantCard from '@/components/customer/RestaurantCard';
