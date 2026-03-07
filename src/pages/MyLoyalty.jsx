@@ -104,6 +104,38 @@ export default function MyLoyalty() {
     : null;
   const selectedProgramData = selectedProgram ? programMap[selectedProgram] : null;
 
+  const generateRedemptionLink = async (reward, loyalty) => {
+    setRedeemingReward({ reward, loyalty });
+    setGeneratedLink(null);
+    setCopied(false);
+
+    const token = crypto.randomUUID();
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString(); // 15 min
+
+    await base44.entities.RewardRedemption.create({
+      token,
+      user_id: currentUser.id,
+      user_name: currentUser.full_name,
+      restaurant_id: loyalty.restaurant_id,
+      loyalty_id: loyalty.id,
+      reward_name: reward.name,
+      reward_description: reward.description || '',
+      points_cost: reward.points_required,
+      status: 'pending',
+      expires_at: expiresAt
+    });
+
+    const link = `${window.location.origin}${createPageUrl('RedeemReward')}?token=${token}`;
+    setGeneratedLink(link);
+  };
+
+  const copyLink = () => {
+    navigator.clipboard.writeText(generatedLink);
+    setCopied(true);
+    toast.success('Link copied!');
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   if (!currentUser || isLoading) {
     return (
       <div className="min-h-screen bg-slate-50 p-6">
