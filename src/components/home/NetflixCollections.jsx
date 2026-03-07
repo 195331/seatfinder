@@ -106,9 +106,28 @@ export default function NetflixCollections({
       
       new_restaurants: restaurantsWithDistance
         .sort((a, b) => new Date(b.created_date) - new Date(a.created_date))
+        .slice(0, 8),
+
+      dine_again: restaurantsWithDistance
+        .filter(r => pastReservationRestaurantIds.includes(r.id))
+        .sort((a, b) => (b.average_rating || 0) - (a.average_rating || 0))
+        .slice(0, 8),
+
+      ambience_kings: restaurantsWithDistance
+        .filter(r => (r.average_rating || 0) >= 4.0)
+        .sort((a, b) => {
+          const aAmbience = allReviews?.filter(r2 => r2.restaurant_id === a.id).reduce((sum, r2) => sum + (r2.ambiance_rating || r2.vibe_rating || 0), 0) / Math.max(allReviews?.filter(r2 => r2.restaurant_id === a.id).length || 1, 1);
+          const bAmbience = allReviews?.filter(r2 => r2.restaurant_id === b.id).reduce((sum, r2) => sum + (r2.ambiance_rating || r2.vibe_rating || 0), 0) / Math.max(allReviews?.filter(r2 => r2.restaurant_id === b.id).length || 1, 1);
+          return bAmbience - aAmbience;
+        })
+        .slice(0, 8),
+
+      family_friendly: restaurantsWithDistance
+        .filter(r => r.is_kid_friendly)
+        .sort((a, b) => (b.average_rating || 0) - (a.average_rating || 0))
         .slice(0, 8)
     };
-  }, [restaurants, userLocation]);
+  }, [restaurants, userLocation, pastReservationRestaurantIds, allReviews]);
 
   return (
     <div className="space-y-10">
