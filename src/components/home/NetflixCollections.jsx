@@ -72,7 +72,8 @@ export default function NetflixCollections({
   onRestaurantClick,
   onFavoriteToggle,
   favoriteIds,
-  allReviews
+  allReviews,
+  pastReservationRestaurantIds = []
 }) {
   const collections = useMemo(() => {
     const restaurantsWithDistance = restaurants.map(r => ({
