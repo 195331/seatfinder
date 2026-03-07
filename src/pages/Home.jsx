@@ -156,6 +156,14 @@ export default function Home() {
     enabled: !!selectedCity && restaurants.length > 0,
   });
 
+  // Fetch past reservations for "Dine Again"
+  const { data: pastReservations = [] } = useQuery({
+    queryKey: ['pastReservations', currentUser?.id],
+    queryFn: () => base44.entities.Reservation.filter({ user_id: currentUser.id, status: 'checked_in' }),
+    enabled: !!currentUser,
+  });
+  const pastReservationRestaurantIds = useMemo(() => [...new Set(pastReservations.map(r => r.restaurant_id))], [pastReservations]);
+
   // Fetch favorites
   const { data: favorites = [] } = useQuery({
     queryKey: ['favorites', currentUser?.id],
