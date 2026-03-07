@@ -174,18 +174,36 @@ export default function MyReservations() {
         )}
 
         {/* Reservations */}
-        <Tabs defaultValue="upcoming">
-          <TabsList className="w-full bg-slate-100 rounded-full p-1 grid grid-cols-3">
-            <TabsTrigger value="upcoming" className="rounded-full">
+        <Tabs defaultValue="calendar">
+          <TabsList className="w-full bg-slate-100 rounded-full p-1 grid grid-cols-4">
+            <TabsTrigger value="calendar" className="rounded-full gap-1 text-xs">
+              <Calendar className="w-3.5 h-3.5" />Calendar
+            </TabsTrigger>
+            <TabsTrigger value="upcoming" className="rounded-full text-xs">
               Upcoming ({upcomingReservations.length})
             </TabsTrigger>
-            <TabsTrigger value="past" className="rounded-full">
+            <TabsTrigger value="past" className="rounded-full text-xs">
               Past ({pastReservations.length})
             </TabsTrigger>
-            <TabsTrigger value="cancelled" className="rounded-full">
-              Cancelled ({cancelledReservations.length})
+            <TabsTrigger value="cancelled" className="rounded-full text-xs">
+              Cancelled
             </TabsTrigger>
           </TabsList>
+
+          {/* Calendar View */}
+          <TabsContent value="calendar" className="mt-4">
+            {loadingReservations ? (
+              <div className="space-y-3">
+                <Skeleton className="h-64 rounded-2xl" />
+              </div>
+            ) : (
+              <ReservationCalendar
+                reservations={reservations.filter(r => r.status !== 'cancelled')}
+                restaurantMap={restaurantMap}
+                onCancel={(r) => setCancelDialog({ open: true, reservation: r })}
+              />
+            )}
+          </TabsContent>
 
           <TabsContent value="upcoming" className="mt-4">
             {loadingReservations ? (
