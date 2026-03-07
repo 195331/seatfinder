@@ -76,6 +76,8 @@ export default function NetflixCollections({
   pastReservationRestaurantIds = []
 }) {
   const collections = useMemo(() => {
+    if (!restaurants.length) return {};
+
     const restaurantsWithDistance = restaurants.map(r => ({
       ...r,
       distance: userLocation && r.latitude && r.longitude
@@ -83,30 +85,73 @@ export default function NetflixCollections({
         : null
     }));
 
+    // Pre-compute per-restaurant ambience score from reviews (O(n) instead of O(n²))
+    const ambienceByRestaurant = {};
+    if (allReviews?.length) {
+      const buckets = {};
+      allReviews.forEach(r => {
+        if (!buckets[r.restaurant_id]) buckets[r.restaurant_id] = { sum: 0, count: 0 };
+        const score = r.ambiance_rating || r.vibe_rating || 0;
+        if (score > 0) {
+          buckets[r.restaurant_id].sum += score;
+          buckets[r.restaurant_id].count += 1;
+        }
+      });
+      Object.entries(buckets).forEach(([id, { sum, count }]) => {
+        ambienceByRestaurant[id] = count > 0 ? sum / count : 0;
+      });
+    }
+
+    // Dynamic thresholds based on actual data distribution
+    const viewCounts = restaurantsWithDistance.map(r => r.view_count || 0).sort((a, b) => a - b);
+    const medianViews = viewCounts[Math.floor(viewCounts.length / 2)] || 0;
+    const top25PercentViewThreshold = viewCounts[Math.floor(viewCounts.length * 0.75)] || 0;
+
+    const avgRatings = restaurantsWithDistance.map(r => r.average_rating || 0).filter(r => r > 0).sort((a, b) => a - b);
+    const minGoodRating = avgRatings.length > 0 ? Math.max(avgRatings[Math.floor(avgRatings.length * 0.6)], 3.5) : 3.5;
+
+    const now = Date.now();
+    const sixtyDaysAgo = now - 60 * 24 * 60 * 60 * 1000;
+
+    // "New" = added in last 60 days; if none, fall back to newest 8
+    const recentlyAdded = restaurantsWithDistance
+      .filter(r => new Date(r.created_date).getTime() > sixtyDaysAgo)
+      .sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+    const newRestaurants = recentlyAdded.length >= 3
+      ? recentlyAdded.slice(0, 8)
+      : restaurantsWithDistance.sort((a, b) => new Date(b.created_date) - new Date(a.created_date)).slice(0, 8);
+
+    // Top-rated: use location if available, else all restaurants
+    const topRatedPool = userLocation
+      ? restaurantsWithDistance.filter(r => r.distance !== null && r.distance < 15)
+      : restaurantsWithDistance;
+
     return {
       trending: restaurantsWithDistance
-        .filter(r => (r.view_count || 0) > 50 || new Date(r.created_date) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000))
-        .sort((a, b) => (b.view_count || 0) - (a.view_count || 0))
+        .filter(r => (r.view_count || 0) >= top25PercentViewThreshold || new Date(r.created_date).getTime() > now - 30 * 24 * 60 * 60 * 1000)
+        .sort((a, b) => {
+          // Blend recency + views: score = views + recency bonus
+          const recencyBonus = (r) => new Date(r.created_date).getTime() > now - 7 * 24 * 60 * 60 * 1000 ? 200 : 0;
+          return ((b.view_count || 0) + recencyBonus(b)) - ((a.view_count || 0) + recencyBonus(a));
+        })
         .slice(0, 8),
-      
+
       date_night: restaurantsWithDistance
-        .filter(r => (r.average_rating || 0) >= 4.0 && r.price_level >= 2)
+        .filter(r => (r.average_rating || 0) >= minGoodRating && (r.price_level || 1) >= 2)
         .sort((a, b) => (b.average_rating || 0) - (a.average_rating || 0))
         .slice(0, 8),
-      
+
       hidden_gems: restaurantsWithDistance
-        .filter(r => (r.view_count || 0) < 100 && (r.average_rating || 0) >= 4.2)
+        .filter(r => (r.view_count || 0) <= medianViews && (r.average_rating || 0) >= minGoodRating)
         .sort((a, b) => (b.average_rating || 0) - (a.average_rating || 0))
         .slice(0, 8),
-      
-      top_rated: restaurantsWithDistance
-        .filter(r => r.distance !== null && r.distance < 15 && (r.average_rating || 0) >= 4.0)
+
+      top_rated: (topRatedPool.length >= 3 ? topRatedPool : restaurantsWithDistance)
+        .filter(r => (r.average_rating || 0) >= minGoodRating)
         .sort((a, b) => (b.average_rating || 0) - (a.average_rating || 0))
         .slice(0, 8),
-      
-      new_restaurants: restaurantsWithDistance
-        .sort((a, b) => new Date(b.created_date) - new Date(a.created_date))
-        .slice(0, 8),
+
+      new_restaurants: newRestaurants,
 
       dine_again: restaurantsWithDistance
         .filter(r => pastReservationRestaurantIds.includes(r.id))
@@ -114,12 +159,8 @@ export default function NetflixCollections({
         .slice(0, 8),
 
       ambience_kings: restaurantsWithDistance
-        .filter(r => (r.average_rating || 0) >= 4.0)
-        .sort((a, b) => {
-          const aAmbience = allReviews?.filter(r2 => r2.restaurant_id === a.id).reduce((sum, r2) => sum + (r2.ambiance_rating || r2.vibe_rating || 0), 0) / Math.max(allReviews?.filter(r2 => r2.restaurant_id === a.id).length || 1, 1);
-          const bAmbience = allReviews?.filter(r2 => r2.restaurant_id === b.id).reduce((sum, r2) => sum + (r2.ambiance_rating || r2.vibe_rating || 0), 0) / Math.max(allReviews?.filter(r2 => r2.restaurant_id === b.id).length || 1, 1);
-          return bAmbience - aAmbience;
-        })
+        .filter(r => (ambienceByRestaurant[r.id] || 0) > 0 || (r.average_rating || 0) >= minGoodRating)
+        .sort((a, b) => (ambienceByRestaurant[b.id] || b.average_rating || 0) - (ambienceByRestaurant[a.id] || a.average_rating || 0))
         .slice(0, 8),
 
       family_friendly: restaurantsWithDistance
