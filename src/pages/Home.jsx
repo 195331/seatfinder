@@ -851,19 +851,18 @@ export default function Home() {
             )}
 
             {/* AI Search - Always at Top when Active */}
-            {showAISearch && (
-              <div ref={aiResultsRef} className="mb-8">
-                <DinerAI
-                  restaurants={filteredRestaurants}
-                  currentUser={currentUser}
-                  onResultsClick={handleRestaurantClick}
-                  onFiltersApply={(filters) => setFilters(prev => ({ ...prev, ...filters }))}
-                  embeddedMode={true}
-                  externalQuery={aiSearchQuery}
-                  externalTrigger={aiTrigger}
-                />
-              </div>
-            )}
+            <div ref={aiResultsRef} className={showAISearch ? "mb-8" : "hidden"}>
+              <DinerAI
+                restaurants={filteredRestaurants}
+                currentUser={currentUser}
+                onResultsClick={handleRestaurantClick}
+                onFiltersApply={(filters) => setFilters(prev => ({ ...prev, ...filters }))}
+                onResultsReady={() => aiResultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                embeddedMode={true}
+                externalQuery={aiSearchQuery}
+                externalTrigger={aiTrigger}
+              />
+            </div>
 
             {/* Netflix-style Top Rated Section */}
             {exploreView === 'all' && !loadingRestaurants && filteredRestaurants.length > 0 && (
