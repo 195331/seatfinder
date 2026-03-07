@@ -494,7 +494,7 @@ export default function Home() {
                     />
                     <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
                       <button
-                        onClick={() => { if (aiSearchQuery.trim()) { setAITrigger(t => t + 1); setTimeout(() => aiResultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300); } }}
+                        onClick={() => { if (aiSearchQuery.trim()) { setAITrigger(t => t + 1); } }}
                         disabled={!aiSearchQuery.trim()}
                         className="h-8 px-3 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-medium hover:shadow-lg hover:shadow-purple-500/30 transition-all disabled:opacity-40"
                       >
