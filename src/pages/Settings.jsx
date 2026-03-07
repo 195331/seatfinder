@@ -24,10 +24,7 @@ const CUISINES = [
   'Vietnamese', 'Spanish', 'Greek', 'Middle Eastern'
 ];
 
-const DIETARY_RESTRICTIONS = [
-  'Vegetarian', 'Vegan', 'Gluten-Free', 'Dairy-Free', 
-  'Nut-Free', 'Halal', 'Kosher', 'Pescatarian'
-];
+import { DIETARY_OPTIONS as DIETARY_RESTRICTIONS } from '@/components/customer/SpecialRequestsForm';
 
 const AMENITIES = [
   { id: 'outdoor', label: 'Outdoor Seating', icon: '🌳' },
@@ -271,7 +268,7 @@ export default function Settings() {
                   <Shield className="w-5 h-5" />
                   Dietary Restrictions
                 </CardTitle>
-                <CardDescription>We'll filter restaurants accordingly</CardDescription>
+                <CardDescription>These will be automatically added to your dietary needs when you make a reservation</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="flex flex-wrap gap-2">

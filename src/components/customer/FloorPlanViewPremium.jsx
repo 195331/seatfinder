@@ -152,9 +152,11 @@ export default function FloorPlanViewPremium({
       return;
     }
 
+    const savedDietary = currentUser?.preferences?.dietary_restrictions || [];
     setReservationData((prev) => ({
       ...prev,
-      partySize: tableObj.seats || tableEntity.capacity || 2
+      partySize: tableObj.seats || tableEntity.capacity || 2,
+      dietaryNeeds: savedDietary.length > 0 ? savedDietary : prev.dietaryNeeds
     }));
     setShowReserveDialog(true);
   };
