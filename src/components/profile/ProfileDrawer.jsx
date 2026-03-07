@@ -41,6 +41,7 @@ const FOOD_AVATARS = [
   { id: 'cupcake', emoji: '🧁' },
 ];
 
+// useMemo is accessed via React.useMemo above
 export default function ProfileDrawer({ currentUser, onLogout, open: controlledOpen, onOpenChange }) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
