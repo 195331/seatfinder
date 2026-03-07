@@ -188,9 +188,20 @@ export default function RestaurantDetail() {
         const freshTables = await base44.entities.Table.filter({ restaurant_id: restaurantId });
         const freshTable = freshTables.find(t => t.id === payload.table_id);
         if (freshTable && freshTable.status !== 'free') {
-          // Invalidate local cache so UI reflects reality instantly
-          queryClient.setQueryData(['tables', restaurantId], freshTables);
-          return { conflict: true };
+          // Only show conflict if the table was taken by someone ELSE
+          // Check if current user already has a reservation on this table
+          const existingReservations = await base44.entities.Reservation.filter({
+            table_id: payload.table_id,
+            user_id: currentUser.id
+          });
+          const myActiveRes = (existingReservations || []).find(r => !['cancelled', 'declined'].includes(r.status));
+          if (myActiveRes) {
+            // It's the same user's own reservation — don't show conflict
+          } else {
+            // Table was taken by someone else
+            queryClient.setQueryData(['tables', restaurantId], freshTables);
+            return { conflict: true };
+          }
         }
         // Also mark table as reserved immediately so others see it
         await base44.entities.Table.update(payload.table_id, { status: 'reserved' }).catch(() => {});
