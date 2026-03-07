@@ -889,6 +889,7 @@ export default function Home() {
                   onFavoriteToggle={handleFavoriteClick}
                   favoriteIds={favoriteIds}
                   allReviews={allReviews}
+                  pastReservationRestaurantIds={pastReservationRestaurantIds}
                 />
               </div>
             )}
