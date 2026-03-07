@@ -59,7 +59,7 @@ export default function OwnerMessages({ restaurantId, currentUser }) {
         grouped[msg.thread_id].unread_count += 1;
       }
     });
-    return Object.values(grouped).sort((a, b) => 
+    return Object.values(grouped).sort((a, b) =>
       new Date(b.last_message_at) - new Date(a.last_message_at)
     );
   }, [messages]);
@@ -172,7 +172,7 @@ export default function OwnerMessages({ restaurantId, currentUser }) {
               </DialogHeader>
 
               <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50">
-                {selectedThread.messages.map((msg) => {
+                {selectedThread.messages.map((msg, idx) => {
                   const isFromRestaurant = msg.is_from_restaurant;
                   return (
                     <div
