@@ -330,7 +330,7 @@ export default function RestaurantDetail() {
           }
         } catch (e) {
           // Loyalty update failure is non-critical
-        }
+        } })();
       }
     },
     onError: (e) => toast.error(e?.message || 'Reservation failed')
