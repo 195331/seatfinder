@@ -68,6 +68,7 @@ import RestaurantSettings from './pages/RestaurantSettings';
 import ReviewSubmission from './pages/ReviewSubmission';
 import Settings from './pages/Settings';
 import UserProfile from './pages/UserProfile';
+import RedeemReward from './pages/RedeemReward';
 import __Layout from './Layout.jsx';
 
 
@@ -93,6 +94,7 @@ export const PAGES = {
     "ReviewSubmission": ReviewSubmission,
     "Settings": Settings,
     "UserProfile": UserProfile,
+    "RedeemReward": RedeemReward,
 }
 
 export const pagesConfig = {
