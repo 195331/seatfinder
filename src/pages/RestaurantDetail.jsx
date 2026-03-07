@@ -311,7 +311,7 @@ export default function RestaurantDetail() {
 
       // Update loyalty points (+25) for this restaurant if user is a member
       if (currentUser && result?.id) {
-        try {
+        (async () => { try {
           const loyaltyList = await base44.entities.CustomerLoyalty.filter({
             user_id: currentUser.id,
             restaurant_id: restaurantId
