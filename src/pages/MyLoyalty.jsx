@@ -248,7 +248,7 @@ export default function MyLoyalty() {
                 {selectedProgramData?.rewards?.map((reward, idx) => {
                   const canRedeem = (selectedLoyalty?.available_points || 0) >= reward.points_required;
                   return (
-                    <Card key={idx} className={cn("border-0 shadow-sm", !canRedeem && "opacity-50")}>
+                    <Card key={idx} className={cn("border-0 shadow-sm", !canRedeem && "opacity-60")}>
                       <CardContent className="p-4 flex items-center justify-between">
                         <div>
                           <h4 className="font-medium">{reward.name}</h4>
@@ -260,8 +260,10 @@ export default function MyLoyalty() {
                         <Button 
                           size="sm" 
                           disabled={!canRedeem}
-                          className="rounded-full"
+                          onClick={() => canRedeem && generateRedemptionLink(reward, selectedLoyalty)}
+                          className="rounded-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white border-0"
                         >
+                          <Gift className="w-3 h-3 mr-1" />
                           Redeem
                         </Button>
                       </CardContent>
