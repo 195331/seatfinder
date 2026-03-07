@@ -40,11 +40,24 @@ export default function MyLoyalty() {
   }, [navigate]);
 
   // Fetch user's loyalty memberships
-  const { data: loyalties = [], isLoading } = useQuery({
+  const { data: loyaltiesRaw = [], isLoading } = useQuery({
     queryKey: ['myLoyalties', currentUser?.id],
     queryFn: () => base44.entities.CustomerLoyalty.filter({ user_id: currentUser.id }),
     enabled: !!currentUser,
   });
+
+  // Deduplicate by restaurant_id (keep most recent per restaurant)
+  const loyalties = React.useMemo(() => {
+    const seen = new Map();
+    loyaltiesRaw.forEach(l => {
+      if (!l?.restaurant_id) return;
+      const existing = seen.get(l.restaurant_id);
+      if (!existing || new Date(l.created_date) > new Date(existing.created_date)) {
+        seen.set(l.restaurant_id, l);
+      }
+    });
+    return Array.from(seen.values());
+  }, [loyaltiesRaw]);
 
   // Fetch all programs
   const programIds = [...new Set(loyalties.map(l => l.program_id))];
