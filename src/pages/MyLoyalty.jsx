@@ -24,8 +24,12 @@ const TIER_COLORS = {
 
 export default function MyLoyalty() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [currentUser, setCurrentUser] = useState(null);
   const [selectedProgram, setSelectedProgram] = useState(null);
+  const [redeemingReward, setRedeemingReward] = useState(null); // { reward, loyaltyId, restaurantId }
+  const [generatedLink, setGeneratedLink] = useState(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const fetchUser = async () => {
