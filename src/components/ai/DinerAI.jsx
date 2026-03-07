@@ -210,6 +210,8 @@ Return JSON format:
         matches: enrichedMatches
       });
 
+      onResultsReady?.();
+
       // Apply suggested filters
       if (response.filters_suggested && onFiltersApply) {
         onFiltersApply(response.filters_suggested);
