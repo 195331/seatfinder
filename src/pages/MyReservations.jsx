@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { ArrowLeft, Calendar, Clock, Plus } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, Plus, LayoutGrid } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -20,6 +20,7 @@ import {
 import { toast } from "sonner";
 import ReservationCard from '@/components/customer/ReservationCard';
 import WaitlistStatus from '@/components/customer/WaitlistStatus';
+import ReservationCalendar from '@/components/reservations/ReservationCalendar';
 import { isAfter, parseISO } from 'date-fns';
 
 export default function MyReservations() {
