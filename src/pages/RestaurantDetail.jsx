@@ -304,9 +304,33 @@ export default function RestaurantDetail() {
       setShowPreOrderFlow(false);
       setPendingReservation(null);
       
-      // Track points
+      // Track gamification points
       if (currentUser) {
         trackReservationCreated(currentUser.id);
+      }
+
+      // Update loyalty points (+25) for this restaurant if user is a member
+      if (currentUser && result?.id) {
+        try {
+          const loyaltyList = await base44.entities.CustomerLoyalty.filter({
+            user_id: currentUser.id,
+            restaurant_id: restaurantId
+          });
+          const loyalty = Array.isArray(loyaltyList) ? loyaltyList[0] : null;
+          if (loyalty) {
+            const RESERVATION_POINTS = 25;
+            await base44.entities.CustomerLoyalty.update(loyalty.id, {
+              total_points: (loyalty.total_points || 0) + RESERVATION_POINTS,
+              available_points: (loyalty.available_points || 0) + RESERVATION_POINTS,
+              lifetime_points: (loyalty.lifetime_points || 0) + RESERVATION_POINTS,
+              visits: (loyalty.visits || 0) + 1,
+              last_visit: new Date().toISOString()
+            });
+            queryClient.invalidateQueries(['customerLoyalty']);
+          }
+        } catch (e) {
+          // Loyalty update failure is non-critical
+        }
       }
     },
     onError: (e) => toast.error(e?.message || 'Reservation failed')
