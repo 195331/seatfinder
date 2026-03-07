@@ -364,11 +364,16 @@ function ReviewPhotoGallery({ reviews }) {
 export default function ReviewsTab({ restaurant, reviews, currentUser }) {
   const [showForm, setShowForm] = useState(false);
 
-  // Check if current user already reviewed
-  const alreadyReviewed = useMemo(() =>
-    currentUser && reviews.some(r => r.user_id === currentUser.id),
+  const MAX_REVIEWS = 3;
+
+  // Count how many times current user has reviewed this restaurant
+  const userReviewCount = useMemo(() =>
+    currentUser ? reviews.filter(r => r.user_id === currentUser.id).length : 0,
     [reviews, currentUser]
   );
+
+  const alreadyReviewed = userReviewCount > 0;
+  const reachedReviewLimit = userReviewCount >= MAX_REVIEWS;
 
   const allPhotos = useMemo(() =>
     reviews.flatMap(r => (r.photos || []).filter(Boolean)),
@@ -394,14 +399,14 @@ export default function ReviewsTab({ restaurant, reviews, currentUser }) {
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>Reviews ({reviews.length})</span>
-            {!alreadyReviewed && currentUser && !showForm && (
+            {currentUser && !showForm && !reachedReviewLimit && (
               <Button
                 onClick={() => setShowForm(true)}
                 className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
                 size="sm"
               >
                 <Star className="w-4 h-4 mr-1.5" />
-                Write a Review
+                {alreadyReviewed ? `Review Again (${userReviewCount}/${MAX_REVIEWS})` : 'Write a Review'}
               </Button>
             )}
             {!currentUser && (
@@ -416,7 +421,7 @@ export default function ReviewsTab({ restaurant, reviews, currentUser }) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {showForm && currentUser && !alreadyReviewed && (
+          {showForm && currentUser && !reachedReviewLimit && (
             <div className="mb-8 pb-8 border-b">
               <h3 className="font-semibold text-slate-900 mb-4">Share your experience at {restaurant.name}</h3>
               <WriteReviewForm
@@ -427,9 +432,14 @@ export default function ReviewsTab({ restaurant, reviews, currentUser }) {
             </div>
           )}
 
-          {alreadyReviewed && (
+          {reachedReviewLimit && (
+            <div className="mb-4 p-3 bg-amber-50 rounded-lg border border-amber-200 text-sm text-amber-700">
+              ✓ You've reviewed this restaurant {MAX_REVIEWS} times — that's the maximum. Thank you for your feedback!
+            </div>
+          )}
+          {alreadyReviewed && !reachedReviewLimit && (
             <div className="mb-4 p-3 bg-emerald-50 rounded-lg border border-emerald-200 text-sm text-emerald-700">
-              ✓ You've already reviewed this restaurant. Thank you!
+              ✓ You've reviewed this restaurant {userReviewCount}/{MAX_REVIEWS} times. You can review {MAX_REVIEWS - userReviewCount} more time{MAX_REVIEWS - userReviewCount > 1 ? 's' : ''}.
             </div>
           )}
 
@@ -438,7 +448,7 @@ export default function ReviewsTab({ restaurant, reviews, currentUser }) {
               <Star className="w-10 h-10 mx-auto mb-3 text-slate-300" />
               <p className="font-medium">No reviews yet</p>
               <p className="text-sm mt-1">Be the first to share your experience!</p>
-              {currentUser && !showForm && (
+              {currentUser && !showForm && !reachedReviewLimit && (
                 <Button
                   onClick={() => setShowForm(true)}
                   className="mt-4 bg-gradient-to-r from-purple-600 to-pink-600"
