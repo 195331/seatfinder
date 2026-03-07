@@ -24,12 +24,22 @@ export default function RestaurantChat({ restaurant, currentUser, triggerButton 
   }, [open, currentUser, restaurant]);
 
   // Fetch messages
-  const { data: messages = [], refetch } = useQuery({
+  const { data: messages = [] } = useQuery({
     queryKey: ['messages', threadId],
     queryFn: () => base44.entities.Message.filter({ thread_id: threadId }, 'created_date'),
     enabled: !!threadId && open,
-    refetchInterval: 3000, // Poll every 3 seconds
   });
+
+  // Real-time subscription
+  useEffect(() => {
+    if (!threadId || !open) return;
+    const unsub = base44.entities.Message.subscribe((event) => {
+      if (event.data?.thread_id === threadId) {
+        queryClient.invalidateQueries(['messages', threadId]);
+      }
+    });
+    return unsub;
+  }, [threadId, open, queryClient]);
 
   // Send message mutation
   const sendMessageMutation = useMutation({
@@ -47,7 +57,7 @@ export default function RestaurantChat({ restaurant, currentUser, triggerButton 
     },
     onSuccess: () => {
       setMessage('');
-      refetch();
+      queryClient.invalidateQueries(['messages', threadId]);
     }
   });
 

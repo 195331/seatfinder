@@ -9,9 +9,10 @@ import { MessageCircle, Send, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import moment from 'moment';
 
-export default function OwnerMessages({ restaurantId }) {
+export default function OwnerMessages({ restaurantId, currentUser }) {
   const [selectedThread, setSelectedThread] = useState(null);
   const [replyText, setReplyText] = useState('');
+  const messagesEndRef = React.useRef(null);
   const queryClient = useQueryClient();
 
   // Fetch all messages for this restaurant
@@ -19,8 +20,18 @@ export default function OwnerMessages({ restaurantId }) {
     queryKey: ['ownerMessages', restaurantId],
     queryFn: () => base44.entities.Message.filter({ restaurant_id: restaurantId }, '-created_date'),
     enabled: !!restaurantId,
-    refetchInterval: 5000,
   });
+
+  // Real-time subscription
+  React.useEffect(() => {
+    if (!restaurantId) return;
+    const unsub = base44.entities.Message.subscribe((event) => {
+      if (event.data?.restaurant_id === restaurantId) {
+        queryClient.invalidateQueries(['ownerMessages', restaurantId]);
+      }
+    });
+    return unsub;
+  }, [restaurantId, queryClient]);
 
   // Group by thread
   const threads = React.useMemo(() => {
