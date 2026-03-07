@@ -906,7 +906,7 @@ export default function OwnerDashboard() {
               </TabsContent>
 
               <TabsContent value="messages">
-                <OwnerMessages restaurantId={selectedRestaurantId} />
+                <OwnerMessages restaurantId={selectedRestaurantId} currentUser={currentUser} />
               </TabsContent>
             </Tabs>
           </>

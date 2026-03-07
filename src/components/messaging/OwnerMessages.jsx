@@ -196,6 +196,7 @@ export default function OwnerMessages({ restaurantId, currentUser }) {
                     </div>
                   );
                 })}
+                <div ref={messagesEndRef} />
               </div>
 
               <div className="p-4 border-t bg-white">
