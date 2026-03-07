@@ -14,6 +14,7 @@ export default function DinerAI({
   currentUser, 
   onResultsClick,
   onFiltersApply,
+  onResultsReady,
   embeddedMode = false,
   externalQuery = '',
   externalTrigger = 0,
