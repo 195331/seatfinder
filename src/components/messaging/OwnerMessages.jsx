@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { MessageCircle, Send, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import moment from 'moment';
+import { formatDistanceToNow, parseISO } from 'date-fns';
 
 export default function OwnerMessages({ restaurantId, currentUser }) {
   const [selectedThread, setSelectedThread] = useState(null);
