@@ -665,6 +665,7 @@ export default function OwnerDashboard() {
               </TabsList>
 
               <TabsContent value="seating">
+                <StaleReservationAlert restaurantId={selectedRestaurantId} />
                 <LiveSeating restaurant={currentRestaurant} />
               </TabsContent>
 
