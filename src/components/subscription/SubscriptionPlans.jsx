@@ -117,9 +117,10 @@ export default function SubscriptionPlans({ restaurantId, currentPlan = 'free' }
         subscription_expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
       });
 
-      queryClient.invalidateQueries(['subscription']);
-      queryClient.invalidateQueries(['ownedRestaurants']);
-      queryClient.invalidateQueries(['restaurant']);
+      queryClient.invalidateQueries({ queryKey: ['subscription'] });
+      queryClient.invalidateQueries({ queryKey: ['ownedRestaurants'] });
+      queryClient.invalidateQueries({ queryKey: ['restaurant'] });
+      queryClient.invalidateQueries({ queryKey: ['staffRestaurants'] });
       
       toast.success(`Successfully ${plan.id === 'free' ? 'downgraded to' : 'upgraded to'} ${plan.name}! Features are now unlocked.`);
     } catch (error) {
