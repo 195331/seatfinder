@@ -51,12 +51,16 @@ export default function OwnerMessages({ restaurantId, currentUser }) {
           customer_email: msg.sender_email,
           messages: [],
           unread_count: 0,
+          sent_count: 0,
           last_message_at: msg.created_date
         };
       }
       grouped[msg.thread_id].messages.push(msg);
       if (!msg.is_read && !msg.is_from_restaurant) {
         grouped[msg.thread_id].unread_count += 1;
+      }
+      if (msg.is_from_restaurant) {
+        grouped[msg.thread_id].sent_count += 1;
       }
     });
     return Object.values(grouped).sort((a, b) =>
