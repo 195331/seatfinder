@@ -247,7 +247,16 @@ export function useFeatureAccess(restaurantId) {
     select: (data) => data[0]
   });
 
-  const plan = subscription?.plan || 'free';
+  // Also read restaurant.subscription_plan directly as the source of truth
+  const { data: restaurantData } = useQuery({
+    queryKey: ['restaurant', restaurantId],
+    queryFn: () => base44.entities.Restaurant.filter({ id: restaurantId }),
+    enabled: !!restaurantId,
+    select: (data) => data[0]
+  });
+
+  // Prefer subscription entity, fall back to restaurant.subscription_plan
+  const plan = subscription?.plan || restaurantData?.subscription_plan || 'free';
 
   return {
     plan,
