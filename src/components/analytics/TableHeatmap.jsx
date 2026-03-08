@@ -12,7 +12,18 @@ const ATTENTION_COLORS = {
   cold: { bg: '#3b82f6', border: '#2563eb', label: 'Low Traffic', icon: Snowflake },
 };
 
+// Vibe colors: 1=Cozy(blue), 5=Energetic(orange)
+const VIBE_COLORS = [
+  { bg: '#3b82f6', border: '#2563eb', label: 'Very Cozy' },   // 1
+  { bg: '#8b5cf6', border: '#7c3aed', label: 'Relaxed' },     // 2
+  { bg: '#10b981', border: '#059669', label: 'Balanced' },    // 3
+  { bg: '#f59e0b', border: '#d97706', label: 'Lively' },      // 4
+  { bg: '#ef4444', border: '#dc2626', label: 'Energetic' },   // 5
+];
+
 export default function TableHeatmap({ restaurantId }) {
+  const [viewMode, setViewMode] = useState('normal'); // 'normal' | 'vibe'
+
   // Fetch restaurant for floor plan data
   const { data: restaurant } = useQuery({
     queryKey: ['restaurant', restaurantId],
