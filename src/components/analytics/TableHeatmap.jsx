@@ -283,35 +283,59 @@ export default function TableHeatmap({ restaurantId }) {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-4 mt-4">
-          <div className="text-center p-3 bg-red-50 rounded-lg">
-            <div className="flex items-center justify-center gap-1 text-red-600 mb-1">
-              <Flame className="w-4 h-4" />
-              <span className="font-bold">
-                {(displayTables || []).filter(t => t?.attention === 'hot').length}
-              </span>
+        {viewMode === 'normal' ? (
+          <div className="grid grid-cols-3 gap-4 mt-4">
+            <div className="text-center p-3 bg-red-50 rounded-lg">
+              <div className="flex items-center justify-center gap-1 text-red-600 mb-1">
+                <Flame className="w-4 h-4" />
+                <span className="font-bold">
+                  {(displayTables || []).filter(t => t?.attention === 'hot').length}
+                </span>
+              </div>
+              <p className="text-xs text-slate-500">Popular Tables</p>
             </div>
-            <p className="text-xs text-slate-500">Popular Tables</p>
-          </div>
-          <div className="text-center p-3 bg-amber-50 rounded-lg">
-            <div className="flex items-center justify-center gap-1 text-amber-600 mb-1">
-              <Minus className="w-4 h-4" />
-              <span className="font-bold">
-                {(displayTables || []).filter(t => t?.attention === 'medium').length}
-              </span>
+            <div className="text-center p-3 bg-amber-50 rounded-lg">
+              <div className="flex items-center justify-center gap-1 text-amber-600 mb-1">
+                <Minus className="w-4 h-4" />
+                <span className="font-bold">
+                  {(displayTables || []).filter(t => t?.attention === 'medium').length}
+                </span>
+              </div>
+              <p className="text-xs text-slate-500">Moderate</p>
             </div>
-            <p className="text-xs text-slate-500">Moderate</p>
-          </div>
-          <div className="text-center p-3 bg-blue-50 rounded-lg">
-            <div className="flex items-center justify-center gap-1 text-blue-600 mb-1">
-              <Snowflake className="w-4 h-4" />
-              <span className="font-bold">
-                {(displayTables || []).filter(t => t?.attention === 'cold').length}
-              </span>
+            <div className="text-center p-3 bg-blue-50 rounded-lg">
+              <div className="flex items-center justify-center gap-1 text-blue-600 mb-1">
+                <Snowflake className="w-4 h-4" />
+                <span className="font-bold">
+                  {(displayTables || []).filter(t => t?.attention === 'cold').length}
+                </span>
+              </div>
+              <p className="text-xs text-slate-500">Low Traffic</p>
             </div>
-            <p className="text-xs text-slate-500">Low Traffic</p>
           </div>
-        </div>
+        ) : (
+          <div className="grid grid-cols-3 gap-4 mt-4">
+            <div className="text-center p-3 bg-slate-50 rounded-lg">
+              <div className="flex items-center justify-center gap-1 mb-1" style={{ color: vibeColor.bg }}>
+                <Music className="w-4 h-4" />
+                <span className="font-bold">{avgVibeRating.toFixed(1)}</span>
+              </div>
+              <p className="text-xs text-slate-500">Avg Vibe Score</p>
+            </div>
+            <div className="text-center p-3 bg-slate-50 rounded-lg">
+              <div className="flex items-center justify-center gap-1 text-slate-700 mb-1">
+                <span className="font-bold">{vibeColor.label}</span>
+              </div>
+              <p className="text-xs text-slate-500">Vibe Type</p>
+            </div>
+            <div className="text-center p-3 bg-slate-50 rounded-lg">
+              <div className="flex items-center justify-center gap-1 text-slate-700 mb-1">
+                <span className="font-bold">{(reviews || []).filter(r => r.vibe_rating).length}</span>
+              </div>
+              <p className="text-xs text-slate-500">Vibe Reviews</p>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
