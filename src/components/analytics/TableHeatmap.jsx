@@ -112,6 +112,8 @@ export default function TableHeatmap({ restaurantId }) {
     }));
   }, [floorPlanData, tables, tablePopularity]);
 
+  const vibeColor = getVibeColor(avgVibeRating);
+
   const areas = floorPlanData?.areas || [];
 
   if (!hasFloorPlan) {
