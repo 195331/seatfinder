@@ -145,6 +145,33 @@ function VibeHeatLayer({ restaurants, activeVibes }) {
     });
 }
 
+// ─── Seating color helper ─────────────────────────────────────────────────────
+const getSeatingColor = (restaurant) => {
+  const { total_seats, available_seats, is_full } = restaurant;
+  if (is_full || available_seats === 0) return { bg: '#ef4444', border: '#b91c1c', label: 'Full' };
+  const pct = total_seats > 0 ? (available_seats / total_seats) * 100 : 100;
+  if (pct <= 40) return { bg: '#eab308', border: '#a16207', label: 'Moderate' };
+  return { bg: '#22c55e', border: '#15803d', label: 'Chill' };
+};
+
+const createSeatingIcon = (restaurant, isSelected = false) => {
+  const { bg, border } = getSeatingColor(restaurant);
+  const size = isSelected ? 38 : 30;
+  return L.divIcon({
+    className: 'custom-seating-marker',
+    html: `<div style="
+      background-color:${bg};
+      width:${size}px;height:${size}px;
+      border-radius:50%;
+      border:3px solid white;
+      box-shadow:0 2px 10px rgba(0,0,0,0.3);
+    "></div>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+    popupAnchor: [0, -(size / 2)],
+  });
+};
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function RestaurantMap({
   restaurants,
@@ -154,30 +181,19 @@ export default function RestaurantMap({
   onRestaurantClick,
 }) {
   const defaultCenter = center || [40.7178, -74.0431];
+  // 'vibe' | 'seating'
+  const [filterMode, setFilterMode] = useState('vibe');
   const [activeVibes, setActiveVibes] = useState(new Set());
-  const [showHeatmap, setShowHeatmap] = useState(false);
 
   const toggleVibe = (vibeId) => {
     setActiveVibes(prev => {
       const next = new Set(prev);
-      if (next.has(vibeId)) {
-        next.delete(vibeId);
-      } else {
-        next.add(vibeId);
-      }
-      // Auto-enable heatmap when any vibe is selected
-      setShowHeatmap(next.size > 0);
+      if (next.has(vibeId)) next.delete(vibeId); else next.add(vibeId);
       return next;
     });
   };
 
-  const clearVibes = () => {
-    setActiveVibes(new Set());
-    setShowHeatmap(false);
-  };
-
-  // Filter visible markers: if vibes active, only show matching ones
-  const visibleRestaurants = activeVibes.size > 0
+  const visibleRestaurants = (filterMode === 'vibe' && activeVibes.size > 0)
     ? restaurants.filter(r => activeVibes.has(getVibe(r)))
     : restaurants;
 
@@ -195,8 +211,8 @@ export default function RestaurantMap({
           url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
         />
 
-        {/* Heatmap glow circles */}
-        {showHeatmap && (
+        {/* Heatmap glow circles for vibe mode */}
+        {filterMode === 'vibe' && activeVibes.size > 0 && (
           <VibeHeatLayer restaurants={restaurants} activeVibes={activeVibes} />
         )}
 
@@ -206,28 +222,29 @@ export default function RestaurantMap({
             <Marker
               key={restaurant.id}
               position={[restaurant.latitude, restaurant.longitude]}
-              icon={createVibeIcon(getVibe(restaurant), selectedRestaurant?.id === restaurant.id)}
+              icon={
+                filterMode === 'seating'
+                  ? createSeatingIcon(restaurant, selectedRestaurant?.id === restaurant.id)
+                  : createVibeIcon(getVibe(restaurant), selectedRestaurant?.id === restaurant.id)
+              }
               eventHandlers={{ click: () => onRestaurantSelect(restaurant) }}
             />
           ) : null
         )}
       </MapContainer>
 
-      {/* ── Vibe Filter Panel ── */}
-      <div className="absolute top-3 left-3 z-[1000] flex flex-col gap-2">
-        {/* Header pill */}
-        <div className="flex items-center gap-2 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-md border border-slate-200">
-          <Zap className="w-3.5 h-3.5 text-purple-600" />
-          <span className="text-xs font-semibold text-slate-700">Vibe Filter</span>
-          {activeVibes.size > 0 && (
-            <button onClick={clearVibes} className="ml-1 text-slate-400 hover:text-slate-700 transition-colors text-xs">
-              ✕ Clear
-            </button>
-          )}
-        </div>
+      {/* ── Toggle button top-right ── */}
+      <button
+        onClick={() => { setFilterMode(m => m === 'vibe' ? 'seating' : 'vibe'); setActiveVibes(new Set()); }}
+        className="absolute top-3 right-3 z-[1000] flex items-center gap-1.5 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-md border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-white transition-all"
+      >
+        <Zap className="w-3.5 h-3.5 text-purple-500" />
+        {filterMode === 'vibe' ? 'Vibe Filter' : 'Seating Filter'}
+      </button>
 
-        {/* Vibe toggles */}
-        <div className="flex flex-col gap-1.5">
+      {/* ── Vibe filter pills (left side, vibe mode only) ── */}
+      {filterMode === 'vibe' && (
+        <div className="absolute top-3 left-3 z-[1000] flex flex-col gap-1.5">
           {VIBES.map(vibe => {
             const isActive = activeVibes.has(vibe.id);
             const count = restaurants.filter(r => getVibe(r) === vibe.id && r.latitude && r.longitude).length;
@@ -245,35 +262,30 @@ export default function RestaurantMap({
               >
                 <span className="text-base leading-none">{vibe.icon}</span>
                 <span>{vibe.label}</span>
-                <span
-                  className={cn(
-                    "ml-auto text-xs px-1.5 py-0.5 rounded-full font-semibold",
-                    isActive ? "bg-white/25 text-white" : "bg-slate-100 text-slate-500"
-                  )}
-                >
+                <span className={cn("ml-auto text-xs px-1.5 py-0.5 rounded-full font-semibold", isActive ? "bg-white/25 text-white" : "bg-slate-100 text-slate-500")}>
                   {count}
                 </span>
               </button>
             );
           })}
         </div>
+      )}
 
-        {/* Legend when heatmap is on */}
-        {showHeatmap && (
-          <div className="mt-1 bg-white/90 backdrop-blur-sm rounded-xl px-3 py-2 shadow border border-slate-200 text-xs text-slate-500">
-            <div className="font-semibold text-slate-700 mb-1">Active vibes shown as glow</div>
-            {VIBES.filter(v => activeVibes.has(v.id)).map(v => (
-              <div key={v.id} className="flex items-center gap-1.5 mt-0.5">
-                <span
-                  className="w-2.5 h-2.5 rounded-full inline-block"
-                  style={{ backgroundColor: v.color }}
-                />
-                <span>{v.description}</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      {/* ── Seating legend (left side, seating mode only) ── */}
+      {filterMode === 'seating' && (
+        <div className="absolute top-3 left-3 z-[1000] flex flex-col gap-1.5 bg-white/90 backdrop-blur-sm rounded-xl px-3 py-2.5 shadow-md border border-slate-200">
+          {[
+            { color: '#22c55e', label: 'Chill' },
+            { color: '#eab308', label: 'Moderate' },
+            { color: '#ef4444', label: 'Full' },
+          ].map(({ color, label }) => (
+            <div key={label} className="flex items-center gap-2 text-xs text-slate-700 font-medium">
+              <span className="w-3 h-3 rounded-full inline-block" style={{ backgroundColor: color }} />
+              {label}
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* ── Selected Restaurant Card ── */}
       {selectedRestaurant && (
@@ -287,8 +299,7 @@ export default function RestaurantMap({
             <X className="w-4 h-4" />
           </Button>
 
-          {/* Vibe badge on the card */}
-          {(() => {
+          {filterMode === 'vibe' ? (() => {
             const vibe = VIBES.find(v => v.id === getVibe(selectedRestaurant));
             return (
               <div
@@ -298,24 +309,27 @@ export default function RestaurantMap({
                 {vibe.icon} {vibe.label}
               </div>
             );
+          })() : (() => {
+            const s = getSeatingColor(selectedRestaurant);
+            return (
+              <div
+                className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full mb-2 text-white"
+                style={{ backgroundColor: s.bg }}
+              >
+                {s.label}
+              </div>
+            );
           })()}
 
-          <div
-            className="flex gap-4 cursor-pointer"
-            onClick={() => onRestaurantClick(selectedRestaurant)}
-          >
+          <div className="flex gap-4 cursor-pointer" onClick={() => onRestaurantClick(selectedRestaurant)}>
             <img
               src={selectedRestaurant.cover_image || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=200&q=80'}
               alt={selectedRestaurant.name}
               className="w-24 h-24 rounded-xl object-cover"
             />
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-lg text-slate-900 truncate">
-                {selectedRestaurant.name}
-              </h3>
-              <p className="text-slate-600 text-sm mb-2">
-                {selectedRestaurant.cuisine} • {selectedRestaurant.neighborhood}
-              </p>
+              <h3 className="font-semibold text-lg text-slate-900 truncate">{selectedRestaurant.name}</h3>
+              <p className="text-slate-600 text-sm mb-2">{selectedRestaurant.cuisine} • {selectedRestaurant.neighborhood}</p>
               <div className="flex items-center justify-between">
                 <OccupancyBadge
                   available={selectedRestaurant.available_seats}
