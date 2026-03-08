@@ -63,6 +63,16 @@ export default function TableHeatmap({ restaurantId }) {
     return counts;
   }, [reservations]);
 
+  // Calculate average vibe rating from reviews
+  const avgVibeRating = useMemo(() => {
+    const vibeReviews = (reviews || []).filter(r => r.vibe_rating);
+    if (vibeReviews.length === 0) return 3;
+    return vibeReviews.reduce((sum, r) => sum + r.vibe_rating, 0) / vibeReviews.length;
+  }, [reviews]);
+
+  // Get vibe color based on rating 1-5
+  const getVibeColor = (rating) => VIBE_COLORS[Math.max(0, Math.min(4, Math.round(rating) - 1))];
+
   // Determine attention level for each table
   const getAttentionLevel = (tableId) => {
     const count = tablePopularity[tableId] || 0;
