@@ -108,6 +108,18 @@ export default function OwnerMessages({ restaurantId, currentUser }) {
 
   const totalUnread = threads.reduce((sum, t) => sum + t.unread_count, 0);
 
+  const relativeTime = (dateStr) => {
+    if (!dateStr) return '';
+    try {
+      const date = typeof dateStr === 'string' && !dateStr.endsWith('Z')
+        ? parseISO(dateStr + 'Z')
+        : parseISO(dateStr);
+      return formatDistanceToNow(date, { addSuffix: true });
+    } catch {
+      return '';
+    }
+  };
+
   return (
     <Card className="border-0 shadow-lg">
       <CardHeader>
