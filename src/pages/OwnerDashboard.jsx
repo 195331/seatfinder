@@ -666,6 +666,25 @@ export default function OwnerDashboard() {
 
               <TabsContent value="seating">
                 <StaleReservationAlert restaurantId={selectedRestaurantId} />
+                {/* Table Status Legend */}
+                <div className="flex flex-wrap gap-3 mb-4 px-1">
+                  <div className="flex items-center gap-1.5 text-xs text-slate-600">
+                    <span className="w-3 h-3 rounded-full bg-emerald-500 inline-block" />
+                    Available
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs text-slate-600">
+                    <span className="w-3 h-3 rounded-full bg-amber-400 inline-block" />
+                    Arrived Early
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs text-slate-600">
+                    <span className="w-3 h-3 rounded-full bg-red-500 inline-block" />
+                    Occupied / Checked In
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs text-slate-600">
+                    <span className="w-3 h-3 rounded-full bg-blue-400 inline-block" />
+                    Reserved
+                  </div>
+                </div>
                 <LiveSeating restaurant={currentRestaurant} />
               </TabsContent>
 
