@@ -45,6 +45,13 @@ export default function TableHeatmap({ restaurantId }) {
     enabled: !!restaurantId,
   });
 
+  // Fetch reviews for vibe data
+  const { data: reviews = [] } = useQuery({
+    queryKey: ['reviews', restaurantId],
+    queryFn: () => base44.entities.Review.filter({ restaurant_id: restaurantId }),
+    enabled: !!restaurantId && viewMode === 'vibe',
+  });
+
   // Calculate table popularity based on reservations
   const tablePopularity = useMemo(() => {
     const counts = {};
