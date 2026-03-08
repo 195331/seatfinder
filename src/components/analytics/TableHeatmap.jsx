@@ -139,28 +139,59 @@ export default function TableHeatmap({ restaurantId }) {
   return (
     <Card className="border-0 shadow-lg">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <LayoutGrid className="w-5 h-5" />
-          Table Turnover Heatmap
-        </CardTitle>
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <CardTitle className="flex items-center gap-2">
+            <LayoutGrid className="w-5 h-5" />
+            Table Turnover Heatmap
+          </CardTitle>
+          {/* View Mode Toggle */}
+          <div className="flex items-center gap-1 bg-slate-100 rounded-full p-1">
+            <button
+              onClick={() => setViewMode('normal')}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all",
+                viewMode === 'normal' ? "bg-white shadow text-slate-800" : "text-slate-500 hover:text-slate-700"
+              )}
+            >
+              <Flame className="w-3.5 h-3.5" /> Popularity
+            </button>
+            <button
+              onClick={() => setViewMode('vibe')}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all",
+                viewMode === 'vibe' ? "bg-white shadow text-slate-800" : "text-slate-500 hover:text-slate-700"
+              )}
+            >
+              <Music className="w-3.5 h-3.5" /> Vibe
+            </button>
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
         {/* Legend */}
-        <div className="flex flex-wrap gap-4 mb-4">
-          {Object.entries(ATTENTION_COLORS).map(([key, value]) => {
-            const Icon = value.icon;
-            return (
-              <div key={key} className="flex items-center gap-2">
-                <div 
-                  className="w-4 h-4 rounded"
-                  style={{ backgroundColor: value.bg }}
-                />
-                <Icon className="w-4 h-4" style={{ color: value.bg }} />
-                <span className="text-sm text-slate-600">{value.label}</span>
+        {viewMode === 'normal' ? (
+          <div className="flex flex-wrap gap-4 mb-4">
+            {Object.entries(ATTENTION_COLORS).map(([key, value]) => {
+              const Icon = value.icon;
+              return (
+                <div key={key} className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded" style={{ backgroundColor: value.bg }} />
+                  <Icon className="w-4 h-4" style={{ color: value.bg }} />
+                  <span className="text-sm text-slate-600">{value.label}</span>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="flex flex-wrap gap-3 mb-4">
+            {VIBE_COLORS.map((v, i) => (
+              <div key={i} className="flex items-center gap-1.5">
+                <div className="w-3.5 h-3.5 rounded-full" style={{ backgroundColor: v.bg }} />
+                <span className="text-xs text-slate-600">{v.label}</span>
               </div>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        )}
 
         {/* Floor Plan View */}
         <div className="relative bg-slate-100 rounded-xl overflow-hidden" style={{ height: 350 }}>
