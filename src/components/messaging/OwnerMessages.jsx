@@ -214,7 +214,7 @@ export default function OwnerMessages({ restaurantId, currentUser }) {
                           <p className="text-sm">{msg.message}</p>
                         </div>
                         <p className="text-xs text-slate-400 mt-1 px-2">
-                          {moment(msg.created_date).fromNow()}
+                          {relativeTime(msg.created_date)}
                         </p>
                       </div>
                     </div>
