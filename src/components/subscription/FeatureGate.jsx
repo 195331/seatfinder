@@ -7,6 +7,34 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { useFeatureAccess } from './SubscriptionPlans';
 
+// ── ProGate: blur overlay variant ────────────────────────────────────────────
+export function ProGate({ restaurantId, requiredPlan = 'pro', children }) {
+  const access = useFeatureAccess(restaurantId);
+  const featureUnlocked = requiredPlan === 'plus' ? access.isPlus : (access.isPro || access.isPlus);
+
+  if (featureUnlocked) return children;
+
+  return (
+    <div className="relative rounded-xl overflow-hidden">
+      <div className="pointer-events-none select-none blur-sm opacity-60">
+        {children}
+      </div>
+      <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/60 backdrop-blur-[2px] z-10">
+        <Lock className="w-8 h-8 text-indigo-400 mb-2" />
+        <p className="font-semibold text-slate-800 mb-1 text-sm">
+          {requiredPlan === 'plus' ? 'Plus' : 'Pro'} Feature
+        </p>
+        <Link to={createPageUrl('Pricing') + `?restaurant_id=${restaurantId}`}>
+          <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 mt-1 text-xs">
+            Upgrade to {requiredPlan === 'plus' ? 'Plus' : 'Pro'} to Unlock
+          </Button>
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+// ── FeatureGate: full replacement card variant ────────────────────────────────
 export default function FeatureGate({ 
   restaurantId, 
   feature, 
@@ -16,7 +44,7 @@ export default function FeatureGate({
   description 
 }) {
   // TEMPORARY: All features unlocked for development
-  // TODO: Re-enable when ready to enforce subscription plans
+  // TODO: Set to false to enforce subscription plans
   const TEMP_UNLOCK_ALL = true;
   
   const access = useFeatureAccess(restaurantId);
@@ -33,9 +61,7 @@ export default function FeatureGate({
 
   const hasAccess = TEMP_UNLOCK_ALL || (featureChecks[feature] ?? false);
 
-  if (hasAccess) {
-    return children;
-  }
+  if (hasAccess) return children;
 
   return (
     <Card className="border-2 border-dashed border-slate-300 bg-slate-50/50">
@@ -59,9 +85,9 @@ export default function FeatureGate({
           </Badge>
           <span className="text-sm text-slate-500">required</span>
         </div>
-        <Link to={createPageUrl('RestaurantSettings') + `?id=${restaurantId}&tab=subscription`}>
+        <Link to={createPageUrl('Pricing') + `?restaurant_id=${restaurantId}`}>
           <Button className="bg-indigo-600 hover:bg-indigo-700">
-            Upgrade Now
+            Upgrade to Pro to Unlock
           </Button>
         </Link>
       </CardContent>
