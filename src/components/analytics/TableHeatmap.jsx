@@ -224,7 +224,7 @@ export default function TableHeatmap({ restaurantId }) {
 
             {/* Tables */}
             {(displayTables || []).map((table) => {
-              const attention = ATTENTION_COLORS[table.attention];
+              const color = viewMode === 'vibe' ? vibeColor : ATTENTION_COLORS[table.attention];
               const size = Math.min(table.width || 50, table.height || 50);
               
               return (
@@ -234,8 +234,8 @@ export default function TableHeatmap({ restaurantId }) {
                       cx={table.x + size / 2}
                       cy={table.y + size / 2}
                       r={size / 2 - 2}
-                      fill={attention.bg}
-                      stroke={attention.border}
+                      fill={color.bg}
+                      stroke={color.border}
                       strokeWidth={3}
                       className="transition-all duration-300"
                     />
@@ -245,8 +245,8 @@ export default function TableHeatmap({ restaurantId }) {
                       y={table.y}
                       width={table.width || 50}
                       height={table.height || 50}
-                      fill={attention.bg}
-                      stroke={attention.border}
+                      fill={color.bg}
+                      stroke={color.border}
                       strokeWidth={3}
                       rx={table.shape === 'round' ? 25 : 6}
                       className="transition-all duration-300"
@@ -264,7 +264,7 @@ export default function TableHeatmap({ restaurantId }) {
                   >
                     {table.label}
                   </text>
-                  {/* Reservation count */}
+                  {/* Sub-label */}
                   <text
                     x={table.x + (table.width || 50) / 2}
                     y={table.y + (table.height || 50) / 2 + 12}
@@ -274,7 +274,7 @@ export default function TableHeatmap({ restaurantId }) {
                     fontSize={9}
                     opacity={0.9}
                   >
-                    {table.reservationCount} res.
+                    {viewMode === 'vibe' ? `${avgVibeRating.toFixed(1)}★` : `${table.reservationCount} res.`}
                   </text>
                 </g>
               );
