@@ -63,12 +63,13 @@ import MyReservations from './pages/MyReservations';
 import OwnerAnalytics from './pages/OwnerAnalytics';
 import OwnerDashboard from './pages/OwnerDashboard';
 import Profile from './pages/Profile';
+import RedeemReward from './pages/RedeemReward';
 import RestaurantDetail from './pages/RestaurantDetail';
 import RestaurantSettings from './pages/RestaurantSettings';
 import ReviewSubmission from './pages/ReviewSubmission';
 import Settings from './pages/Settings';
 import UserProfile from './pages/UserProfile';
-import RedeemReward from './pages/RedeemReward';
+import Pricing from './pages/Pricing';
 import __Layout from './Layout.jsx';
 
 
@@ -89,12 +90,13 @@ export const PAGES = {
     "OwnerAnalytics": OwnerAnalytics,
     "OwnerDashboard": OwnerDashboard,
     "Profile": Profile,
+    "RedeemReward": RedeemReward,
     "RestaurantDetail": RestaurantDetail,
     "RestaurantSettings": RestaurantSettings,
     "ReviewSubmission": ReviewSubmission,
     "Settings": Settings,
     "UserProfile": UserProfile,
-    "RedeemReward": RedeemReward,
+    "Pricing": Pricing,
 }
 
 export const pagesConfig = {
