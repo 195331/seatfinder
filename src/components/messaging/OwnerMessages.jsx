@@ -160,13 +160,21 @@ export default function OwnerMessages({ restaurantId, currentUser }) {
                   </div>
                   <div className="text-right">
                     <p className="text-xs text-slate-400">
-                      {moment(thread.last_message_at).fromNow()}
+                      {relativeTime(thread.last_message_at)}
                     </p>
-                    {thread.unread_count > 0 && (
-                      <Badge className="mt-1 bg-blue-600 text-white">
-                        {thread.unread_count}
-                      </Badge>
-                    )}
+                    <div className="flex items-center gap-1 mt-1 justify-end">
+                      {thread.unread_count > 0 && (
+                        <Badge className="bg-blue-600 text-white">
+                          {thread.unread_count}
+                        </Badge>
+                      )}
+                      {thread.sent_count > 0 && (
+                        <Badge className="bg-blue-500 text-white flex items-center gap-1">
+                          <Send className="w-2.5 h-2.5" />
+                          {thread.sent_count}
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <p className="text-sm text-slate-600 line-clamp-2">
