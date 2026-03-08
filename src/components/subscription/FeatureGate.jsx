@@ -85,8 +85,8 @@ export default function FeatureGate({
           <span className="text-sm text-slate-500">required</span>
         </div>
         <Link to={createPageUrl('Pricing') + `?restaurant_id=${restaurantId}`}>
-          <Button className="bg-indigo-600 hover:bg-indigo-700">
-            Upgrade to Pro to Unlock
+          <Button className={requiredPlan === 'plus' ? 'bg-amber-600 hover:bg-amber-700' : 'bg-indigo-600 hover:bg-indigo-700'}>
+            Upgrade to {requiredPlan === 'plus' ? 'Plus' : 'Pro'} to Unlock
           </Button>
         </Link>
       </CardContent>
