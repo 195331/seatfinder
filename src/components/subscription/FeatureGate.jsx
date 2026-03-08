@@ -43,10 +43,6 @@ export default function FeatureGate({
   title,
   description 
 }) {
-  // TEMPORARY: All features unlocked for development
-  // TODO: Set to false to enforce subscription plans
-  const TEMP_UNLOCK_ALL = true;
-  
   const access = useFeatureAccess(restaurantId);
   
   const featureChecks = {
@@ -56,10 +52,13 @@ export default function FeatureGate({
     floorplan: access.hasAdvancedFloorPlan,
     sms: access.hasSMS,
     aiReservations: access.hasAIReservations,
-    aiAnalyzer: access.hasAIAnalyzer
+    aiAnalyzer: access.hasAIAnalyzer,
+    loyalty: access.hasLoyalty,
+    menu: access.hasMenu,
+    promotions: access.hasPromotions,
   };
 
-  const hasAccess = TEMP_UNLOCK_ALL || (featureChecks[feature] ?? false);
+  const hasAccess = featureChecks[feature] ?? false;
 
   if (hasAccess) return children;
 
