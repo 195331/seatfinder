@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { format } from 'date-fns';
 import moment from 'moment';
 import { cn } from "@/lib/utils";
+import { checkTableConflict } from '@/components/reservations/ConflictChecker';
 
 const formatTime = (time) => {
   if (!time) return '';
