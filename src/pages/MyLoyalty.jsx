@@ -103,37 +103,45 @@ export default function MyLoyalty() {
     : null;
   const selectedProgramData = selectedProgram ? programMap[selectedProgram] : null;
 
-  const generateRedemptionLink = async (reward, loyalty) => {
-    setRedeemingReward({ reward, loyalty });
-    setGeneratedLink(null);
-    setCopied(false);
-
-    const token = crypto.randomUUID();
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString(); // 15 min
-
-    await base44.entities.RewardRedemption.create({
-      token,
-      user_id: currentUser.id,
-      user_name: currentUser.full_name,
-      restaurant_id: loyalty.restaurant_id,
-      loyalty_id: loyalty.id,
-      reward_name: reward.name,
-      reward_description: reward.description || '',
-      points_cost: reward.points_required,
-      status: 'pending',
-      expires_at: expiresAt
-    });
-
-    const link = `${window.location.origin}${createPageUrl('RedeemReward')}?token=${token}`;
-    setGeneratedLink(link);
-  };
-
-  const copyLink = () => {
-    navigator.clipboard.writeText(generatedLink);
-    setCopied(true);
-    toast.success('Link copied!');
-    setTimeout(() => setCopied(false), 2000);
-  };
+  const redeemMutation = useMutation({
+    mutationFn: async ({ reward, loyalty }) => {
+      const newAvailable = (loyalty.available_points || 0) - reward.points_required;
+      const newTotal = (loyalty.total_points || 0) - reward.points_required;
+      const redemptionEntry = {
+        reward_id: reward.id || reward.name,
+        redeemed_at: new Date().toISOString(),
+        points_used: reward.points_required,
+        reward_name: reward.name,
+      };
+      await base44.entities.CustomerLoyalty.update(loyalty.id, {
+        available_points: newAvailable,
+        total_points: newTotal,
+        rewards_redeemed: [...(loyalty.rewards_redeemed || []), redemptionEntry],
+      });
+      // Also log a RewardRedemption record for staff visibility
+      const token = crypto.randomUUID();
+      await base44.entities.RewardRedemption.create({
+        token,
+        user_id: currentUser.id,
+        user_name: currentUser.full_name,
+        restaurant_id: loyalty.restaurant_id,
+        loyalty_id: loyalty.id,
+        reward_name: reward.name,
+        reward_description: reward.description || '',
+        points_cost: reward.points_required,
+        status: 'redeemed',
+        redeemed_at: new Date().toISOString(),
+        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      });
+      return newAvailable;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['myLoyalties']);
+      setConfirmed(true);
+      toast.success('Reward redeemed! Points deducted.');
+    },
+    onError: () => toast.error('Redemption failed, please try again.'),
+  });
 
   if (!currentUser || isLoading) {
     return (
