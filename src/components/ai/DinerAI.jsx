@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Sparkles, MapPin, Clock, DollarSign, Loader2, Star, TrendingUp } from 'lucide-react';
+import { Sparkles, Clock, Loader2, Star } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import moment from 'moment';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function DinerAI({ 
   restaurants, 
