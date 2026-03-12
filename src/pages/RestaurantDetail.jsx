@@ -204,6 +204,19 @@ export default function RestaurantDetail() {
             return { conflict: true };
           }
         }
+        // --- Date/time conflict check: prevent double-booking same table/slot ---
+        if (payload.reservation_date && payload.reservation_time) {
+          const { conflict: timeConflict } = await checkTableConflict(
+            payload.table_id,
+            payload.reservation_date,
+            payload.reservation_time
+          );
+          if (timeConflict) {
+            queryClient.setQueryData(['tables', restaurantId], freshTables);
+            return { conflict: true, reason: 'time_overlap' };
+          }
+        }
+
         // Also mark table as reserved immediately so others see it
         await base44.entities.Table.update(payload.table_id, { status: 'reserved' }).catch(() => {});
         queryClient.setQueryData(['tables', restaurantId], (old = []) =>
