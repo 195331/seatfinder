@@ -217,7 +217,7 @@ export default function OwnerDashboard() {
   const { data: tablesRaw } = useQuery({
     queryKey: ["tables", selectedRestaurantId],
     enabled: !!selectedRestaurantId,
-    refetchInterval: 3000,
+    refetchInterval: 30000,
     queryFn: async () => {
       return base44.entities.Table.filter({ restaurant_id: selectedRestaurantId });
     },
@@ -251,11 +251,11 @@ export default function OwnerDashboard() {
   });
   const recentEvents = useMemo(() => norm(recentEventsRaw), [recentEventsRaw]);
 
-  // Reservations — poll every 3s for real-time dashboard awareness
+  // Reservations — poll every 30s
   const { data: reservationsRaw } = useQuery({
     queryKey: ["reservations", selectedRestaurantId],
     enabled: !!selectedRestaurantId,
-    refetchInterval: 3000,
+    refetchInterval: 30000,
     queryFn: async () => {
       return base44.entities.Reservation.filter(
         { restaurant_id: selectedRestaurantId },
