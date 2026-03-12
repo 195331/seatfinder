@@ -27,9 +27,8 @@ export default function MyLoyalty() {
   const queryClient = useQueryClient();
   const [currentUser, setCurrentUser] = useState(null);
   const [selectedProgram, setSelectedProgram] = useState(null);
-  const [redeemingReward, setRedeemingReward] = useState(null); // { reward, loyaltyId, restaurantId }
-  const [generatedLink, setGeneratedLink] = useState(null);
-  const [copied, setCopied] = useState(false);
+  const [redeemingReward, setRedeemingReward] = useState(null); // { reward, loyalty } — confirm dialog
+  const [confirmed, setConfirmed] = useState(false);
 
   useEffect(() => {
     const fetchUser = async () => {
