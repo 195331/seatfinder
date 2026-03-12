@@ -61,11 +61,11 @@ export default function DinerAI({
 
 User Query: "${q}"
 
-Available Restaurants: ${JSON.stringify(context.restaurants, null, 2)}
+Available Restaurants: ${JSON.stringify(restaurantList)}
 
-User Preferences: ${JSON.stringify(context.user_preferences, null, 2)}
+User Preferences: ${JSON.stringify({ taste_profile: tasteProfile, favorite_cuisines: preferences.favorite_cuisines || [], dietary_restrictions: preferences.dietary_restrictions || [] })}
 
-Current Time: ${context.current_time}
+Current Time: ${new Date().toISOString()}
 
 Analyze the query and return the top 3-5 restaurant matches. For each match:
 1. Calculate confidence (High/Medium/Low) based on:
