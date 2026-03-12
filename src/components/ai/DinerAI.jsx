@@ -235,7 +235,26 @@ Return JSON format:
         </div>
       )}
 
+      <AnimatePresence>
+      {isProcessing && (
+        <motion.div
+          key="loading"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0 }}
+          className="flex items-center gap-3 px-4 py-3 bg-purple-50 border border-purple-200 rounded-xl"
+        >
+          <Loader2 className="w-4 h-4 text-purple-500 animate-spin shrink-0" />
+          <span className="text-sm text-purple-700 font-medium">Finding your perfect match…</span>
+        </motion.div>
+      )}
       {results && (
+        <motion.div
+          key="results"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
+        >
         <Card className="border-purple-200 bg-gradient-to-br from-purple-50 to-indigo-50">
           <CardContent className="p-6">
             <div className="flex items-start gap-3 mb-4">
