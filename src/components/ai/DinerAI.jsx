@@ -327,7 +327,6 @@ Return JSON format:
         </Card>
         </motion.div>
       )}
-      </AnimatePresence>
 
       {!embeddedMode && (
         <div className="text-xs text-slate-500 text-center">
