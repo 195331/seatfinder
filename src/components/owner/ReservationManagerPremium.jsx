@@ -80,6 +80,16 @@ export default function ReservationManagerPremium({ reservations = [], restauran
 
   const updateReservationMutation = useMutation({
     mutationFn: async ({ reservationId, status, userEmail, userName, userId, partySize, date, time, tableId }) => {
+      // Conflict check before approving
+      if (status === 'approved' && tableId && date && time) {
+        const { conflict, conflicting } = await checkTableConflict(tableId, date, time, reservationId);
+        if (conflict) {
+          throw new Error(
+            `Double-booking conflict: Table is already reserved for ${conflicting.user_name || 'another guest'} at ${conflicting.reservation_time} on ${conflicting.reservation_date}.`
+          );
+        }
+      }
+
       await base44.entities.Reservation.update(reservationId, {
         status,
         owner_response_at: new Date().toISOString()
