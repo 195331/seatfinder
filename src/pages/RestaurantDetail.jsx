@@ -843,17 +843,17 @@ export default function RestaurantDetail() {
           </DialogHeader>
           <div className="py-4 space-y-3">
             <p className="text-slate-700 font-medium text-base">
-              Someone just reserved this table before you!
+              This table is already booked at that time!
             </p>
             <p className="text-slate-500 text-sm">
-              It happens — the table is now taken. Please pick a different table or try another time.
+              There's already a reservation within 2 hours of your chosen time. Please pick a different table or try another time slot.
             </p>
           </div>
           <Button
             className="w-full"
             onClick={() => setShowConflictDialog(false)}
           >
-            Choose Another Table
+            Choose Another Table or Time
           </Button>
         </DialogContent>
       </Dialog>
