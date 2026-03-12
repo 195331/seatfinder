@@ -851,7 +851,7 @@ export default function Home() {
             )}
 
             {/* AI Search - Always at Top when Active */}
-            <div ref={aiResultsRef} className={showAISearch ? "mb-8" : "hidden"}>
+            <div ref={aiResultsRef} className={showAISearch ? "mb-8 scroll-mt-24" : "hidden"}>
               <DinerAI
                 restaurants={filteredRestaurants}
                 currentUser={currentUser}
