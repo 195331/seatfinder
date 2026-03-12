@@ -393,50 +393,83 @@ export default function MyLoyalty() {
         )}
       </main>
 
-      {/* Redemption Link Modal */}
+      {/* Redeem Confirm Modal */}
       {redeemingReward && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4">
           <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-bold text-lg">Redemption Link</h2>
-              <button onClick={() => { setRedeemingReward(null); setGeneratedLink(null); }} className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center hover:bg-slate-200">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="bg-amber-50 rounded-2xl p-4 mb-4 border border-amber-200">
-              <p className="font-semibold text-slate-900">{redeemingReward.reward.name}</p>
-              {redeemingReward.reward.description && (
-                <p className="text-sm text-slate-600 mt-0.5">{redeemingReward.reward.description}</p>
-              )}
-              <p className="text-amber-700 font-bold mt-2">{redeemingReward.reward.points_required.toLocaleString()} pts</p>
-            </div>
-
-            {!generatedLink ? (
-              <div className="flex items-center justify-center py-6">
-                <Loader2 className="w-6 h-6 animate-spin text-amber-500" />
-                <span className="ml-2 text-slate-500 text-sm">Generating link...</span>
-              </div>
-            ) : (
+            {!confirmed ? (
               <>
-                <p className="text-sm text-slate-500 mb-3 text-center">Show this link to restaurant staff to confirm your reward. It expires in <strong>15 minutes</strong>.</p>
-                
-                <div className="bg-slate-50 rounded-xl p-3 mb-4 flex items-center gap-2 border border-slate-200">
-                  <p className="text-xs text-slate-600 flex-1 truncate font-mono">{generatedLink}</p>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="font-bold text-lg">Redeem Reward</h2>
+                  <button onClick={() => setRedeemingReward(null)} className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center hover:bg-slate-200">
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
 
-                <div className="flex gap-2">
-                  <Button onClick={copyLink} variant="outline" className="flex-1 rounded-xl">
-                    {copied ? <><Check className="w-4 h-4 mr-1 text-emerald-600" /> Copied!</> : <><Copy className="w-4 h-4 mr-1" /> Copy Link</>}
-                  </Button>
-                  <Button
-                    onClick={() => window.open(generatedLink, '_blank')}
-                    className="flex-1 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white border-0"
-                  >
-                    <ExternalLink className="w-4 h-4 mr-1" /> Open
-                  </Button>
+                <div className="bg-amber-50 rounded-2xl p-4 mb-4 border border-amber-200">
+                  <p className="font-semibold text-slate-900 text-lg">{redeemingReward.reward.name}</p>
+                  {redeemingReward.reward.description && (
+                    <p className="text-sm text-slate-600 mt-0.5">{redeemingReward.reward.description}</p>
+                  )}
+                  <div className="mt-3 pt-3 border-t border-amber-200 flex items-center justify-between">
+                    <span className="text-sm text-slate-500">Points cost</span>
+                    <span className="font-bold text-amber-700 text-lg">{redeemingReward.reward.points_required.toLocaleString()} pts</span>
+                  </div>
+                  <div className="flex items-center justify-between mt-1">
+                    <span className="text-sm text-slate-500">Remaining after</span>
+                    <span className="font-bold text-slate-700">
+                      {((redeemingReward.loyalty.available_points || 0) - redeemingReward.reward.points_required).toLocaleString()} pts
+                    </span>
+                  </div>
                 </div>
+
+                {/* Warning */}
+                <div className="flex items-start gap-2 bg-orange-50 border border-orange-200 rounded-xl p-3 mb-5">
+                  <AlertTriangle className="w-4 h-4 text-orange-500 mt-0.5 shrink-0" />
+                  <p className="text-xs text-orange-700">
+                    <strong>Heads up!</strong> Redeeming this reward will immediately deduct <strong>{redeemingReward.reward.points_required.toLocaleString()} points</strong> from your balance. Show this to a restaurant employee to claim your reward.
+                  </p>
+                </div>
+
+                <Button
+                  onClick={() => redeemMutation.mutate(redeemingReward)}
+                  disabled={redeemMutation.isPending}
+                  className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold h-12 rounded-xl"
+                >
+                  {redeemMutation.isPending
+                    ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Processing...</>
+                    : `Confirm & Redeem — ${redeemingReward.reward.points_required.toLocaleString()} pts`
+                  }
+                </Button>
               </>
+            ) : (
+              /* Success state — show to staff */
+              <div className="text-center">
+                <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle className="w-9 h-9 text-emerald-600" />
+                </div>
+                <h2 className="font-bold text-xl text-slate-900 mb-1">Reward Redeemed!</h2>
+                <p className="text-sm text-slate-500 mb-6">Points have been deducted from your balance.</p>
+
+                <div className="bg-emerald-50 rounded-2xl p-5 mb-4 text-left border border-emerald-200">
+                  <p className="text-xs font-semibold text-emerald-700 uppercase mb-1">Customer</p>
+                  <p className="font-bold text-slate-900 text-lg mb-3">{currentUser?.full_name}</p>
+                  <p className="text-xs font-semibold text-emerald-700 uppercase mb-1">Reward</p>
+                  <p className="font-bold text-slate-900 text-lg">{redeemingReward.reward.name}</p>
+                  <div className="mt-3 pt-3 border-t border-emerald-200 flex items-center justify-between text-sm">
+                    <span className="text-slate-500">Points deducted</span>
+                    <span className="font-bold text-red-600">−{redeemingReward.reward.points_required.toLocaleString()} pts</span>
+                  </div>
+                </div>
+
+                <p className="text-xs text-slate-400 bg-slate-50 rounded-xl p-3 border border-slate-200 mb-4">
+                  🛎️ <strong>Staff:</strong> This screen confirms the reward has been redeemed. Please apply the reward to this customer.
+                </p>
+
+                <Button onClick={() => setRedeemingReward(null)} className="w-full rounded-xl" variant="outline">
+                  Done
+                </Button>
+              </div>
             )}
           </div>
         </div>
