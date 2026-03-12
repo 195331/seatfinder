@@ -252,33 +252,72 @@ export default function MyLoyalty() {
               </TabsList>
 
               <TabsContent value="rewards" className="mt-4 space-y-3">
-                {selectedProgramData?.rewards?.map((reward, idx) => {
-                  const canRedeem = (selectedLoyalty?.available_points || 0) >= reward.points_required;
-                  return (
-                    <Card key={idx} className={cn("border-0 shadow-sm", !canRedeem && "opacity-60")}>
-                      <CardContent className="p-4 flex items-center justify-between">
-                        <div>
-                          <h4 className="font-medium">{reward.name}</h4>
-                          <p className="text-sm text-slate-500">{reward.description}</p>
-                          <Badge variant="outline" className="mt-2">
-                            {reward.points_required.toLocaleString()} pts
-                          </Badge>
-                        </div>
-                        <Button 
-                          size="sm" 
-                          disabled={!canRedeem}
-                          onClick={() => canRedeem && generateRedemptionLink(reward, selectedLoyalty)}
-                          className="rounded-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white border-0"
-                        >
-                          <Gift className="w-3 h-3 mr-1" />
-                          Redeem
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-                {(!selectedProgramData?.rewards || selectedProgramData.rewards.length === 0) && (
-                  <p className="text-center text-slate-500 py-8">No rewards available yet</p>
+                {selectedProgramData?.rewards?.length > 0 ? (
+                  <>
+                    <p className="text-xs text-slate-500 mb-3">
+                      You have <strong>{(selectedLoyalty?.available_points || 0).toLocaleString()} pts</strong>. Grayed-out rewards require more points.
+                    </p>
+                    {selectedProgramData.rewards
+                      .slice()
+                      .sort((a, b) => a.points_required - b.points_required)
+                      .map((reward, idx) => {
+                        const canRedeem = (selectedLoyalty?.available_points || 0) >= reward.points_required;
+                        return (
+                          <div
+                            key={idx}
+                            className={cn(
+                              "rounded-2xl border bg-white shadow-sm transition-all",
+                              !canRedeem && "opacity-50 grayscale"
+                            )}
+                          >
+                            <div className="p-4 flex items-center justify-between gap-3">
+                              <div className="flex items-center gap-3 flex-1 min-w-0">
+                                <div className={cn(
+                                  "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
+                                  canRedeem ? "bg-amber-100" : "bg-slate-100"
+                                )}>
+                                  {canRedeem
+                                    ? <Gift className="w-5 h-5 text-amber-600" />
+                                    : <Lock className="w-5 h-5 text-slate-400" />
+                                  }
+                                </div>
+                                <div className="min-w-0">
+                                  <h4 className="font-semibold text-slate-900 truncate">{reward.name}</h4>
+                                  {reward.description && (
+                                    <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">{reward.description}</p>
+                                  )}
+                                  <div className="flex items-center gap-2 mt-1.5">
+                                    <Badge variant="outline" className={cn("text-xs", canRedeem ? "border-amber-400 text-amber-700" : "")}>
+                                      {reward.points_required.toLocaleString()} pts
+                                    </Badge>
+                                    {!canRedeem && (
+                                      <span className="text-xs text-slate-400">
+                                        Need {(reward.points_required - (selectedLoyalty?.available_points || 0)).toLocaleString()} more
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                              <Button
+                                size="sm"
+                                disabled={!canRedeem}
+                                onClick={() => { setRedeemingReward({ reward, loyalty: selectedLoyalty }); setConfirmed(false); }}
+                                className={cn(
+                                  "rounded-full shrink-0",
+                                  canRedeem
+                                    ? "bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white border-0"
+                                    : "bg-slate-100 text-slate-400 cursor-not-allowed"
+                                )}
+                              >
+                                {canRedeem ? 'Redeem' : 'Locked'}
+                              </Button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </>
+                ) : (
+                  <p className="text-center text-slate-500 py-8">No rewards added by this restaurant yet.</p>
                 )}
               </TabsContent>
 
