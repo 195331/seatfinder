@@ -36,80 +36,26 @@ export default function DinerAI({
     if (!q.trim()) return;
 
     setIsProcessing(true);
+    setResults(null);
     try {
-      // Get user's taste profile and history
+      // Use already-available user data — no extra DB fetches
       const tasteProfile = currentUser?.taste_profile || {};
-      const recentlyViewed = currentUser?.recently_viewed || [];
       const preferences = currentUser?.preferences || {};
-      
-      // Get user's review history for preferences
-      const userReviews = currentUser 
-        ? await base44.entities.Review.filter({ user_id: currentUser.id }, '-created_date', 20)
-        : [];
-      
-      const reviewedCuisines = [...new Set(userReviews.map(r => {
-        const restaurant = restaurants.find(rest => rest.id === r.restaurant_id);
-        return restaurant?.cuisine;
-      }).filter(Boolean))];
 
-      // Get dining history if enabled
-      let diningHistory = [];
-      if (preferences.ai_settings?.use_dining_history) {
-        try {
-          const recentReservations = await base44.entities.Reservation.filter({
-            user_id: currentUser.id,
-            status: 'approved'
-          }, '-created_date', 20);
-          
-          const visitedRestaurantIds = [...new Set(recentReservations.map(r => r.restaurant_id))];
-          const visitedRestaurants = await Promise.all(
-            visitedRestaurantIds.slice(0, 10).map(id => 
-              base44.entities.Restaurant.filter({ id }).then(r => r[0])
-            )
-          );
-          
-          diningHistory = visitedRestaurants.filter(Boolean).map(r => ({
-            name: r.name,
-            cuisine: r.cuisine,
-            price_level: r.price_level
-          }));
-        } catch (e) {
-          console.log('Could not fetch dining history');
-        }
-      }
-
-      // Build context for AI
-      const context = {
-        query: q,
-        restaurants: restaurants.map(r => ({
-          id: r.id,
-          name: r.name,
-          cuisine: r.cuisine,
-          price_level: r.price_level,
-          available_seats: r.available_seats,
-          total_seats: r.total_seats,
-          is_full: r.is_full,
-          average_rating: r.average_rating,
-          review_count: r.review_count,
-          neighborhood: r.neighborhood,
-          has_outdoor: r.has_outdoor,
-          has_bar_seating: r.has_bar_seating,
-          is_kid_friendly: r.is_kid_friendly,
-          seating_updated_at: r.seating_updated_at,
-          reliability_score: r.reliability_score,
-          opening_hours: r.opening_hours
-        })),
-        user_preferences: {
-          taste_profile: tasteProfile,
-          reviewed_cuisines: reviewedCuisines,
-          recently_viewed: recentlyViewed.slice(0, 5),
-          favorite_cuisines: preferences.favorite_cuisines || [],
-          dietary_restrictions: preferences.dietary_restrictions || [],
-          preferred_amenities: preferences.preferred_amenities || [],
-          dining_history: diningHistory
-        },
-        current_time: new Date().toISOString()
-      };
+      // Build compact restaurant list for the prompt (limit to 30 most relevant)
+      const restaurantList = restaurants.slice(0, 30).map(r => ({
+        id: r.id,
+        name: r.name,
+        cuisine: r.cuisine,
+        price_level: r.price_level,
+        available_seats: r.available_seats,
+        is_full: r.is_full,
+        average_rating: r.average_rating,
+        neighborhood: r.neighborhood,
+        has_outdoor: r.has_outdoor,
+        is_kid_friendly: r.is_kid_friendly,
+        seating_updated_at: r.seating_updated_at,
+      }));
 
       const prompt = `You are SeatFinder AI, helping users find the perfect restaurant.
 
