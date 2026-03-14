@@ -107,7 +107,14 @@ export default function LiveSeating({ restaurant }) {
     seatPartyMutation.mutate(data);
   };
 
-  const floorPlan = restaurant?.floor_plan_data;
+  // Fall back to localStorage cache if restaurant floor_plan_data is missing (offline)
+  const floorPlan = React.useMemo(() => {
+    if (restaurant?.floor_plan_data?.publishedAt) return restaurant.floor_plan_data;
+    try {
+      const cached = localStorage.getItem(`floorplan_${restaurant?.id}`);
+      return cached ? JSON.parse(cached) : null;
+    } catch { return null; }
+  }, [restaurant?.floor_plan_data, restaurant?.id]);
 
   if (!floorPlan || !floorPlan.publishedAt) {
     return (
