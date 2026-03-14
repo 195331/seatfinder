@@ -424,9 +424,9 @@ export default function RestaurantDetail() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Hero Section with Photo Gallery */}
+      {/* Hero Section */}
       <div className="relative bg-slate-900">
-        <PhotoGallery restaurant={restaurant} />
+        <RestaurantHero restaurant={restaurant} />
         
         {/* Floating Back Button */}
         <Button
