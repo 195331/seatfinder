@@ -660,9 +660,14 @@ export default function Home() {
         {!loadingRestaurants && filteredRestaurants.length > 0 && (
           <div className="mb-8">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-slate-900">
-                Top Picks for You
-              </h2>
+              <div className="flex items-center gap-3">
+                <h2 className="text-xl font-semibold text-slate-900">
+                  Top Picks for You
+                </h2>
+                <span className="text-sm font-medium text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full">
+                  {filteredRestaurants.length} restaurant{filteredRestaurants.length !== 1 ? 's' : ''}
+                </span>
+              </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {filteredRestaurants.slice(0, 6).map((restaurant) => {
