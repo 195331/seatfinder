@@ -19,6 +19,13 @@ const TIME_SLOTS = [
   "17:00","17:30","18:00","18:30","19:00","19:30","20:00","20:30","21:00"
 ];
 
+const formatTime = (time) => {
+  const [h, m] = time.split(":").map(Number);
+  const period = h >= 12 ? "PM" : "AM";
+  const hour = h % 12 || 12;
+  return `${hour}:${String(m).padStart(2, "0")} ${period}`;
+};
+
 const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
 const clampScale = (s) => clamp(s, 0.35, 2.4);
 
