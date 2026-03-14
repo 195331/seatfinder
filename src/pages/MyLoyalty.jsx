@@ -26,7 +26,10 @@ export default function MyLoyalty() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [currentUser, setCurrentUser] = useState(null);
-  const [selectedProgram, setSelectedProgram] = useState(null);
+  const [selectedProgram, setSelectedProgram] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('program') || null;
+  });
   const [redeemingReward, setRedeemingReward] = useState(null); // { reward, loyalty } — confirm dialog
   const [confirmed, setConfirmed] = useState(false);
 
