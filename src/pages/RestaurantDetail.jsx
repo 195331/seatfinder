@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { createPageUrl } from '@/utils';
 
-import PhotoGallery from '@/components/customer/PhotoGallery';
+import RestaurantHero from '@/components/customer/RestaurantHero';
 import MenuView from '@/components/customer/MenuView';
 import FloorPlanViewPremium from '@/components/customer/FloorPlanViewPremium';
 import ReviewsTab from '@/components/restaurant/ReviewsTab';
