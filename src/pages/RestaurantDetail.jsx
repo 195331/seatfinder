@@ -37,6 +37,7 @@ import PriceLevel from '@/components/ui/PriceLevel';
 import StarRating from '@/components/ui/StarRating';
 import { trackReservationCreated } from '@/components/gamification/PointsTracker';
 import { checkTableConflict } from '@/components/reservations/ConflictChecker';
+import CustomerWaitlistJoin from '@/components/customer/CustomerWaitlistJoin';
 
 export default function RestaurantDetail() {
   const navigate = useNavigate();
