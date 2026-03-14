@@ -126,6 +126,7 @@ export default function RestaurantSettings() {
       has_bar_seating: formData.has_bar_seating,
       is_kid_friendly: formData.is_kid_friendly,
       enable_preorder: formData.enable_preorder,
+      waitlist_enabled: formData.waitlist_enabled,
       preorder_deadline_minutes: formData.preorder_deadline_minutes,
       preorder_all_items_eligible: formData.preorder_all_items_eligible,
       preorder_minimum_spend: formData.preorder_minimum_spend,
