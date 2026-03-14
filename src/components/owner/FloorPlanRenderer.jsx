@@ -304,6 +304,7 @@ export default function FloorPlanRenderer({
                             liveStatus === 'free' ? COLORS.tableFree : obj.fill || COLORS.tableFill;
           const statusStroke = liveStatus === 'occupied' ? COLORS.tableStrokeOccupied :
                               liveStatus === 'reserved' ? COLORS.tableStrokeReserved :
+                              liveStatus === 'arrived_early' ? COLORS.tableStrokeArrivedEarly :
                               liveStatus === 'free' ? COLORS.tableStrokeFree : obj.stroke || COLORS.tableStroke;
           
           // Generate table label: T{table_number}
