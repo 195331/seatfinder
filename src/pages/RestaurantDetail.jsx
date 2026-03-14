@@ -767,6 +767,26 @@ export default function RestaurantDetail() {
             </Card>
           </TabsContent>
 
+          {/* Waitlist Tab */}
+          <TabsContent value="waitlist" className="space-y-4">
+            {restaurant?.waitlist_enabled ? (
+              <CustomerWaitlistJoin
+                restaurantId={restaurantId}
+                currentUser={currentUser}
+              />
+            ) : (
+              <Card className="border-0 shadow-sm">
+                <CardContent className="py-12 text-center">
+                  <Users className="w-12 h-12 mx-auto mb-3 text-slate-300" />
+                  <h3 className="font-semibold text-slate-700 mb-1">No Waitlist Available</h3>
+                  <p className="text-sm text-slate-500">
+                    This restaurant hasn't activated a public waitlist yet.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
           {/* Reviews Tab */}
           <TabsContent value="reviews" className="space-y-6">
             <ReviewsTab
