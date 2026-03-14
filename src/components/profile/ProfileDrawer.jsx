@@ -480,47 +480,73 @@ export default function ProfileDrawer({ currentUser, onLogout, open: controlledO
                     </CardContent>
                   </Card>
                 ) : (
-                  loyaltyMemberships.map((loyalty) => {
-                    const restaurant = getRestaurantForLoyalty(loyalty);
-                    const program = getProgramForLoyalty(loyalty);
-                    return (
-                      <Card key={loyalty.id} className="overflow-hidden">
-                        <div className="bg-gradient-to-r from-amber-500 to-orange-500 p-4 text-white">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="font-bold">{restaurant?.name || 'Restaurant'}</p>
-                              <p className="text-sm opacity-90">{loyalty.current_tier} Member</p>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-2xl font-bold">{loyalty.available_points}</p>
-                              <p className="text-xs opacity-90">points</p>
+                  <>
+                    {loyaltyMemberships.map((loyalty) => {
+                      const restaurant = getRestaurantForLoyalty(loyalty);
+                      const program = getProgramForLoyalty(loyalty);
+                      return (
+                        <Card
+                          key={loyalty.id}
+                          className="overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
+                          onClick={() => {
+                            setOpen(false);
+                            navigate(createPageUrl('MyLoyalty') + `?program=${loyalty.program_id}`);
+                          }}
+                        >
+                          <div className="bg-gradient-to-r from-amber-500 to-orange-500 p-4 text-white">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="font-bold">{restaurant?.name || 'Restaurant'}</p>
+                                <p className="text-sm opacity-90">{loyalty.current_tier} Member</p>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-2xl font-bold">{loyalty.available_points}</p>
+                                <p className="text-xs opacity-90">points</p>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-slate-500">{loyalty.visits || 0} visits</span>
-                            <span className="text-slate-500">
-                              ${loyalty.total_spent?.toFixed(2) || '0.00'} spent
-                            </span>
-                          </div>
-                          {program?.rewards?.length > 0 && (
-                            <div className="mt-3 pt-3 border-t">
-                              <p className="text-xs text-slate-500 mb-2">AVAILABLE REWARDS</p>
-                              {program.rewards.slice(0, 2).map((reward, idx) => (
-                                <div key={idx} className="flex items-center justify-between py-1">
-                                  <span className="text-sm">{reward.name}</span>
-                                  <Badge variant="outline" className="text-xs">
-                                    {reward.points_required} pts
-                                  </Badge>
-                                </div>
-                              ))}
+                          <CardContent className="p-4">
+                            <div className="flex items-center justify-between text-sm mb-2">
+                              <span className="text-slate-500">{loyalty.visits || 0} visits</span>
+                              <span className="text-slate-500">
+                                ${loyalty.total_spent?.toFixed(2) || '0.00'} spent
+                              </span>
                             </div>
-                          )}
-                        </CardContent>
-                      </Card>
-                    );
-                  })
+                            {program?.rewards?.length > 0 && (
+                              <div className="mt-2 pt-2 border-t">
+                                <p className="text-xs text-slate-500 mb-2">AVAILABLE REWARDS</p>
+                                {program.rewards.slice(0, 2).map((reward, idx) => (
+                                  <div key={idx} className="flex items-center justify-between py-1">
+                                    <span className={cn("text-sm", (loyalty.available_points || 0) < reward.points_required && "text-slate-400")}>
+                                      {reward.name}
+                                    </span>
+                                    <Badge variant="outline" className={cn("text-xs", (loyalty.available_points || 0) >= reward.points_required ? "border-amber-400 text-amber-700" : "text-slate-400")}>
+                                      {reward.points_required} pts
+                                    </Badge>
+                                  </div>
+                                ))}
+                                {program.rewards.length > 2 && (
+                                  <p className="text-xs text-amber-600 mt-1">+{program.rewards.length - 2} more rewards →</p>
+                                )}
+                              </div>
+                            )}
+                            <p className="text-xs text-slate-400 mt-3 text-center">Tap to view all rewards & redeem</p>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => {
+                        setOpen(false);
+                        navigate(createPageUrl('MyLoyalty'));
+                      }}
+                    >
+                      <Award className="w-4 h-4 mr-2" />
+                      View Full Rewards Page
+                    </Button>
+                  </>
                 )}
               </TabsContent>
             </div>
