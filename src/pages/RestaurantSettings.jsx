@@ -327,6 +327,28 @@ export default function RestaurantSettings() {
                 />
               </div>
 
+              {/* Waitlist toggle — only for pro/plus */}
+              {['pro', 'plus'].includes(restaurant?.subscription_plan) ? (
+                <div className="flex items-center justify-between p-3 bg-purple-50 rounded-xl border border-purple-100">
+                  <div>
+                    <span className="font-medium text-slate-800">Public Waitlist</span>
+                    <p className="text-xs text-slate-500 mt-0.5">Let guests join your waitlist from the restaurant page</p>
+                  </div>
+                  <Switch
+                    checked={!!formData.waitlist_enabled}
+                    onCheckedChange={(checked) => updateField('waitlist_enabled', checked)}
+                  />
+                </div>
+              ) : (
+                <div className="flex items-center justify-between p-3 bg-slate-100 rounded-xl opacity-60">
+                  <div>
+                    <span className="font-medium text-slate-700">Public Waitlist</span>
+                    <p className="text-xs text-slate-500 mt-0.5">Requires Pro plan — upgrade in the Subscription tab</p>
+                  </div>
+                  <Switch checked={false} disabled />
+                </div>
+              )}
+
             </div>
           </CardContent>
         </Card>
