@@ -437,6 +437,12 @@ export default function OwnerDashboard() {
 
             <div className="flex items-center gap-3">
               {!!currentUser && <NotificationBell currentUser={currentUser} />}
+              <Link to={createPageUrl("Home")}>
+                <Button variant="outline" className="rounded-full gap-2">
+                  <Home className="w-4 h-4" />
+                  Home
+                </Button>
+              </Link>
               <Link to={createPageUrl("RestaurantSettings") + `?id=${selectedRestaurantId || ""}`}>
                 <Button variant="outline" className="rounded-full gap-2">
                   <Settings className="w-4 h-4" />
