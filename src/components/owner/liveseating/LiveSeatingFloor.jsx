@@ -115,16 +115,6 @@ export default function LiveSeatingFloor({
         </div>
       </CardHeader>
       <CardContent className="p-4">
-        {/* Status Legend */}
-        <div className="flex flex-wrap gap-2 mb-4 justify-center">
-          {Object.entries(STATUS_COLORS).map(([status, info]) => (
-            <Badge key={status} variant="outline" className="text-xs gap-1">
-              <span>{info.emoji}</span>
-              {info.text}
-            </Badge>
-          ))}
-        </div>
-
         {/* Canvas - with clipping */}
         <div className="bg-slate-900 rounded-xl mx-auto border-2 border-slate-700 relative" style={{ width: 800, height: 500, overflow: 'hidden', pointerEvents: 'auto' }}>
           <FloorPlanRenderer
