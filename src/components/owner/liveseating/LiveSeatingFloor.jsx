@@ -116,7 +116,7 @@ export default function LiveSeatingFloor({
       </CardHeader>
       <CardContent className="p-4">
         {/* Canvas - with clipping */}
-        <div className="bg-slate-900 rounded-xl mx-auto border-2 border-slate-700 relative" style={{ width: 800, height: 500, overflow: 'hidden', pointerEvents: 'auto' }}>
+        <div className="bg-slate-900 rounded-xl mx-auto border-2 border-slate-700 relative w-full" style={{ height: 500, overflow: 'hidden', pointerEvents: 'auto' }}>
           <FloorPlanRenderer
             stageRef={stageRef}
             width={800}
