@@ -28,6 +28,7 @@ export default function MyReservations() {
   const queryClient = useQueryClient();
   const [currentUser, setCurrentUser] = useState(null);
   const [cancelDialog, setCancelDialog] = useState({ open: false, reservation: null });
+  const [confirmBanner, setConfirmBanner] = useState(null); // { type: 'confirm'|'cancel', resId }
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -41,6 +42,18 @@ export default function MyReservations() {
     };
     fetchUser();
   }, [navigate]);
+
+  // Handle confirm/cancel actions from email link (?action=confirm&id=xxx)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const action = params.get('action');
+    const resId  = params.get('id');
+    if (action && resId) {
+      setConfirmBanner({ type: action, resId });
+      // Strip params from URL without reload
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
 
   // Fetch user's reservations
   const { data: reservations = [], isLoading: loadingReservations } = useQuery({
