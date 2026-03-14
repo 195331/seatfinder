@@ -597,10 +597,14 @@ export default function RestaurantDetail() {
 
         {/* Main Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-5">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="menu">Menu</TabsTrigger>
             <TabsTrigger value="reserve">Reserve</TabsTrigger>
+            <TabsTrigger value="waitlist">
+              Waitlist
+              {restaurant?.waitlist_enabled && <span className="ml-1.5 w-2 h-2 bg-emerald-500 rounded-full inline-block" />}
+            </TabsTrigger>
             <TabsTrigger value="reviews">Reviews</TabsTrigger>
           </TabsList>
 
