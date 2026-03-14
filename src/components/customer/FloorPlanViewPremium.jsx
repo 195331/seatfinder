@@ -472,7 +472,7 @@ export default function FloorPlanViewPremium({
                     onClick={() => setReservationData((prev) => ({ ...prev, time }))}
                     className={cn(reservationData.time === time && "bg-emerald-600 hover:bg-emerald-700")}
                   >
-                    {time}
+                    {formatTime(time)}
                   </Button>
                 ))}
               </div>
