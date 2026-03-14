@@ -81,6 +81,7 @@ const PLANS = [
 export default function SubscriptionPlans({ restaurantId, currentPlan = 'free' }) {
   const queryClient = useQueryClient();
   const [upgrading, setUpgrading] = useState(null);
+  const [successPlan, setSuccessPlan] = useState(null);
 
   const { data: subscription } = useQuery({
     queryKey: ['subscription', restaurantId],
