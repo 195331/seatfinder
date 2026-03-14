@@ -119,12 +119,20 @@ export default function SubscriptionPlans({ restaurantId, currentPlan = 'free' }
         subscription_expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
       });
 
-      queryClient.invalidateQueries({ queryKey: ['subscription'] });
-      queryClient.invalidateQueries({ queryKey: ['ownedRestaurants'] });
-      queryClient.invalidateQueries({ queryKey: ['restaurant'] });
-      queryClient.invalidateQueries({ queryKey: ['staffRestaurants'] });
-      
-      toast.success(`Successfully ${plan.id === 'free' ? 'downgraded to' : 'upgraded to'} ${plan.name}! Features are now unlocked.`);
+      await queryClient.invalidateQueries({ queryKey: ['subscription'] });
+      await queryClient.invalidateQueries({ queryKey: ['ownedRestaurants'] });
+      await queryClient.invalidateQueries({ queryKey: ['restaurant'] });
+      await queryClient.invalidateQueries({ queryKey: ['staffRestaurants'] });
+
+      if (plan.id !== 'free') {
+        // Fire confetti
+        confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
+        setTimeout(() => confetti({ particleCount: 80, angle: 60, spread: 60, origin: { x: 0 } }), 300);
+        setTimeout(() => confetti({ particleCount: 80, angle: 120, spread: 60, origin: { x: 1 } }), 500);
+        setSuccessPlan(plan);
+      } else {
+        toast.success('Switched to Free plan.');
+      }
     } catch (error) {
       toast.error('Failed to change plan: ' + error.message);
     }
