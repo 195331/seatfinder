@@ -22,6 +22,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ImageUploader from '@/components/owner/ImageUploader';
 import RestaurantImageManager from '@/components/owner/RestaurantImageManager';
 import OpeningHoursEditor from '@/components/owner/OpeningHoursEditor';
+import ReservationTimeSlotsEditor from '@/components/owner/ReservationTimeSlotsEditor';
 import MenuBuilder from '@/components/owner/MenuBuilder';
 import PreOrderSettings from '@/components/owner/PreOrderSettings';
 
