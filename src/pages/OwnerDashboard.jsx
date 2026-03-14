@@ -15,6 +15,7 @@ import {
   MousePointerClick,
   LayoutGrid,
   ChefHat,
+  Home,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
