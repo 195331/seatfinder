@@ -137,6 +137,7 @@ export default function RestaurantSettings() {
       longitude: formData.longitude,
       cover_image: formData.cover_image,
       opening_hours: formData.opening_hours,
+      reservation_time_slots: formData.reservation_time_slots || [],
     });
   };
 
