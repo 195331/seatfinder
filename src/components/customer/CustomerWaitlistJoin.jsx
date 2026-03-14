@@ -31,6 +31,11 @@ export default function CustomerWaitlistJoin({ restaurantId, currentUser }) {
   const joinMutation = useMutation({
     mutationFn: async () => {
       if (!form.guest_name || !form.guest_phone) throw new Error('Name and phone are required');
+      // Check for existing active entry for this restaurant
+      if (currentUser) {
+        const existing = waitingEntries.find(e => e.user_id === currentUser.id);
+        if (existing) throw new Error("You're already on the waitlist for this restaurant.");
+      }
       return base44.entities.WaitlistEntry.create({
         restaurant_id: restaurantId,
         user_id: currentUser?.id || null,
