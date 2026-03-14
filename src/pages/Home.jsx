@@ -917,9 +917,6 @@ export default function Home() {
                 ) : view === 'list' ? (
                   <>
                     <div className="flex items-center justify-between mb-6">
-                      <h2 className="text-xl font-semibold text-slate-900">
-                        {filteredRestaurants.length} restaurant{filteredRestaurants.length !== 1 ? 's' : ''}
-                      </h2>
                       <div className="flex items-center gap-2">
                         {/* Active Filter Sticker */}
                         {(sortBy !== 'verified' || Object.keys(filters).length > 0 || activePreset) && (
