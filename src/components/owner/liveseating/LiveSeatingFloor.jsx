@@ -10,7 +10,8 @@ import FloorPlanRenderer from '../FloorPlanRenderer';
 const STATUS_COLORS = {
   free: { bg: '#10B981', text: 'Free', emoji: '🟢' },
   occupied: { bg: '#F59E0B', text: 'Seated', emoji: '🟡' },
-  reserved: { bg: '#3B82F6', text: 'Reserved', emoji: '🔵' }
+  reserved: { bg: '#F97316', text: 'Reserved', emoji: '🟠' },
+  arrived_early: { bg: '#3B82F6', text: 'Arrived Early', emoji: '🔵' }
 };
 
 export default function LiveSeatingFloor({ 
