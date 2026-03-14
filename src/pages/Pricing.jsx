@@ -23,7 +23,7 @@ export default function Pricing() {
       {/* Header */}
       <div className="max-w-5xl mx-auto px-4 py-8">
         <div className="flex items-center gap-4 mb-10">
-          <Link to={restaurantId ? createPageUrl('RestaurantSettings') + `?id=${restaurantId}&tab=subscription` : createPageUrl('Home')}>
+          <Link to={restaurantId ? createPageUrl('OwnerDashboard') : createPageUrl('Home')}>
             <Button variant="ghost" size="sm" className="gap-2">
               <ArrowLeft className="w-4 h-4" />
               Back

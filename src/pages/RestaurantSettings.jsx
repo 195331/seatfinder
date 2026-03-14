@@ -163,7 +163,7 @@ export default function RestaurantSettings() {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => navigate(-1)}
+                onClick={() => navigate(createPageUrl('OwnerDashboard'))}
                 className="rounded-full"
               >
                 <ArrowLeft className="w-5 h-5" />
