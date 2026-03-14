@@ -71,6 +71,10 @@ export default function FloorPlanViewPremium({
     return map;
   }, [tables]);
 
+  const TIME_SLOTS = (restaurant?.reservation_time_slots?.length > 0)
+    ? restaurant.reservation_time_slots
+    : DEFAULT_TIME_SLOTS;
+
   const availableCount = (Array.isArray(tables) ? tables : []).filter((t) => t.status === "free").length;
   const reservedCount  = (Array.isArray(tables) ? tables : []).filter((t) => t.status === "reserved").length;
   const occupiedCount  = (Array.isArray(tables) ? tables : []).filter((t) => t.status === "occupied").length;
