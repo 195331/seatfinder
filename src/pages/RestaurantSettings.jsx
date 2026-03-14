@@ -357,7 +357,7 @@ export default function RestaurantSettings() {
         </Card>
           </TabsContent>
 
-          <TabsContent value="hours">
+          <TabsContent value="hours" className="space-y-6">
             <Card className="border-0 shadow-lg">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -370,6 +370,27 @@ export default function RestaurantSettings() {
                   hours={formData.opening_hours || {}}
                   onChange={(hours) => updateField('opening_hours', hours)}
                 />
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="w-5 h-5" />
+                  Reservation Time Slots
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ReservationTimeSlotsEditor
+                  slots={formData.reservation_time_slots || []}
+                  onChange={(slots) => updateField('reservation_time_slots', slots)}
+                />
+                <div className="mt-4 pt-4 border-t">
+                  <Button onClick={handleSave} disabled={updateRestaurantMutation.isPending} className="rounded-full gap-2">
+                    <Save className="w-4 h-4" />
+                    {updateRestaurantMutation.isPending ? 'Saving...' : 'Save Time Slots'}
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
