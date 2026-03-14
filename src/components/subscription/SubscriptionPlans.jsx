@@ -148,6 +148,33 @@ export default function SubscriptionPlans({ restaurantId, currentPlan = 'free' }
     }
   };
 
+  if (successPlan) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center space-y-6 animate-in fade-in duration-500">
+        <div className="w-24 h-24 rounded-full bg-indigo-100 flex items-center justify-center">
+          <PartyPopper className="w-12 h-12 text-indigo-600" />
+        </div>
+        <div>
+          <h2 className="text-3xl font-bold text-slate-900">Welcome to {successPlan.name}! 🎉</h2>
+          <p className="text-slate-500 mt-2 text-lg">Your features are now unlocked and ready to use.</p>
+        </div>
+        <div className="flex flex-wrap justify-center gap-2 max-w-md">
+          {successPlan.features.slice(1, 6).map((f, i) => (
+            <span key={i} className="flex items-center gap-1 bg-emerald-50 text-emerald-700 text-sm px-3 py-1 rounded-full border border-emerald-200">
+              <Check className="w-3.5 h-3.5" /> {f}
+            </span>
+          ))}
+        </div>
+        <Button
+          className="rounded-full px-8 bg-indigo-600 hover:bg-indigo-700 text-white"
+          onClick={() => setSuccessPlan(null)}
+        >
+          View All Plans
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="text-center">
