@@ -818,6 +818,14 @@ Provide JSON with these suggestions:
         }
       }
 
+      // Cache floor plan to localStorage for offline resilience
+      try {
+        localStorage.setItem(`floorplan_${restaurant.id}`, JSON.stringify({
+          ...floorPlanData,
+          cachedAt: new Date().toISOString(),
+        }));
+      } catch {}
+
       toast.success("Published! Live floor plan updated.");
       onPublish?.(floorPlanData);
     } catch (e) {
