@@ -96,8 +96,22 @@ export default function MyReservations() {
       queryClient.invalidateQueries(['myReservations']);
       toast.success("Reservation cancelled");
       setCancelDialog({ open: false, reservation: null });
+      setConfirmBanner(null);
     }
   });
+
+  // Handle email action banner once reservations are loaded
+  useEffect(() => {
+    if (!confirmBanner || reservations.length === 0) return;
+    const res = reservations.find(r => r.id === confirmBanner.resId);
+    if (!res) return;
+    if (confirmBanner.type === 'cancel') {
+      setCancelDialog({ open: true, reservation: res });
+    } else if (confirmBanner.type === 'confirm') {
+      toast.success(`✅ You're confirmed for ${res.reservation_time}! See you there.`);
+      setConfirmBanner(null);
+    }
+  }, [confirmBanner, reservations]);
 
   // Leave waitlist mutation
   const leaveWaitlistMutation = useMutation({
