@@ -146,7 +146,16 @@ export default function MyReservations() {
   
   const cancelledReservations = reservations.filter(r => r.status === 'cancelled');
 
-  const activeWaitlist = waitlistEntries.filter(w => ['waiting', 'notified'].includes(w.status));
+  // Deduplicate: one active entry per restaurant (keep the most recent)
+  const activeWaitlistRaw = waitlistEntries.filter(w => ['waiting', 'notified'].includes(w.status));
+  const activeWaitlist = Object.values(
+    activeWaitlistRaw.reduce((acc, entry) => {
+      if (!acc[entry.restaurant_id] || entry.created_date > acc[entry.restaurant_id].created_date) {
+        acc[entry.restaurant_id] = entry;
+      }
+      return acc;
+    }, {})
+  );
 
   if (!currentUser) {
     return (
