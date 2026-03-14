@@ -22,6 +22,7 @@ const COLORS = {
   tableStrokeFree: "#10b981",
   tableStrokeOccupied: "#ef4444",
   tableStrokeReserved: "#f97316",
+  tableStrokeArrivedEarly: "#3b82f6",
   chairDot: "rgba(148,163,184,0.8)"
 };
 
