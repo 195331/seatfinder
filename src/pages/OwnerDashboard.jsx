@@ -456,6 +456,12 @@ export default function OwnerDashboard() {
                   Analytics
                 </Button>
               </Link>
+              <Link to={createPageUrl("CommandCenter") + `?restaurant_id=${selectedRestaurantId || ""}`}>
+                <Button className="rounded-full gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 border-0">
+                  <Zap className="w-4 h-4" />
+                  Command Center
+                </Button>
+              </Link>
             </div>
           </div>
 
