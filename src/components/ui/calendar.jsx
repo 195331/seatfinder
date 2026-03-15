@@ -6,7 +6,7 @@ import { buttonVariants } from "@/components/ui/button"
 const DAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
-function Calendar({ className, selected, onSelect, mode, disabled, ...props }) {
+function Calendar({ className, selected, onSelect, mode, disabled, id, ...props }) {
   const today = new Date();
   const [view, setView] = React.useState(() => {
     const d = selected ? new Date(selected) : new Date();
@@ -36,11 +36,12 @@ function Calendar({ className, selected, onSelect, mode, disabled, ...props }) {
   for (let d = 1; d <= daysInMonth; d++) cells.push(d);
 
   return (
-    <div className={cn("p-3 select-none", className)} {...props}>
+    <div className={cn("p-3 select-none", className)} id={id} {...props}>
       <div className="flex justify-center pt-1 relative items-center mb-4">
         <button
           className={cn(buttonVariants({ variant: "outline" }), "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 absolute left-1")}
           onClick={prevMonth}
+          type="button"
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
@@ -48,6 +49,7 @@ function Calendar({ className, selected, onSelect, mode, disabled, ...props }) {
         <button
           className={cn(buttonVariants({ variant: "outline" }), "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 absolute right-1")}
           onClick={nextMonth}
+          type="button"
         >
           <ChevronRight className="h-4 w-4" />
         </button>
@@ -68,8 +70,9 @@ function Calendar({ className, selected, onSelect, mode, disabled, ...props }) {
               return (
                 <button
                   key={day}
+                  type="button"
                   disabled={dis}
-                  onClick={() => onSelect?.(new Date(year, month, day))}
+                  onClick={() => onSelect && onSelect(new Date(year, month, day))}
                   className={cn(
                     buttonVariants({ variant: "ghost" }),
                     "h-8 w-8 p-0 font-normal",
