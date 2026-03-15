@@ -338,6 +338,9 @@ export default function DiscoverSection({
         </div>
       )}
 
+      {/* People / Social Section */}
+      <PeopleSection currentUser={currentUser} />
+
       {/* Restaurant Sections */}
       {sections.map((section, idx) => {
         if (section.restaurants.length === 0) return null;
