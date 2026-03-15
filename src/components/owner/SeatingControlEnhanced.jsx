@@ -255,11 +255,11 @@ export default function SeatingControlEnhanced({
             <div className="flex items-center gap-3">
               <WifiOff className="w-5 h-5 text-orange-500 shrink-0" />
               <div>
-                <p className="font-medium text-orange-800">Offline Mode</p>
+                <p className="font-medium text-orange-800">Offline Mode — Manual Only</p>
                 <p className="text-sm text-orange-700">
-                  Database unreachable — showing cached data from{' '}
+                  Database unreachable. Auto-sync paused — using cached data from{' '}
                   {cachedData?.cachedAt ? moment(cachedData.cachedAt).fromNow() : 'earlier'}.
-                  Changes cannot be saved until reconnected.
+                  Adjust seats manually below until connection is restored.
                 </p>
               </div>
             </div>
