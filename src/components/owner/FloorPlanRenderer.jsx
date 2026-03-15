@@ -20,10 +20,12 @@ const COLORS = {
   tableOccupied: "#ffffff",
   tableReserved: "#ffffff",
   tableArrivedEarly: "#ffffff",
+  tableCombined: "#ede9fe",           // light purple fill — Group Booking
   tableStrokeFree:         "#10B981", // emerald   — Available
   tableStrokeArrivedEarly: "#F59E0B", // amber     — Arrived Early
   tableStrokeOccupied:     "#EF4444", // red       — Occupied / Checked In
   tableStrokeReserved:     "#3B82F6", // blue      — Reserved
+  tableStrokeCombined:     "#7C3AED", // purple    — Group Booking / Combined
   chairDot: "rgba(148,163,184,0.8)"
 };
 
