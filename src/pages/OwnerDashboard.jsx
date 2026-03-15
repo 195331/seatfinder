@@ -760,7 +760,7 @@ export default function OwnerDashboard() {
                   </div>
 
                   {/* Calendar Section */}
-                  <div>
+                  <div ref={calendarRef}>
                     <h3 className="text-base font-semibold text-slate-800 mb-4 flex items-center gap-2">
                       <svg className="w-4 h-4 text-blue-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
