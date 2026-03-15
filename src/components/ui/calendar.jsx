@@ -6,7 +6,7 @@ import { buttonVariants } from "@/components/ui/button"
 const DAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
-function Calendar({ className, selected, onSelect, mode = "single", disabled, ...props }) {
+function Calendar({ className, selected, onSelect, mode, disabled, ...props }) {
   const today = new Date();
   const [view, setView] = React.useState(() => {
     const d = selected ? new Date(selected) : new Date();
@@ -28,8 +28,7 @@ function Calendar({ className, selected, onSelect, mode = "single", disabled, ..
   const isToday = (day) => today.getFullYear() === year && today.getMonth() === month && today.getDate() === day;
   const isDisabled = (day) => {
     if (!disabled) return false;
-    const d = new Date(year, month, day);
-    return disabled(d);
+    return disabled(new Date(year, month, day));
   };
 
   const cells = [];
@@ -38,7 +37,6 @@ function Calendar({ className, selected, onSelect, mode = "single", disabled, ..
 
   return (
     <div className={cn("p-3 select-none", className)} {...props}>
-      {/* Header */}
       <div className="flex justify-center pt-1 relative items-center mb-4">
         <button
           className={cn(buttonVariants({ variant: "outline" }), "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 absolute left-1")}
@@ -54,13 +52,11 @@ function Calendar({ className, selected, onSelect, mode = "single", disabled, ..
           <ChevronRight className="h-4 w-4" />
         </button>
       </div>
-      {/* Day headers */}
       <div className="flex">
         {DAYS.map(d => (
           <div key={d} className="text-muted-foreground rounded-md w-8 font-normal text-[0.8rem] text-center">{d}</div>
         ))}
       </div>
-      {/* Day grid */}
       <div className="mt-2">
         {Array.from({ length: Math.ceil(cells.length / 7) }).map((_, week) => (
           <div key={week} className="flex w-full mt-2">
