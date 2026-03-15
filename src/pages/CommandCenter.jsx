@@ -88,6 +88,7 @@ async function getSuperHubContext(restaurantId) {
       latest_10_reviews: reviews.map(r => ({ rating: r.rating, comment: r.comment?.slice(0, 120) })),
       sentiment_score: sentimentScore,
     },
+    large_party_alerts: largePartyAlerts,
   };
 
   try {
