@@ -270,19 +270,13 @@ export default function SubscriptionPlans({ restaurantId, currentPlan = 'free' }
 
 // Helper hook to check feature access
 export function useFeatureAccess(restaurantId) {
-  const { data: subscription } = useQuery({
-    queryKey: ['subscription', restaurantId],
-    queryFn: () => base44.entities.Subscription.filter({ restaurant_id: restaurantId }),
-    enabled: !!restaurantId,
-    select: (data) => data[0]
-  });
-
-  // Also read restaurant.subscription_plan directly as the source of truth
+  // Use restaurant.subscription_plan as the single source of truth
   const { data: restaurantData } = useQuery({
     queryKey: ['restaurant', restaurantId],
     queryFn: () => base44.entities.Restaurant.filter({ id: restaurantId }),
     enabled: !!restaurantId,
-    select: (data) => data[0]
+    select: (data) => data[0],
+    staleTime: 30000,
   });
 
   // Prefer subscription entity, fall back to restaurant.subscription_plan
