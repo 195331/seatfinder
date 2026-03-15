@@ -514,9 +514,14 @@ export default function SeatingControlEnhanced({
               </Button>
             </div>
 
-            {!data?.manual_override_active && (
+            {!data?.manual_override_active && !offlineMode && (
               <p className="text-center text-xs text-slate-400 mt-3">
                 Enable Manual Override to adjust seats manually
+              </p>
+            )}
+            {offlineMode && (
+              <p className="text-center text-xs text-orange-500 mt-3">
+                Offline — changes tracked locally until reconnected
               </p>
             )}
           </div>
