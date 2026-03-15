@@ -667,7 +667,7 @@ export default function OwnerAnalytics() {
 
               {/* Reviews & Ratings */}
               <Card>
-                <CardHeader><CardTitle>Reviews & Ratings</CardTitle><p className="text-sm text-slate-500">What diners are saying</p></CardHeader>
+                <CardHeader><CardTitle>Reviews & Ratings</CardTitle><p className="text-sm text-slate-500">What diners are saying (all time)</p></CardHeader>
                 <CardContent>
                   <div className="flex items-center gap-4">
                     <div className="text-center">
@@ -675,12 +675,12 @@ export default function OwnerAnalytics() {
                       <div className="flex text-amber-400 mt-1">
                         {[...Array(5)].map((_, i) => <Star key={i} className={cn("w-4 h-4", i < Math.round(avgRating) && "fill-current")} />)}
                       </div>
-                      <p className="text-sm text-slate-500 mt-1">{filteredReviews.length} reviews</p>
+                      <p className="text-sm text-slate-500 mt-1">{reviews.length} reviews</p>
                     </div>
                     <div className="flex-1 space-y-2">
                       {[5, 4, 3, 2, 1].map(rating => {
-                        const count = filteredReviews.filter(r => r.rating === rating).length;
-                        const percent = filteredReviews.length > 0 ? (count / filteredReviews.length * 100) : 0;
+                        const count = reviews.filter(r => r.rating === rating).length;
+                        const percent = reviews.length > 0 ? (count / reviews.length * 100) : 0;
                         return (
                           <div key={rating} className="flex items-center gap-2">
                             <span className="text-sm w-8">{rating}★</span>
