@@ -49,21 +49,43 @@ export default function SeatingControlEnhanced({
 }) {
   const queryClient = useQueryClient();
 
-  // ── Offline mode: try cached data if restaurant prop has no seats ──────────
+  // ── Offline mode ──────────────────────────────────────────────────────────
   const [offlineMode, setOfflineMode] = useState(false);
   const [cachedData, setCachedData] = useState(null);
+  // When offline, track local seat count for manual adjustments
+  const [localOfflineSeats, setLocalOfflineSeats] = useState(null);
+
+  // Real-time restaurant data (live synced via subscription)
+  const [liveRestaurant, setLiveRestaurant] = useState(null);
+
+  // Subscribe to real-time restaurant updates
+  useEffect(() => {
+    if (!restaurant?.id) return;
+    const unsubscribe = base44.entities.Restaurant.subscribe((event) => {
+      if (event.id !== restaurant.id) return;
+      if (event.type === 'update' && event.data) {
+        setLiveRestaurant(event.data);
+        // When we receive a live update, we're definitely online
+        setOfflineMode(false);
+        saveToCache(event.data);
+      }
+    });
+    return unsubscribe;
+  }, [restaurant?.id]);
 
   useEffect(() => {
     if (!restaurant?.id) return;
     const cache = loadFromCache(restaurant.id);
     setCachedData(cache);
-
-    // If we got a restaurant but it looks like we had a fetch error (no total_seats AND cache exists)
+    // Detect offline: no total_seats in live data but have cache
     const seemsOffline = !restaurant.total_seats && cache;
-    setOfflineMode(!!seemsOffline);
+    if (seemsOffline) {
+      setOfflineMode(true);
+      setLocalOfflineSeats(cache.available_seats ?? 0);
+    }
   }, [restaurant?.id]);
 
-  // Persist to cache every time restaurant changes meaningfully
+  // Persist cache whenever restaurant prop has valid data
   useEffect(() => {
     if (restaurant?.id && restaurant.total_seats > 0) {
       saveToCache(restaurant);
@@ -79,27 +101,29 @@ export default function SeatingControlEnhanced({
     restaurant?.seating_updated_at,
   ]);
 
-  // Use live data or fall back to cache
-  const data = offlineMode && cachedData ? { ...restaurant, ...cachedData } : restaurant;
+  // Merge: liveRestaurant (real-time) > restaurant (prop) > cache (offline)
+  const data = offlineMode && cachedData
+    ? { ...restaurant, ...cachedData }
+    : (liveRestaurant ?? restaurant);
 
-  // ── Auto-calculated available seats from occupied reservations ─────────────
-  const { data: occupiedReservations = [] } = useQuery({
-    queryKey: ['occupiedReservations', restaurant?.id],
+  // ── Auto-calculated available seats from approved/checked-in reservations ──
+  const { data: confirmedReservations = [] } = useQuery({
+    queryKey: ['confirmedReservations', restaurant?.id],
     queryFn: () => base44.entities.Reservation.filter({
       restaurant_id: restaurant.id,
-      status: 'checked_in',
       reservation_date: moment().format('YYYY-MM-DD'),
     }),
-    enabled: !!restaurant?.id && !data?.manual_override_active,
+    enabled: !!restaurant?.id && !offlineMode,
     refetchInterval: 15000,
+    select: (res) => res.filter(r => ['approved', 'checked_in'].includes(r.status)),
   });
 
-  // Seats occupied by checked-in reservations
-  const reservationOccupiedSeats = occupiedReservations.reduce(
+  // Seats committed by confirmed + checked-in reservations
+  const reservationOccupiedSeats = confirmedReservations.reduce(
     (sum, r) => sum + (r.party_size || 0), 0
   );
 
-  // Auto-calculated available = total - occupied (only when override is OFF)
+  // Auto-calculated available = total - committed (only when override is OFF)
   const autoAvailable = data?.manual_override_active
     ? null
     : Math.max(0, Math.min(
@@ -107,10 +131,23 @@ export default function SeatingControlEnhanced({
         (data?.total_seats || 0) - reservationOccupiedSeats + (data?.manual_adjustment_offset || 0)
       ));
 
-  // Displayed available seats
-  const displayAvailable = data?.manual_override_active
-    ? (data?.available_seats ?? 0)
-    : (autoAvailable ?? data?.available_seats ?? 0);
+  // Displayed available seats — in offline mode use local value
+  const displayAvailable = offlineMode
+    ? (localOfflineSeats ?? data?.available_seats ?? 0)
+    : data?.manual_override_active
+      ? (data?.available_seats ?? 0)
+      : (autoAvailable ?? data?.available_seats ?? 0);
+
+  // ── Manual Drift Alert ─────────────────────────────────────────────────────
+  // Show when manual override is ON and manual count differs from reservation-based count
+  const autoBasedCount = data?.manual_override_active
+    ? Math.max(0, (data?.total_seats || 0) - reservationOccupiedSeats)
+    : null;
+  const manualDrift = data?.manual_override_active && autoBasedCount !== null
+    ? Math.abs(displayAvailable - autoBasedCount)
+    : 0;
+  const [driftDismissed, setDriftDismissed] = useState(false);
+  const showDriftAlert = data?.manual_override_active && manualDrift > 0 && !driftDismissed && !offlineMode;
 
   // ── Stale data detection ───────────────────────────────────────────────────
   const lastUpdate = data?.seating_updated_at ? moment(data.seating_updated_at) : null;
@@ -119,7 +156,7 @@ export default function SeatingControlEnhanced({
   const isVeryStale = minutesSinceUpdate !== null && minutesSinceUpdate >= 90;
 
   const [reminderDismissed, setReminderDismissed] = useState(false);
-  const showStaleAlert = isStale && !reminderDismissed;
+  const showStaleAlert = isStale && !reminderDismissed && !data?.manual_override_active;
 
   const dismissReminder = () => {
     setReminderDismissed(true);
@@ -151,16 +188,16 @@ export default function SeatingControlEnhanced({
   });
 
   const handleToggleOverride = async (enabled) => {
+    if (offlineMode) return; // can't toggle in offline mode
     if (enabled) {
-      // Turning ON override: seed manual value with current displayed value
       await updateMutation.mutateAsync({
         manual_override_active: true,
         available_seats: displayAvailable,
         manual_adjustment_offset: 0,
       });
+      setDriftDismissed(false);
       toast.info('Manual override ON — auto-sync paused');
     } else {
-      // Turning OFF: revert to auto calculation
       await updateMutation.mutateAsync({
         manual_override_active: false,
         manual_adjustment_offset: 0,
@@ -170,26 +207,43 @@ export default function SeatingControlEnhanced({
     }
   };
 
-  // ── Manual seat adjustment (only when override is ON) ─────────────────────
+  // Sync manual count to reservation-based count
+  const handleSyncToAuto = async () => {
+    if (!autoBasedCount !== null) return;
+    await updateMutation.mutateAsync({ available_seats: autoBasedCount });
+    setDriftDismissed(true);
+    toast.success(`Synced to ${autoBasedCount} available seats`);
+  };
+
+  // ── Manual seat adjustment ─────────────────────────────────────────────────
   const handleAdjust = (delta) => {
+    if (offlineMode) {
+      // Offline: update local state only
+      const maxSeats = cachedData?.total_seats || data?.total_seats || 100;
+      const current = localOfflineSeats ?? data?.available_seats ?? 0;
+      setLocalOfflineSeats(Math.max(0, Math.min(maxSeats, current + delta)));
+      return;
+    }
     if (!data?.manual_override_active) return;
     const newValue = Math.max(0, Math.min(data.total_seats, (data.available_seats || 0) + delta));
     onSeatingChange(newValue);
     setReminderDismissed(false);
+    setDriftDismissed(false);
   };
 
-  // When override is OFF, we push the auto-calculated value to the DB whenever it changes
+  // When override is OFF, push auto-calculated value to DB whenever it changes
   useEffect(() => {
+    if (offlineMode) return;
     if (data?.manual_override_active) return;
     if (autoAvailable === null || autoAvailable === undefined) return;
-    if (autoAvailable === data?.available_seats) return; // no change needed
+    if (autoAvailable === data?.available_seats) return;
 
     updateMutation.mutate({
       available_seats: autoAvailable,
       manual_override_active: false,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoAvailable, data?.manual_override_active]);
+  }, [autoAvailable, data?.manual_override_active, offlineMode]);
 
   return (
     <div className="space-y-4">
