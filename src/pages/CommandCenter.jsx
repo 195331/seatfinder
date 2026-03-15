@@ -349,7 +349,8 @@ export default function CommandCenter() {
     return () => clearInterval(interval);
   }, [restaurantId, loadContext]);
 
-  const isPlus = featureAccess?.isPlus;
+  // Temporarily allow all access for preview — re-enable gate when ready
+  const isPlus = true; // featureAccess?.isPlus;
 
   return (
     <div className="min-h-screen bg-[#080808] text-white font-sans">
