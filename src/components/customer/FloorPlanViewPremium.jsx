@@ -257,18 +257,23 @@ export default function FloorPlanViewPremium({
   return (
     <div className="space-y-4">
       {/* Status Summary */}
+      {/* Universal legend — matches floor plan colors exactly */}
       <div className="flex flex-wrap gap-4 p-4 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl border border-emerald-100">
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-emerald-500" />
+          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#10B981' }} />
           <span className="text-sm font-medium text-emerald-900">{availableCount} Available</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-amber-500" />
-          <span className="text-sm font-medium text-amber-900">{reservedCount} Reserved</span>
+          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#F59E0B' }} />
+          <span className="text-sm font-medium text-amber-900">Arrived Early</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-red-500" />
-          <span className="text-sm font-medium text-red-900">{occupiedCount} Occupied</span>
+          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#EF4444' }} />
+          <span className="text-sm font-medium text-red-900">{occupiedCount} Occupied / Checked In</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#3B82F6' }} />
+          <span className="text-sm font-medium text-blue-900">{reservedCount} Reserved</span>
         </div>
       </div>
 
