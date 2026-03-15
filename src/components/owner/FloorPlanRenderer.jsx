@@ -302,8 +302,9 @@ export default function FloorPlanRenderer({
           const isSelected = selectedIds.includes(obj.id);
           const isHighlighted = highlightedIds.includes(obj.id);
           const liveStatus = showTableStatus ? tableStatusMap[obj.id] : null;
-          const statusFill = '#ffffff';
-          const statusStroke = liveStatus === 'arrived_early' ? COLORS.tableStrokeArrivedEarly :
+          const statusFill = liveStatus === 'combined' ? COLORS.tableCombined : '#ffffff';
+          const statusStroke = liveStatus === 'combined'      ? COLORS.tableStrokeCombined :
+                              liveStatus === 'arrived_early' ? COLORS.tableStrokeArrivedEarly :
                               liveStatus === 'occupied'      ? COLORS.tableStrokeOccupied :
                               liveStatus === 'reserved'      ? COLORS.tableStrokeReserved :
                               liveStatus === 'free'          ? COLORS.tableStrokeFree :
