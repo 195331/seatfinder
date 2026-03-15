@@ -443,10 +443,10 @@ export default function SeatingControlEnhanced({
             />
           </div>
 
-          {/* Adjust buttons — only active in manual override mode */}
+          {/* Adjust buttons — active in manual override mode OR offline mode */}
           <div className={cn(
             "mt-6 transition-opacity",
-            !data?.manual_override_active && "opacity-40 pointer-events-none"
+            !data?.manual_override_active && !offlineMode && "opacity-40 pointer-events-none"
           )}>
             <div className="flex items-center justify-center gap-3">
               <Button
