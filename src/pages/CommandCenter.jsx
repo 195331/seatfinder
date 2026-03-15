@@ -158,7 +158,7 @@ Format: Return JSON with keys: bullet1, bullet2, bullet3. Each is a single sente
   useEffect(() => { generateBriefing(); }, [generateBriefing]);
 
   return (
-    <div className="rounded-xl border border-[#333] bg-[#0d0d0d] p-5 flex flex-col h-full">
+    <div className="rounded-xl border border-[#333] bg-[#0d0d0d]/80 backdrop-blur-sm shadow-lg shadow-black/40 p-5 flex flex-col h-full">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Zap className="w-4 h-4 text-amber-400" />
