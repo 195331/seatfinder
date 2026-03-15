@@ -707,7 +707,7 @@ export default function OwnerDashboard() {
                     Reserved
                   </div>
                 </div>
-                <LiveSeating restaurant={currentRestaurant} />
+                <LiveSeating restaurant={currentRestaurant} onViewReservations={handleViewTodaysReservations} />
               </TabsContent>
 
               <TabsContent value="floorplan">
