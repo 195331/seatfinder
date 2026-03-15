@@ -151,12 +151,10 @@ export default function LiveSeating({ restaurant, onViewReservations }) {
                 {waitlist.length} ({avgWaitTime}m avg)
               </Badge>
             </div>
-            <Link to={createPageUrl('OwnerDashboard') + `?tab=calendar`}>
-              <Button variant="outline" size="sm" className="w-full gap-2 mt-2">
-                <Calendar className="w-4 h-4" />
-                View Today's Reservations
-              </Button>
-            </Link>
+            <Button variant="outline" size="sm" className="w-full gap-2 mt-2" onClick={onViewReservations}>
+              <Calendar className="w-4 h-4" />
+              View Today's Reservations
+            </Button>
           </CardContent>
         </Card>
 
