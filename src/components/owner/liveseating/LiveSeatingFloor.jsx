@@ -2,10 +2,11 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Eye, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
+import { Eye, ZoomIn, ZoomOut, Maximize2, Link2 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import moment from 'moment';
 import FloorPlanRenderer from '../FloorPlanRenderer';
+import TableCombinationEngine from './TableCombinationEngine';
 
 // Universal color system: Available=emerald, Arrived Early=amber, Occupied=red, Reserved=blue
 const STATUS_COLORS = {
