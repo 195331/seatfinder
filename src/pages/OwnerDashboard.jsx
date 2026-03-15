@@ -291,6 +291,13 @@ export default function OwnerDashboard() {
 
   const featureAccess = useFeatureAccess(selectedRestaurantId);
 
+  const handleViewTodaysReservations = () => {
+    setActiveTab("guests");
+    setTimeout(() => {
+      calendarRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 100);
+  };
+
   // ---- Mutations ----
 
   const updateSeatingMutation = useMutation({
