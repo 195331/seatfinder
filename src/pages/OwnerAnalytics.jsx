@@ -663,6 +663,9 @@ export default function OwnerAnalytics() {
               <OperationalMetrics restaurantId={restaurantId} />
               <LoyaltyAnalytics restaurantId={restaurantId} />
 
+              {/* Customer Intelligence */}
+              <AnalyticsCustomerIntel restaurantId={restaurantId} />
+
               {/* Reviews & Ratings */}
               <Card>
                 <CardHeader><CardTitle>Reviews & Ratings</CardTitle><p className="text-sm text-slate-500">What diners are saying</p></CardHeader>
