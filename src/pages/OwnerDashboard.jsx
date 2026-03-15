@@ -16,6 +16,7 @@ import {
   LayoutGrid,
   ChefHat,
   Home,
+  Zap,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
