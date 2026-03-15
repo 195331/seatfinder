@@ -1,18 +1,24 @@
 /**
  * Seating Automation Backend Function
  *
- * Handles two triggers:
- *  1. reservation_seated  — called when a reservation status changes to "seated"
- *                           Decreases available_seats by party_size immediately.
- *  2. pos_table_paid      — called by POS when a table is marked "paid" or "closed"
- *                           Increases available_seats by table capacity after a 10-min grace period.
+ * Handles three triggers:
+ *  1. reservation_confirmed — called via entity automation when a reservation status changes to "approved"
+ *                             Decreases available_seats by party_size immediately.
+ *  2. reservation_seated    — called when a reservation status changes to "checked_in"
+ *                             Decreases available_seats by party_size immediately.
+ *  3. pos_table_paid        — called by POS when a table is marked "paid" or "closed"
+ *                             Increases available_seats by table capacity after a 10-min grace period.
  *
  * Payload:
- *   { trigger: "reservation_seated", reservation_id, party_size, restaurant_id }
- *   { trigger: "pos_table_paid",     table_id, restaurant_id }
+ *   { trigger: "reservation_confirmed", reservation_id, party_size, restaurant_id }
+ *   { trigger: "reservation_seated",    reservation_id, party_size, restaurant_id }
+ *   { trigger: "pos_table_paid",        table_id, restaurant_id }
+ *
+ * Entity automation payload (auto-called):
+ *   { event: { type, entity_name, entity_id }, data: <reservation>, old_data: <reservation> }
  */
 
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
 
 const GRACE_PERIOD_MS = 10 * 60 * 1000; // 10 minutes
 
