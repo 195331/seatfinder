@@ -69,7 +69,7 @@ export default function FloorPlanEditorOwner({ restaurant, onSave }) {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const totalSeats = data.tables.reduce((sum, t) => sum + t.seats, 0);
+      const totalSeats = data?.tables?.reduce((sum, t) => sum + t.seats, 0) || 0;
       
       // Update restaurant with floor plan data
       await base44.entities.Restaurant.update(restaurant.id, {
@@ -274,7 +274,7 @@ export default function FloorPlanEditorOwner({ restaurant, onSave }) {
     };
   }, [handleMouseMove, handleMouseUp]);
 
-  const totalSeats = data.tables.reduce((sum, t) => sum + t.seats, 0);
+  const totalSeats = data?.tables?.reduce((sum, t) => sum + t.seats, 0) || 0;
 
   const getTableShape = (table, isSelected) => {
     const baseClasses = cn(
