@@ -267,6 +267,39 @@ export default function SeatingControlEnhanced({
         </Card>
       )}
 
+      {/* Manual Drift Alert */}
+      {showDriftAlert && (
+        <Card className="border-2 border-blue-400 bg-blue-50">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <ArrowRightLeft className="w-5 h-5 text-blue-500 shrink-0" />
+                <div>
+                  <p className="font-medium text-blue-800">Seat Count Mismatch</p>
+                  <p className="text-sm text-blue-700">
+                    Manual count is <strong>{displayAvailable}</strong>, but active reservations say <strong>{autoBasedCount}</strong>. Sync now?
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <Button size="sm" variant="ghost" onClick={() => setDriftDismissed(true)} className="text-slate-500">
+                  Ignore
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleSyncToAuto}
+                  disabled={updateMutation.isPending}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  <RefreshCw className="w-4 h-4 mr-1" />
+                  Sync
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Stale Data Alert (>60 min) */}
       {showStaleAlert && (
         <Card className={cn(
