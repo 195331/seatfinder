@@ -103,17 +103,17 @@ function PulseIndicator() {
 }
 
 function KPICard({ label, value, sub, color = 'indigo' }) {
-  const colors = {
-    indigo: 'border-indigo-500/30 text-indigo-400',
-    emerald: 'border-emerald-500/30 text-emerald-400',
-    amber: 'border-amber-500/30 text-amber-400',
-    rose: 'border-rose-500/30 text-rose-400',
+  const glows = {
+    indigo: 'border-indigo-500/40 shadow-indigo-500/10 text-indigo-400',
+    emerald: 'border-emerald-500/40 shadow-emerald-500/10 text-emerald-400',
+    amber: 'border-amber-500/40 shadow-amber-500/10 text-amber-400',
+    rose: 'border-rose-500/40 shadow-rose-500/10 text-rose-400',
   };
   return (
-    <div className={`rounded-xl border bg-[#111] p-5 flex flex-col gap-1 ${colors[color]}`}>
+    <div className={`rounded-xl border bg-[#0d0d0d]/80 backdrop-blur-sm p-5 flex flex-col gap-1 shadow-lg ${glows[color]}`}>
       <p className="text-xs uppercase tracking-widest text-slate-500">{label}</p>
       <p className="text-4xl font-black text-white leading-none">{value}</p>
-      {sub && <p className="text-xs text-slate-500 mt-1">{sub}</p>}
+      {sub && <p className="text-xs text-slate-400 mt-1">{sub}</p>}
     </div>
   );
 }
