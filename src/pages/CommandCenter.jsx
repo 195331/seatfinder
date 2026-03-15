@@ -90,7 +90,7 @@ async function getSuperHubContext(restaurantId) {
   };
 
   try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify({ ...ctx, _cached_at: Date.now() }));
+    localStorage.setItem(getCacheKey(restaurantId), JSON.stringify({ ...ctx, _cached_at: Date.now() }));
   } catch (_) {}
 
   return ctx;
@@ -359,7 +359,7 @@ export default function CommandCenter() {
     } catch (e) {
       // Offline fallback
       try {
-        const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
+        const cached = JSON.parse(localStorage.getItem(getCacheKey(restaurantId)) || 'null');
         if (cached) { setCtx(cached); setOffline(true); }
       } catch (_) {}
     }

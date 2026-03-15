@@ -97,7 +97,7 @@ async function getSuperHubContext(restaurantId) {
     _reservations: reservations,
   };
 
-  try { localStorage.setItem(CACHE_KEY, JSON.stringify({ ...ctx, _cached_at: Date.now() })); } catch (_) {}
+  try { localStorage.setItem(getCacheKey(restaurantId), JSON.stringify({ ...ctx, _cached_at: Date.now() })); } catch (_) {}
   return ctx;
 }
 
@@ -345,7 +345,7 @@ export default function OwnerAnalytics() {
       setLastRefreshed(new Date());
     } catch (e) {
       try {
-        const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
+        const cached = JSON.parse(localStorage.getItem(getCacheKey(restaurantId)) || 'null');
         if (cached) { setCtx(cached); setOffline(true); }
       } catch (_) {}
     }
