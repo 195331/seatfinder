@@ -242,13 +242,8 @@ export default function LiveSeatingFloor({
             draggable={true}
             onDragEnd={(e) => setCamera(c => ({ ...c, x: e.target.x(), y: e.target.y() }))}
             onWheel={(e) => {
-              e.evt.preventDefault();
-              const st = stageRef.current;
-              if (!st) return;
-              const pointer = st.getPointerPosition();
-              if (!pointer) return;
-
-              const direction = e.evt.deltaY > 0 ? -1 : 1;
+              e.preventDefault();
+              setCamera(c => ({ ...c, scale: clampScale(c.scale * (e.deltaY > 0 ? 0.92 : 1.08)) }));
               const factor = direction > 0 ? 1.08 : 0.92;
               
               const oldScale = st.scaleX();
