@@ -8,10 +8,12 @@ import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Legend
 } from 'recharts';
-import { Loader2, Crown, Lock, ArrowLeft, RefreshCw, Wifi, WifiOff, Zap } from 'lucide-react';
+import { Loader2, Crown, ArrowLeft, RefreshCw, Wifi, WifiOff, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useFeatureAccess } from '@/components/subscription/SubscriptionPlans';
 import confetti from 'canvas-confetti';
+import LiveFeed from '@/components/commandcenter/LiveFeed';
+import CustomerIntelPanel from '@/components/commandcenter/CustomerIntelPanel';
 
 const CACHE_KEY = 'supa_hub_cache';
 
