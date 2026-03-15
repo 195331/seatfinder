@@ -128,37 +128,37 @@ export default function LiveSeatingFloor({
 
   return (
     <Card className="border-0 shadow-lg h-full">
-      <CardHeader className="border-b bg-gradient-to-r from-slate-50 to-slate-100">
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
+      <CardHeader className="border-b bg-gradient-to-r from-slate-50 to-slate-100 pb-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <CardTitle className="flex items-center gap-2 shrink-0">
             <Eye className="w-5 h-5 text-emerald-500" />
             Live Floor Plan
           </CardTitle>
-          <div className="flex items-center gap-2">
-            {layers.length > 1 && (
-              <div className="flex gap-1 mr-2">
-                {layers.map(layer => (
-                  <Button
-                    key={layer}
-                    size="sm"
-                    variant={activeLayer === layer ? 'default' : 'outline'}
-                    onClick={() => setActiveLayer(layer)}
-                  >
-                    {layer}
-                  </Button>
-                ))}
-              </div>
-            )}
-            {/* Link Mode toggle */}
-            <Button
-              size="sm"
-              variant={linkModeActive ? 'default' : 'outline'}
-              onClick={() => { setLinkModeActive(v => !v); setCombinedIds([]); }}
-              className={linkModeActive ? 'bg-purple-600 hover:bg-purple-700 text-white border-purple-600' : 'border-purple-300 text-purple-700 hover:bg-purple-50'}
-            >
-              <Link2 className="w-4 h-4 mr-1" />
-              {linkModeActive ? 'Exit Link Mode' : 'Link Mode'}
-            </Button>
+          {layers.length > 1 && (
+            <div className="flex gap-1">
+              {layers.map(layer => (
+                <Button
+                  key={layer}
+                  size="sm"
+                  variant={activeLayer === layer ? 'default' : 'outline'}
+                  onClick={() => setActiveLayer(layer)}
+                >
+                  {layer}
+                </Button>
+              ))}
+            </div>
+          )}
+          {/* Link Mode toggle */}
+          <Button
+            size="sm"
+            variant={linkModeActive ? 'default' : 'outline'}
+            onClick={() => { setLinkModeActive(v => !v); setCombinedIds([]); }}
+            className={linkModeActive ? 'bg-purple-600 hover:bg-purple-700 text-white border-purple-600' : 'border-purple-300 text-purple-700 hover:bg-purple-50'}
+          >
+            <Link2 className="w-4 h-4 mr-1" />
+            {linkModeActive ? 'Exit Link Mode' : 'Link Mode'}
+          </Button>
+          <div className="flex items-center gap-1 ml-auto">
             <Button size="sm" variant="outline" onClick={() => setCamera(c => ({ ...c, scale: clampScale(c.scale * 0.88) }))}>
               <ZoomOut className="w-4 h-4" />
             </Button>
