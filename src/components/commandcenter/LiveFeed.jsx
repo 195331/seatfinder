@@ -33,9 +33,11 @@ export default function LiveFeed({ restaurantId }) {
   const [newIds, setNewIds] = useState(new Set());
   const seenIds = useRef(new Set());
   const isFirst = useRef(true);
+  const isFetching = useRef(false);
 
   const fetchEvents = async () => {
-    if (!restaurantId) return;
+    if (!restaurantId || isFetching.current) return;
+    isFetching.current = true;
     const delay = (ms) => new Promise(res => setTimeout(res, ms));
     const checkins = await base44.entities.Reservation.filter({ restaurant_id: restaurantId, status: 'checked_in' }, '-checked_in_at', 15);
     await delay(200);
