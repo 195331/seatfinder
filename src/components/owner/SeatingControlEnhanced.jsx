@@ -365,10 +365,16 @@ export default function SeatingControlEnhanced({
                     {moment(lastUpdate).fromNow()}
                   </Badge>
                 )}
-                {!data?.manual_override_active && (
+                {!data?.manual_override_active && !offlineMode && (
                   <Badge variant="outline" className="text-xs border-blue-200 text-blue-600 gap-1">
                     <Database className="w-3 h-3" />
-                    {reservationOccupiedSeats} reserved
+                    {reservationOccupiedSeats} confirmed
+                  </Badge>
+                )}
+                {offlineMode && (
+                  <Badge variant="outline" className="text-xs border-orange-300 text-orange-600 gap-1">
+                    <WifiOff className="w-3 h-3" />
+                    Offline
                   </Badge>
                 )}
               </div>
