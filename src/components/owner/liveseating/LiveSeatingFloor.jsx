@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Eye, ZoomIn, ZoomOut, Maximize2, Link2 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import moment from 'moment';
-import FloorPlanRenderer from '@/components/owner/FloorPlanRenderer';
+import FloorPlanRenderer from '../FloorPlanRenderer';
 import TableCombinationEngine from './TableCombinationEngine';
 
 // Universal color system: Available=emerald, Arrived Early=amber, Occupied=red, Reserved=blue
@@ -242,8 +242,29 @@ export default function LiveSeatingFloor({
             draggable={true}
             onDragEnd={(e) => setCamera(c => ({ ...c, x: e.target.x(), y: e.target.y() }))}
             onWheel={(e) => {
-              e.preventDefault();
-              setCamera(c => ({ ...c, scale: clampScale(c.scale * (e.deltaY > 0 ? 0.92 : 1.08)) }));
+              e.evt.preventDefault();
+              const st = stageRef.current;
+              if (!st) return;
+              const pointer = st.getPointerPosition();
+              if (!pointer) return;
+
+              const direction = e.evt.deltaY > 0 ? -1 : 1;
+              const factor = direction > 0 ? 1.08 : 0.92;
+              
+              const oldScale = st.scaleX();
+              const newScale = clampScale(oldScale * factor);
+
+              const mousePointTo = {
+                x: (pointer.x - st.x()) / oldScale,
+                y: (pointer.y - st.y()) / oldScale
+              };
+
+              const newPos = {
+                x: pointer.x - mousePointTo.x * newScale,
+                y: pointer.y - mousePointTo.y * newScale
+              };
+
+              setCamera({ x: newPos.x, y: newPos.y, scale: newScale });
             }}
             readOnly={true}
           />

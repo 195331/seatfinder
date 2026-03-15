@@ -1,24 +1,18 @@
 /**
  * Seating Automation Backend Function
  *
- * Handles three triggers:
- *  1. reservation_confirmed — called via entity automation when a reservation status changes to "approved"
- *                             Decreases available_seats by party_size immediately.
- *  2. reservation_seated    — called when a reservation status changes to "checked_in"
- *                             Decreases available_seats by party_size immediately.
- *  3. pos_table_paid        — called by POS when a table is marked "paid" or "closed"
- *                             Increases available_seats by table capacity after a 10-min grace period.
+ * Handles two triggers:
+ *  1. reservation_seated  — called when a reservation status changes to "seated"
+ *                           Decreases available_seats by party_size immediately.
+ *  2. pos_table_paid      — called by POS when a table is marked "paid" or "closed"
+ *                           Increases available_seats by table capacity after a 10-min grace period.
  *
  * Payload:
- *   { trigger: "reservation_confirmed", reservation_id, party_size, restaurant_id }
- *   { trigger: "reservation_seated",    reservation_id, party_size, restaurant_id }
- *   { trigger: "pos_table_paid",        table_id, restaurant_id }
- *
- * Entity automation payload (auto-called):
- *   { event: { type, entity_name, entity_id }, data: <reservation>, old_data: <reservation> }
+ *   { trigger: "reservation_seated", reservation_id, party_size, restaurant_id }
+ *   { trigger: "pos_table_paid",     table_id, restaurant_id }
  */
 
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 const GRACE_PERIOD_MS = 10 * 60 * 1000; // 10 minutes
 
@@ -32,67 +26,6 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-
-    // ── Entity Automation payload (reservation status change) ─────────────────
-    // When triggered by entity automation, body has: event, data, old_data
-    if (body.event && body.data && body.event.entity_name === 'Reservation') {
-      const reservation = body.data;
-      const oldReservation = body.old_data;
-
-      // Only act when status changes TO 'approved' (confirmed)
-      if (reservation.status === 'approved' && oldReservation?.status !== 'approved') {
-        const restId = reservation.restaurant_id;
-        const restaurants = await base44.asServiceRole.entities.Restaurant.filter({ id: restId });
-        const restaurant = restaurants?.[0];
-        if (!restaurant || restaurant.manual_override_active) {
-          // Skip if manual override is active — owner is managing manually
-          return Response.json({ success: true, message: 'Manual override active, skipping auto-deduct' });
-        }
-
-        const currentAvailable = Number(restaurant.available_seats || 0);
-        const decrease = Number(reservation.party_size || 0);
-        const newAvailable = Math.max(0, currentAvailable - decrease);
-
-        await base44.asServiceRole.entities.Restaurant.update(restId, {
-          available_seats: newAvailable,
-          seating_updated_at: new Date().toISOString(),
-        });
-
-        if (restaurant.total_seats > 0) {
-          await base44.asServiceRole.entities.SeatingHistory.create({
-            restaurant_id: restId,
-            available_seats: newAvailable,
-            total_seats: Number(restaurant.total_seats),
-            occupancy_percent: ((Number(restaurant.total_seats) - newAvailable) / Number(restaurant.total_seats)) * 100,
-            recorded_at: new Date().toISOString(),
-          });
-        }
-
-        await base44.asServiceRole.entities.AuditLog.create({
-          restaurant_id: restId,
-          action_type: 'seating_auto_decrease',
-          source: 'system_automation',
-          entity_type: 'reservation',
-          entity_id: reservation.id,
-          performed_by: 'system',
-          performed_by_name: 'Seating Automation',
-          old_value: { available_seats: currentAvailable },
-          new_value: { available_seats: newAvailable },
-          reason: `Reservation approved — party of ${decrease} auto-deducted from available seats`,
-        });
-
-        return Response.json({
-          success: true,
-          message: `Reservation confirmed. Seats decreased by ${decrease}. Now ${newAvailable} available.`,
-          old_available: currentAvailable,
-          new_available: newAvailable,
-        });
-      }
-
-      return Response.json({ success: true, message: 'No seat change needed for this status transition' });
-    }
-
-    // ── Manual / direct trigger payload ───────────────────────────────────────
     const { trigger, restaurant_id } = body;
 
     if (!trigger || !restaurant_id) {
@@ -106,16 +39,11 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Restaurant not found' }, { status: 404 });
     }
 
-    // ── 1. Reservation Confirmed / Seated ─────────────────────────────────────
-    if (trigger === 'reservation_confirmed' || trigger === 'reservation_seated') {
+    // ── 1. Reservation Seated ──────────────────────────────────────────────────
+    if (trigger === 'reservation_seated') {
       const { reservation_id, party_size } = body;
       if (!reservation_id || !party_size) {
         return Response.json({ error: 'Missing reservation_id or party_size' }, { status: 400 });
-      }
-
-      // Skip if manual override is active
-      if (restaurant.manual_override_active) {
-        return Response.json({ success: true, message: 'Manual override active, skipping auto-deduct' });
       }
 
       const currentAvailable = Number(restaurant.available_seats || 0);
@@ -127,6 +55,7 @@ Deno.serve(async (req) => {
         seating_updated_at: new Date().toISOString(),
       });
 
+      // Log seating history
       if (restaurant.total_seats > 0) {
         await base44.entities.SeatingHistory.create({
           restaurant_id,
@@ -137,6 +66,7 @@ Deno.serve(async (req) => {
         });
       }
 
+      // Audit log
       await base44.entities.AuditLog.create({
         restaurant_id,
         action_type: 'seating_auto_decrease',
@@ -147,7 +77,7 @@ Deno.serve(async (req) => {
         performed_by_name: 'Seating Automation',
         old_value: { available_seats: currentAvailable },
         new_value: { available_seats: newAvailable },
-        reason: `Reservation ${trigger === 'reservation_confirmed' ? 'confirmed' : 'seated'} — party of ${decrease} auto-deducted from available seats`,
+        reason: `Reservation seated — party of ${decrease} auto-deducted from available seats`,
       });
 
       return Response.json({
