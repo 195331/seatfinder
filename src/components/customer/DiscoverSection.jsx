@@ -8,6 +8,7 @@ import RestaurantCard from './RestaurantCard';
 import { Skeleton } from "@/components/ui/skeleton";
 import { motion } from 'framer-motion';
 import { cn } from "@/lib/utils";
+import PeopleSection from '@/components/discover/PeopleSection';
 
 export default function DiscoverSection({ 
   currentUser, 
