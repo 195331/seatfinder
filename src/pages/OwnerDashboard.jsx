@@ -683,19 +683,19 @@ export default function OwnerDashboard() {
                 {/* Table Status Legend */}
                 <div className="flex flex-wrap gap-3 mb-4 px-1">
                   <div className="flex items-center gap-1.5 text-xs text-slate-600">
-                    <span className="w-3 h-3 rounded-full bg-emerald-500 inline-block" />
+                    <span className="w-3 h-3 rounded-full inline-block" style={{ backgroundColor: '#10B981' }} />
                     Available
                   </div>
                   <div className="flex items-center gap-1.5 text-xs text-slate-600">
-                    <span className="w-3 h-3 rounded-full bg-amber-400 inline-block" />
+                    <span className="w-3 h-3 rounded-full inline-block" style={{ backgroundColor: '#F59E0B' }} />
                     Arrived Early
                   </div>
                   <div className="flex items-center gap-1.5 text-xs text-slate-600">
-                    <span className="w-3 h-3 rounded-full bg-red-500 inline-block" />
+                    <span className="w-3 h-3 rounded-full inline-block" style={{ backgroundColor: '#EF4444' }} />
                     Occupied / Checked In
                   </div>
                   <div className="flex items-center gap-1.5 text-xs text-slate-600">
-                    <span className="w-3 h-3 rounded-full bg-blue-400 inline-block" />
+                    <span className="w-3 h-3 rounded-full inline-block" style={{ backgroundColor: '#3B82F6' }} />
                     Reserved
                   </div>
                 </div>
