@@ -244,22 +244,6 @@ export default function LiveSeatingFloor({
             onWheel={(e) => {
               e.preventDefault();
               setCamera(c => ({ ...c, scale: clampScale(c.scale * (e.deltaY > 0 ? 0.92 : 1.08)) }));
-              const factor = direction > 0 ? 1.08 : 0.92;
-              
-              const oldScale = st.scaleX();
-              const newScale = clampScale(oldScale * factor);
-
-              const mousePointTo = {
-                x: (pointer.x - st.x()) / oldScale,
-                y: (pointer.y - st.y()) / oldScale
-              };
-
-              const newPos = {
-                x: pointer.x - mousePointTo.x * newScale,
-                y: pointer.y - mousePointTo.y * newScale
-              };
-
-              setCamera({ x: newPos.x, y: newPos.y, scale: newScale });
             }}
             readOnly={true}
           />
