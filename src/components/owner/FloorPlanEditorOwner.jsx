@@ -38,7 +38,18 @@ export default function FloorPlanEditorOwner({ restaurant, onSave }) {
   const stageRef = useRef(null);
   const featureAccess = useFeatureAccess(restaurant?.id);
   const [isSaving, setIsSaving] = useState(false);
-  const [data, setData] = useState({ areas: [], tables: [] });
+  const [data, setData] = useState({ 
+    areas: [{
+      id: 'area-1',
+      name: 'Main Dining',
+      color: '#3B82F6',
+      x: 100,
+      y: 100,
+      width: 600,
+      height: 400
+    }],
+    tables: [] 
+  });
   const [selectedTableId, setSelectedTableId] = useState(null);
   const [selectedAreaId, setSelectedAreaId] = useState(null);
   const [newTableType, setNewTableType] = useState(null);
@@ -272,7 +283,7 @@ export default function FloorPlanEditorOwner({ restaurant, onSave }) {
             </Button>
           </CardHeader>
           <CardContent className="pt-0 space-y-2">
-            {data.areas.map(area => (
+            {data?.areas?.map(area => (
               <div
                 key={area.id}
                 onClick={() => setSelectedAreaId(area.id)}
@@ -344,7 +355,7 @@ export default function FloorPlanEditorOwner({ restaurant, onSave }) {
         >
           <Layer>
             {/* Areas */}
-            {data.areas.map(area => (
+            {data?.areas?.map(area => (
               <Group key={area.id}>
                 <Rect
                   x={area.x}
@@ -369,7 +380,7 @@ export default function FloorPlanEditorOwner({ restaurant, onSave }) {
             ))}
 
             {/* Tables */}
-            {data.tables.map(table => (
+            {data?.tables?.map(table => (
               <Group
                 key={table.id}
                 draggable={true}
