@@ -1,63 +1,62 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
+import { Stage, Layer, Rect, Text, Group } from 'react-konva';
 import { base44 } from '@/api/base44Client';
-import { Plus, Trash2, Move, Save, Loader2, Sparkles } from 'lucide-react';
+import { Plus, Trash2, Save, Loader2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import AIFloorPlanOptimizer from '@/components/ai/AIFloorPlanOptimizer';
 import { useFeatureAccess } from '@/components/subscription/SubscriptionPlans';
 
-const GRID_SIZE = 40;
-const CANVAS_WIDTH = 800;
-const CANVAS_HEIGHT = 600;
+const GRID_SIZE = 20;
+const CANVAS_WIDTH = 1000;
+const CANVAS_HEIGHT = 700;
+
+const TABLE_COLORS = {
+  2: '#10B981',   // green
+  4: '#3B82F6',   // blue
+  6: '#8B5CF6',   // purple
+  10: '#F59E0B'   // amber
+};
 
 const AREA_COLORS = [
   { name: 'Main Dining', color: '#3B82F6' },
   { name: 'Patio', color: '#10B981' },
   { name: 'Bar', color: '#8B5CF6' },
   { name: 'Private Room', color: '#F59E0B' },
-  { name: 'Lounge', color: '#EC4899' },
 ];
 
 const TABLE_TYPES = [
-  { seats: 2, shape: 'circle', label: '2 Seats', width: 40, height: 40 },
-  { seats: 4, shape: 'square', label: '4 Seats', width: 50, height: 50 },
-  { seats: 6, shape: 'rectangle', label: '6 Seats', width: 80, height: 50 },
-  { seats: 10, shape: 'large', label: '10 Seats', width: 100, height: 60 },
+  { seats: 2, shape: 'square', label: '2 Seats', width: 60, height: 60 },
+  { seats: 4, shape: 'square', label: '4 Seats', width: 80, height: 80 },
+  { seats: 6, shape: 'rect', label: '6 Seats', width: 120, height: 70 },
+  { seats: 10, shape: 'rect', label: '10 Seats', width: 160, height: 90 },
 ];
 
 export default function FloorPlanEditorOwner({ restaurant, onSave }) {
-  const canvasRef = useRef(null);
+  const stageRef = useRef(null);
   const featureAccess = useFeatureAccess(restaurant?.id);
   const [isSaving, setIsSaving] = useState(false);
   const [data, setData] = useState({ areas: [], tables: [] });
   const [selectedTableId, setSelectedTableId] = useState(null);
   const [selectedAreaId, setSelectedAreaId] = useState(null);
-  const [draggedTable, setDraggedTable] = useState(null);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const [resizingArea, setResizingArea] = useState(null);
-  const [draggingArea, setDraggingArea] = useState(null);
-  const [areaResizeStart, setAreaResizeStart] = useState(null);
   const [newTableType, setNewTableType] = useState(null);
+  const [camera, setCamera] = useState({ x: 0, y: 0, scale: 1 });
 
-  // Load existing floor plan data
   useEffect(() => {
     if (restaurant?.floor_plan_data) {
       setData(restaurant.floor_plan_data);
     } else {
-      // Initialize with default area
       setData({
         areas: [{
           id: 'area-1',
           name: 'Main Dining',
           color: '#3B82F6',
-          x: GRID_SIZE,
-          y: GRID_SIZE,
-          width: GRID_SIZE * 12,
-          height: GRID_SIZE * 10
+          x: 100,
+          y: 100,
+          width: 600,
+          height: 400
         }],
         tables: []
       });
@@ -71,20 +70,15 @@ export default function FloorPlanEditorOwner({ restaurant, onSave }) {
     try {
       const totalSeats = data?.tables?.reduce((sum, t) => sum + t.seats, 0) || 0;
       
-      // Update restaurant with floor plan data
       await base44.entities.Restaurant.update(restaurant.id, {
         floor_plan_data: data,
         total_seats: totalSeats,
         available_seats: totalSeats
       });
 
-      // Sync areas to RestaurantArea entity
       const existingAreas = await base44.entities.RestaurantArea.filter({ restaurant_id: restaurant.id });
-      
-      // Delete old areas
       await Promise.all(existingAreas.map(a => base44.entities.RestaurantArea.delete(a.id)));
       
-      // Create new areas
       for (const area of data.areas) {
         const areaSeats = data.tables.filter(t => t.areaId === area.id).reduce((sum, t) => sum + t.seats, 0);
         await base44.entities.RestaurantArea.create({
@@ -96,7 +90,6 @@ export default function FloorPlanEditorOwner({ restaurant, onSave }) {
         });
       }
 
-      // Sync tables
       const existingTables = await base44.entities.Table.filter({ restaurant_id: restaurant.id });
       await Promise.all(existingTables.map(t => base44.entities.Table.delete(t.id)));
       
@@ -127,10 +120,10 @@ export default function FloorPlanEditorOwner({ restaurant, onSave }) {
       id: `area-${Date.now()}`,
       name: preset.name,
       color: preset.color,
-      x: GRID_SIZE * 2 + (data.areas.length * GRID_SIZE),
-      y: GRID_SIZE * 2 + (data.areas.length * GRID_SIZE),
-      width: GRID_SIZE * 8,
-      height: GRID_SIZE * 6
+      x: 150 + (data.areas.length * 50),
+      y: 150 + (data.areas.length * 50),
+      width: 400,
+      height: 300
     };
     setData({ ...data, areas: [...data.areas, newArea] });
     setSelectedAreaId(newArea.id);
@@ -191,128 +184,57 @@ export default function FloorPlanEditorOwner({ restaurant, onSave }) {
     setSelectedTableId(null);
   };
 
-  const handleCanvasMouseDown = (e) => {
-    const rect = canvasRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    if (newTableType) {
-      addTable(newTableType, x - newTableType.width / 2, y - newTableType.height / 2);
-      return;
-    }
-
-    setSelectedTableId(null);
-    setSelectedAreaId(null);
-  };
-
-  const handleTableMouseDown = (e, table) => {
-    e.stopPropagation();
-    const rect = canvasRef.current.getBoundingClientRect();
-    setDraggedTable(table.id);
-    setDragOffset({
-      x: e.clientX - rect.left - table.x,
-      y: e.clientY - rect.top - table.y
-    });
-    setSelectedTableId(table.id);
-    setSelectedAreaId(null);
-  };
-
-  const handleAreaMouseDown = (e, area, isResize = false) => {
-    e.stopPropagation();
-    const rect = canvasRef.current.getBoundingClientRect();
+  const handleStageClick = (e) => {
+    const stage = stageRef.current;
+    if (!stage) return;
     
-    if (isResize) {
-      setResizingArea(area.id);
-      setAreaResizeStart({ x: e.clientX, y: e.clientY, width: area.width, height: area.height });
-    } else {
-      setDraggingArea(area.id);
-      setDragOffset({ x: e.clientX - rect.left - area.x, y: e.clientY - rect.top - area.y });
+    const clickedOnEmpty = e.target === stage;
+    if (clickedOnEmpty) {
+      setSelectedTableId(null);
+      setSelectedAreaId(null);
+      
+      if (newTableType) {
+        const pointerPos = stage.getPointerPosition();
+        const relX = (pointerPos.x - camera.x) / camera.scale;
+        const relY = (pointerPos.y - camera.y) / camera.scale;
+        addTable(newTableType, relX, relY);
+      }
     }
-    setSelectedAreaId(area.id);
-    setSelectedTableId(null);
   };
 
-  const handleMouseMove = useCallback((e) => {
-    if (!canvasRef.current) return;
-    const rect = canvasRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+  const handleTableDragEnd = (tableId, newPos) => {
+    updateTable(tableId, { x: snapToGrid(newPos.x), y: snapToGrid(newPos.y) });
+  };
 
-    if (draggedTable) {
-      const newX = snapToGrid(Math.max(0, Math.min(CANVAS_WIDTH - 60, x - dragOffset.x)));
-      const newY = snapToGrid(Math.max(0, Math.min(CANVAS_HEIGHT - 60, y - dragOffset.y)));
-      const areaAtPosition = data.areas.find(a => 
-        newX >= a.x && newX <= a.x + a.width && newY >= a.y && newY <= a.y + a.height
-      );
-      updateTable(draggedTable, { x: newX, y: newY, areaId: areaAtPosition?.id || data.tables.find(t => t.id === draggedTable)?.areaId });
-    }
-
-    if (draggingArea) {
-      updateArea(draggingArea, { x: snapToGrid(Math.max(0, x - dragOffset.x)), y: snapToGrid(Math.max(0, y - dragOffset.y)) });
-    }
-
-    if (resizingArea && areaResizeStart) {
-      const newWidth = snapToGrid(Math.max(GRID_SIZE * 3, areaResizeStart.width + (e.clientX - areaResizeStart.x)));
-      const newHeight = snapToGrid(Math.max(GRID_SIZE * 3, areaResizeStart.height + (e.clientY - areaResizeStart.y)));
-      updateArea(resizingArea, { width: newWidth, height: newHeight });
-    }
-  }, [draggedTable, draggingArea, resizingArea, dragOffset, areaResizeStart, data]);
-
-  const handleMouseUp = useCallback(() => {
-    setDraggedTable(null);
-    setDraggingArea(null);
-    setResizingArea(null);
-    setAreaResizeStart(null);
-  }, []);
-
-  useEffect(() => {
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
+  const handleWheel = (e) => {
+    e.evt.preventDefault();
+    const stage = stageRef.current;
+    if (!stage) return;
+    
+    const pointer = stage.getPointerPosition();
+    const oldScale = camera.scale;
+    const newScale = camera.scale * (e.evt.deltaY > 0 ? 0.9 : 1.1);
+    const clampedScale = Math.max(0.5, Math.min(3, newScale));
+    
+    const mousePointTo = {
+      x: (pointer.x - camera.x) / oldScale,
+      y: (pointer.y - camera.y) / oldScale
     };
-  }, [handleMouseMove, handleMouseUp]);
+
+    const newPos = {
+      x: pointer.x - mousePointTo.x * clampedScale,
+      y: pointer.y - mousePointTo.y * clampedScale
+    };
+
+    setCamera({ x: newPos.x, y: newPos.y, scale: clampedScale });
+  };
 
   const totalSeats = data?.tables?.reduce((sum, t) => sum + t.seats, 0) || 0;
-
-  const getTableShape = (table, isSelected) => {
-    const baseClasses = cn(
-      "absolute flex items-center justify-center cursor-move transition-all border-2 shadow-sm",
-      isSelected ? "ring-2 ring-emerald-400 border-emerald-500 shadow-lg z-20" : "border-slate-400 hover:border-slate-500 z-10"
-    );
-    const shapeStyles = {
-      circle: "rounded-full bg-white",
-      square: "rounded-lg bg-white",
-      rectangle: "rounded-lg bg-white",
-      large: "rounded-lg bg-white"
-    };
-
-    return (
-      <div
-        key={table.id}
-        className={cn(baseClasses, shapeStyles[table.shape])}
-        style={{ left: table.x, top: table.y, width: table.width, height: table.height }}
-        onMouseDown={(e) => handleTableMouseDown(e, table)}
-      >
-        <div className="text-center pointer-events-none">
-          <div className="text-xs font-bold text-slate-700">{table.label}</div>
-          <div className="text-[10px] text-slate-500">{table.seats}</div>
-        </div>
-        {table.shape === 'large' && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="w-full h-0.5 bg-slate-300 absolute" />
-            <div className="w-0.5 h-full bg-slate-300 absolute" />
-          </div>
-        )}
-      </div>
-    );
-  };
 
   return (
     <div className="flex gap-4">
       {/* Left Sidebar */}
-      <div className="w-64 shrink-0 space-y-4">
+      <div className="w-64 shrink-0 space-y-4 overflow-y-auto max-h-screen">
         <Card>
           <CardHeader className="py-3">
             <CardTitle className="text-sm">Table Types</CardTitle>
@@ -327,12 +249,10 @@ export default function FloorPlanEditorOwner({ restaurant, onSave }) {
                   newTableType?.seats === type.seats ? "border-emerald-500 bg-emerald-50" : "border-slate-200 hover:border-slate-300"
                 )}
               >
-                <div className={cn(
-                  "w-8 h-8 flex items-center justify-center border-2 border-slate-400 text-xs font-bold",
-                  type.shape === 'circle' && "rounded-full",
-                  type.shape === 'square' && "rounded",
-                  (type.shape === 'rectangle' || type.shape === 'large') && "rounded w-10 h-6"
-                )}>
+                <div 
+                  className="w-8 h-8 flex items-center justify-center text-xs font-bold text-white"
+                  style={{ backgroundColor: TABLE_COLORS[type.seats], borderRadius: '4px' }}
+                >
                   {type.seats}
                 </div>
                 <span className="text-sm">{type.label}</span>
@@ -405,66 +325,100 @@ export default function FloorPlanEditorOwner({ restaurant, onSave }) {
             </CardContent>
           </Card>
         )}
-
-        {/* AI Floor Plan Optimizer - Plus feature */}
-        {featureAccess.isPlus && (
-          <AIFloorPlanOptimizer
-            restaurantId={restaurant?.id}
-            currentLayout={data}
-            onApplySuggestion={(newLayout) => setData(newLayout)}
-          />
-        )}
       </div>
 
       {/* Canvas */}
-      <div className="flex-1">
-        <div
-          ref={canvasRef}
-          className={cn("relative bg-white rounded-xl border-2 border-slate-200 overflow-hidden", newTableType && "cursor-crosshair")}
-          style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT }}
-          onMouseDown={handleCanvasMouseDown}
+      <div className="flex-1 bg-slate-100 rounded-xl overflow-hidden border border-slate-200">
+        <Stage
+          ref={stageRef}
+          width={CANVAS_WIDTH}
+          height={CANVAS_HEIGHT}
+          onWheel={handleWheel}
+          onClick={handleStageClick}
+          scaleX={camera.scale}
+          scaleY={camera.scale}
+          x={camera.x}
+          y={camera.y}
+          draggable={true}
+          onDragEnd={(e) => setCamera(c => ({ ...c, x: e.target.x(), y: e.target.y() }))}
         >
-          <svg className="absolute inset-0 pointer-events-none" width="100%" height="100%">
-            <defs>
-              <pattern id="ownerGrid" width={GRID_SIZE} height={GRID_SIZE} patternUnits="userSpaceOnUse">
-                <path d={`M ${GRID_SIZE} 0 L 0 0 0 ${GRID_SIZE}`} fill="none" stroke="#e2e8f0" strokeWidth="1"/>
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#ownerGrid)" />
-          </svg>
+          <Layer>
+            {/* Areas */}
+            {data.areas.map(area => (
+              <Group key={area.id}>
+                <Rect
+                  x={area.x}
+                  y={area.y}
+                  width={area.width}
+                  height={area.height}
+                  fill={area.color}
+                  opacity={0.1}
+                  stroke={area.color}
+                  strokeWidth={2}
+                  dash={[5, 5]}
+                />
+                <Text
+                  x={area.x + 5}
+                  y={area.y - 20}
+                  text={area.name}
+                  fontSize={14}
+                  fontStyle="bold"
+                  fill={area.color}
+                />
+              </Group>
+            ))}
 
-          {data.areas.map(area => (
-            <div
-              key={area.id}
-              className={cn("absolute border-2 border-dashed rounded-lg", selectedAreaId === area.id && "shadow-lg")}
-              style={{
-                left: area.x, top: area.y, width: area.width, height: area.height,
-                backgroundColor: `${area.color}20`, borderColor: area.color, cursor: 'move'
-              }}
-              onMouseDown={(e) => handleAreaMouseDown(e, area)}
-            >
-              <div className="absolute -top-3 left-2 px-2 py-0.5 text-xs font-medium rounded text-white" style={{ backgroundColor: area.color }}>
-                {area.name}
-              </div>
-              <div
-                className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize"
-                style={{ backgroundColor: area.color }}
-                onMouseDown={(e) => handleAreaMouseDown(e, area, true)}
-              />
-            </div>
-          ))}
-
-          {data.tables.map(table => getTableShape(table, selectedTableId === table.id))}
-
-          {data.tables.length === 0 && (
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none text-slate-400">
-              <div className="text-center">
-                <div className="text-4xl mb-2">🪑</div>
-                <p className="text-sm">Select a table type and click to place</p>
-              </div>
-            </div>
-          )}
-        </div>
+            {/* Tables */}
+            {data.tables.map(table => (
+              <Group
+                key={table.id}
+                draggable={true}
+                onDragEnd={(e) => handleTableDragEnd(table.id, { x: e.target.x(), y: e.target.y() })}
+                onClick={(e) => {
+                  e.cancelBubble = true;
+                  setSelectedTableId(table.id);
+                }}
+              >
+                <Rect
+                  x={table.x}
+                  y={table.y}
+                  width={table.width}
+                  height={table.height}
+                  fill={TABLE_COLORS[table.seats] || '#94a3b8'}
+                  stroke={selectedTableId === table.id ? '#fff' : 'transparent'}
+                  strokeWidth={selectedTableId === table.id ? 3 : 0}
+                  cornerRadius={4}
+                />
+                <Text
+                  x={table.x}
+                  y={table.y}
+                  width={table.width}
+                  height={table.height}
+                  text={table.label}
+                  fontSize={12}
+                  fontStyle="bold"
+                  fill="white"
+                  align="center"
+                  verticalAlign="middle"
+                  pointerEvents="none"
+                />
+                <Text
+                  x={table.x}
+                  y={table.y + table.height / 2}
+                  width={table.width}
+                  height={table.height / 2}
+                  text={`${table.seats}`}
+                  fontSize={16}
+                  fontStyle="bold"
+                  fill="white"
+                  align="center"
+                  verticalAlign="middle"
+                  pointerEvents="none"
+                />
+              </Group>
+            ))}
+          </Layer>
+        </Stage>
       </div>
     </div>
   );
