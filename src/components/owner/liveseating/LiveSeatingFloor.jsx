@@ -7,11 +7,12 @@ import { cn } from "@/lib/utils";
 import moment from 'moment';
 import FloorPlanRenderer from '../FloorPlanRenderer';
 
+// Universal color system: Available=emerald, Arrived Early=amber, Occupied=red, Reserved=blue
 const STATUS_COLORS = {
-  free: { bg: '#10B981', text: 'Free', emoji: '🟢' },
-  occupied: { bg: '#F59E0B', text: 'Seated', emoji: '🟡' },
-  reserved: { bg: '#F97316', text: 'Reserved', emoji: '🟠' },
-  arrived_early: { bg: '#3B82F6', text: 'Arrived Early', emoji: '🔵' }
+  free:          { bg: '#10B981', text: 'Available',            emoji: '🟢' },
+  arrived_early: { bg: '#F59E0B', text: 'Arrived Early',        emoji: '🟡' },
+  occupied:      { bg: '#EF4444', text: 'Occupied / Checked In', emoji: '🔴' },
+  reserved:      { bg: '#3B82F6', text: 'Reserved',             emoji: '🔵' },
 };
 
 export default function LiveSeatingFloor({ 
