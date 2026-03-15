@@ -27,6 +27,8 @@ export default function LiveSeatingFloor({
   const stageRef = useRef(null);
   const [camera, setCamera] = useState({ x: -260, y: -140, scale: 1.18 });
   const [activeLayer, setActiveLayer] = useState('MAIN');
+  const [linkModeActive, setLinkModeActive] = useState(false);
+  const [combinedIds, setCombinedIds] = useState([]); // floorplan_item_ids that are combined
 
   const clampScale = (s) => Math.max(0.35, Math.min(2.4, s));
 
