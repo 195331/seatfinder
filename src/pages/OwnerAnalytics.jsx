@@ -410,8 +410,8 @@ export default function OwnerAnalytics() {
     ? (filteredReservations.reduce((sum, r) => sum + (r.party_size || 0), 0) / filteredReservations.length).toFixed(1) : 0;
   const waitlistConversion = filteredWaitlist.length > 0
     ? (filteredWaitlist.filter(w => w.status === 'seated').length / filteredWaitlist.length * 100).toFixed(1) : 0;
-  const avgRating = filteredReviews.length > 0
-    ? (filteredReviews.reduce((sum, r) => sum + r.rating, 0) / filteredReviews.length).toFixed(1) : 0;
+  const avgRating = reviews.length > 0
+    ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1) : 0;
 
   const partySizeData = useMemo(() => {
     const sizes = { '2': 0, '3-4': 0, '5-6': 0, '7+': 0 };
