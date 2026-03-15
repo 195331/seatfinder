@@ -133,6 +133,9 @@ function ManagerBriefing({ ctx, restaurantId }) {
     if (!ctx || !restaurantId) return;
     setLoading(true);
     try {
+      const comboAlertNote = ctx.large_party_alerts?.length
+        ? `IMPORTANT — Large party Combo Alerts (need table linking): ${ctx.large_party_alerts.join('; ')}`
+        : '';
       const result = await base44.integrations.Core.InvokeLLM({
         prompt: `You are an AI restaurant operations manager. Based on this live data, write exactly 3 concise, specific, actionable bullet points for the manager's briefing:
 
@@ -140,8 +143,10 @@ Live stats: ${JSON.stringify(ctx.live_stats)}
 Forecast: ${JSON.stringify(ctx.forecast)}
 Sentiment score: ${ctx.feedback.sentiment_score}%
 Known spikes: ${ctx.forecast.known_reservation_spikes.join(', ') || 'none'}
+${comboAlertNote}
 
-Format: Return JSON with keys: bullet1, bullet2, bullet3. Each is a single sentence starting with a category label like "Pacing Alert:", "Sentiment:", "Revenue Op:", "Capacity:", "Staffing:", etc.`,
+Format: Return JSON with keys: bullet1, bullet2, bullet3. Each is a single sentence starting with a category label like "Pacing Alert:", "Sentiment:", "Revenue Op:", "Capacity:", "Staffing:", "Combo Alert:", etc.
+${ctx.large_party_alerts?.length ? 'If there are Combo Alerts, include at least one bullet about using Link Mode on the floor map to combine tables for the large party.' : ''}`,
         response_json_schema: {
           type: 'object',
           properties: {
