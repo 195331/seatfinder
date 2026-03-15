@@ -186,22 +186,35 @@ ${ctx.large_party_alerts?.length ? 'If there are Combo Alerts, include at least 
           <Loader2 className="w-5 h-5 animate-spin text-amber-400" />
         </div>
       ) : briefing ? (
-        <ul className="space-y-3 flex-1">
-          {[briefing.bullet1, briefing.bullet2, briefing.bullet3].filter(Boolean).map((b, i) => {
-            const colonIdx = b.indexOf(':');
-            const label = colonIdx > -1 ? b.slice(0, colonIdx + 1) : '';
-            const rest = colonIdx > -1 ? b.slice(colonIdx + 1) : b;
-            return (
-              <li key={i} className="flex gap-2 text-sm leading-snug">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-1.5 shrink-0" />
-                <span>
-                  {label && <span className="text-amber-400 font-semibold">{label}</span>}
-                  <span className="text-slate-300">{rest}</span>
-                </span>
-              </li>
-            );
-          })}
-        </ul>
+        <div className="flex flex-col gap-3 flex-1">
+          {/* Combo Alert banner */}
+          {ctx?.large_party_alerts?.length > 0 && (
+            <div className="bg-purple-900/40 border border-purple-500/40 rounded-lg px-3 py-2">
+              <p className="text-xs font-bold text-purple-300 uppercase tracking-wide mb-1">🟣 Combo Alert</p>
+              {ctx.large_party_alerts.map((a, i) => (
+                <p key={i} className="text-xs text-purple-200">{a}</p>
+              ))}
+              <p className="text-[10px] text-purple-400 mt-1">Use "Link Mode" on the floor map to combine tables.</p>
+            </div>
+          )}
+          <ul className="space-y-3">
+            {[briefing.bullet1, briefing.bullet2, briefing.bullet3].filter(Boolean).map((b, i) => {
+              const colonIdx = b.indexOf(':');
+              const label = colonIdx > -1 ? b.slice(0, colonIdx + 1) : '';
+              const rest = colonIdx > -1 ? b.slice(colonIdx + 1) : b;
+              const isCombo = label.toLowerCase().includes('combo');
+              return (
+                <li key={i} className="flex gap-2 text-sm leading-snug">
+                  <span className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${isCombo ? 'bg-purple-400' : 'bg-amber-400'}`} />
+                  <span>
+                    {label && <span className={`font-semibold ${isCombo ? 'text-purple-400' : 'text-amber-400'}`}>{label}</span>}
+                    <span className="text-slate-300">{rest}</span>
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
       ) : null}
     </div>
   );
