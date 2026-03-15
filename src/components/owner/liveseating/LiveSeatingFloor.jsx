@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Eye, ZoomIn, ZoomOut, Maximize2, Link2 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import moment from 'moment';
-import FloorPlanRenderer from '../FloorPlanRenderer';
+import FloorPlanRenderer from '@/components/owner/FloorPlanRenderer';
 import TableCombinationEngine from './TableCombinationEngine';
 
 // Universal color system: Available=emerald, Arrived Early=amber, Occupied=red, Reserved=blue
