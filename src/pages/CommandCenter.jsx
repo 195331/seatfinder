@@ -28,12 +28,6 @@ async function getSuperHubContext(restaurantId) {
     base44.entities.Review.filter({ restaurant_id: restaurantId, is_hidden: false }, '-created_date', 10),
   ]);
 
-  // Detect large-party reservations (> 6 guests) that need table combining
-  const todayStr = moment().format('YYYY-MM-DD');
-  const largePartyAlerts = reservations
-    .filter(r => r.reservation_date === todayStr && r.party_size > 6 && !r.combined_table_ids?.length)
-    .map(r => `${r.user_name || 'Guest'} — ${r.party_size} guests at ${r.reservation_time}`);
-
   const totalSeats = restaurant?.total_seats || 0;
   const availableSeats = restaurant?.available_seats || 0;
   const occupiedSeats = Math.max(0, totalSeats - availableSeats);
