@@ -87,7 +87,7 @@ export default function LiveFeed({ restaurantId }) {
 
   useEffect(() => { fetchEvents(); }, [restaurantId]);
   useEffect(() => {
-    const interval = setInterval(fetchEvents, 60_000);
+    const interval = setInterval(fetchEvents, 120_000);
     return () => clearInterval(interval);
   }, [restaurantId]);
 
