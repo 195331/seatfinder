@@ -96,36 +96,20 @@ export default function SubscriptionPlans({ restaurantId, currentPlan = 'free' }
     setUpgrading(plan.id);
     
     try {
-      const existingSub = await base44.entities.Subscription.filter({ restaurant_id: restaurantId });
-      
-      if (existingSub.length > 0) {
-        await base44.entities.Subscription.update(existingSub[0].id, {
-          plan: plan.id,
-          status: 'active',
-          current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-        });
-      } else {
-        await base44.entities.Subscription.create({
-          restaurant_id: restaurantId,
-          plan: plan.id,
-          status: 'active',
-          current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-        });
-      }
+      const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
-      // Update restaurant subscription plan
+      // Single call: update the restaurant's subscription plan directly
       await base44.entities.Restaurant.update(restaurantId, {
         subscription_plan: plan.id,
-        subscription_expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+        subscription_expires_at: expiresAt
       });
 
-      await queryClient.invalidateQueries({ queryKey: ['subscription'] });
-      await queryClient.invalidateQueries({ queryKey: ['ownedRestaurants'] });
-      await queryClient.invalidateQueries({ queryKey: ['restaurant'] });
-      await queryClient.invalidateQueries({ queryKey: ['staffRestaurants'] });
+      queryClient.invalidateQueries({ queryKey: ['subscription'] });
+      queryClient.invalidateQueries({ queryKey: ['ownedRestaurants'] });
+      queryClient.invalidateQueries({ queryKey: ['restaurant'] });
+      queryClient.invalidateQueries({ queryKey: ['staffRestaurants'] });
 
       if (plan.id !== 'free') {
-        // Fire confetti
         confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
         setTimeout(() => confetti({ particleCount: 80, angle: 60, spread: 60, origin: { x: 0 } }), 300);
         setTimeout(() => confetti({ particleCount: 80, angle: 120, spread: 60, origin: { x: 1 } }), 500);
