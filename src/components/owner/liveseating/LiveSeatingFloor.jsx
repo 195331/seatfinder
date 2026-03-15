@@ -149,6 +149,16 @@ export default function LiveSeatingFloor({
                 ))}
               </div>
             )}
+            {/* Link Mode toggle */}
+            <Button
+              size="sm"
+              variant={linkModeActive ? 'default' : 'outline'}
+              onClick={() => { setLinkModeActive(v => !v); setCombinedIds([]); }}
+              className={linkModeActive ? 'bg-purple-600 hover:bg-purple-700 text-white border-purple-600' : 'border-purple-300 text-purple-700 hover:bg-purple-50'}
+            >
+              <Link2 className="w-4 h-4 mr-1" />
+              {linkModeActive ? 'Exit Link Mode' : 'Link Mode'}
+            </Button>
             <Button size="sm" variant="outline" onClick={() => setCamera(c => ({ ...c, scale: clampScale(c.scale * 0.88) }))}>
               <ZoomOut className="w-4 h-4" />
             </Button>
@@ -162,9 +172,45 @@ export default function LiveSeatingFloor({
           </div>
         </div>
       </CardHeader>
-      <CardContent className="p-4">
+      <CardContent className="p-4 space-y-4">
+        {/* Link Mode Panel */}
+        {linkModeActive && (
+          <div className="border-2 border-purple-300 bg-purple-50/60 rounded-xl p-4">
+            <TableCombinationEngine
+              tables={tables}
+              reservations={reservations}
+              floorPlan={floorPlan}
+              camera={camera}
+              onCombinationConfirmed={(ids) => {
+                setCombinedIds(ids);
+                setLinkModeActive(false);
+              }}
+              onClose={() => { setLinkModeActive(false); setCombinedIds([]); }}
+            />
+          </div>
+        )}
+
         {/* Canvas - with clipping */}
         <div className="bg-slate-900 rounded-xl mx-auto border-2 border-slate-700 relative w-full" style={{ height: 500, overflow: 'hidden', pointerEvents: 'auto' }}>
+          {/* SVG overlay for dashed link lines */}
+          {linkLines.length > 0 && (
+            <svg
+              className="absolute inset-0 pointer-events-none z-10"
+              width="100%"
+              height="100%"
+            >
+              {linkLines.map(({ x1, y1, x2, y2, key }) => (
+                <line
+                  key={key}
+                  x1={x1} y1={y1} x2={x2} y2={y2}
+                  stroke="#a855f7"
+                  strokeWidth={2}
+                  strokeDasharray="8 5"
+                  strokeLinecap="round"
+                />
+              ))}
+            </svg>
+          )}
           <FloorPlanRenderer
             stageRef={stageRef}
             width={800}
