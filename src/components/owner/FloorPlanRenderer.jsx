@@ -1,110 +1,63 @@
-import React from 'react';
-import { Stage, Layer, Group, Rect, Circle, Line, Text } from 'react-konva';
+import React, { useRef, useEffect } from 'react';
 
-const COLORS = {
-  canvasBg: "#0b1220",
-  gridMajor: "rgba(255,255,255,0.06)",
-  gridMinor: "rgba(255,255,255,0.03)",
-  text: "#1e293b",
-  subtext: "rgba(255,255,255,0.60)",
-  accent: "#22c55e",
-  tableFill: "#ffffff",
-  tableStroke: "rgba(255,255,255,0.18)",
-  wall: "rgba(255,255,255,0.42)",
-  roomFill: "rgba(34,197,94,0.10)",
-  roomStroke: "rgba(34,197,94,0.38)",
-  noteFill: "rgba(59,130,246,0.10)",
-  noteStroke: "rgba(59,130,246,0.35)",
-  danger: "#ef4444",
-  tableFree: "#ffffff",
-  tableOccupied: "#ffffff",
-  tableReserved: "#ffffff",
-  tableArrivedEarly: "#ffffff",
-  tableCombined: "#ede9fe",           // light purple fill — Group Booking
-  tableStrokeFree:         "#10B981", // emerald   — Available
-  tableStrokeArrivedEarly: "#F59E0B", // amber     — Arrived Early
-  tableStrokeOccupied:     "#EF4444", // red       — Occupied / Checked In
-  tableStrokeReserved:     "#3B82F6", // blue      — Reserved
-  tableStrokeCombined:     "#7C3AED", // purple    — Group Booking / Combined
-  chairDot: "rgba(148,163,184,0.8)"
+const STATUS_STROKE = {
+  combined:     '#7C3AED',
+  arrived_early:'#F59E0B',
+  occupied:     '#EF4444',
+  checked_in:   '#EF4444',
+  reserved:     '#3B82F6',
+  free:         '#10B981',
 };
 
-function toFlat(points) {
-  const out = [];
-  for (const p of points) out.push(p.x, p.y);
-  return out;
-}
+function drawTable(ctx, obj, status, selected) {
+  const stroke = STATUS_STROKE[status] || '#94a3b8';
+  const fill = status === 'combined' ? '#ede9fe' : '#ffffff';
+  ctx.save();
+  ctx.translate(obj.x + obj.w / 2, obj.y + obj.h / 2);
+  ctx.rotate(((obj.rotation || 0) * Math.PI) / 180);
+  ctx.translate(-obj.w / 2, -obj.h / 2);
 
-// Chair dots for tables
-function ChairDots({ w, h, seats, shape }) {
-  const count = Math.max(1, Math.min(12, seats || 4));
-  const dots = [];
-  
-  if (shape === "round") {
-    const cx = w / 2;
-    const cy = h / 2;
-    const r = Math.max(w, h) / 2 + 14;
-    
-    for (let i = 0; i < count; i++) {
-      const a = (i / count) * Math.PI * 2;
-      dots.push(
-        <Circle
-          key={i}
-          x={cx + Math.cos(a) * r}
-          y={cy + Math.sin(a) * r}
-          radius={6}
-          fill={COLORS.chairDot}
-          stroke="none"
-          listening={false}
-        />
-      );
-    }
+  ctx.lineWidth = selected ? 3.5 : 2.5;
+  ctx.strokeStyle = selected ? '#22c55e' : stroke;
+  ctx.fillStyle = fill;
+
+  if (obj.shape === 'round') {
+    const r = obj.w / 2;
+    ctx.beginPath();
+    ctx.arc(r, r, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
   } else {
-    // Rectangular tables - distribute chairs around perimeter
-    const perimeter = 2 * (w + h);
-    const spacing = perimeter / count;
-    
-    for (let i = 0; i < count; i++) {
-      const dist = i * spacing;
-      let x, y;
-      
-      if (dist < w) {
-        // Top edge
-        x = dist;
-        y = -12;
-      } else if (dist < w + h) {
-        // Right edge
-        x = w + 12;
-        y = dist - w;
-      } else if (dist < 2 * w + h) {
-        // Bottom edge
-        x = w - (dist - w - h);
-        y = h + 12;
-      } else {
-        // Left edge
-        x = -12;
-        y = h - (dist - 2 * w - h);
-      }
-      
-      dots.push(
-        <Circle
-          key={i}
-          x={x}
-          y={y}
-          radius={6}
-          fill={COLORS.chairDot}
-          stroke="none"
-          listening={false}
-        />
-      );
-    }
+    const rad = 8;
+    ctx.beginPath();
+    ctx.moveTo(rad, 0);
+    ctx.lineTo(obj.w - rad, 0);
+    ctx.arcTo(obj.w, 0, obj.w, rad, rad);
+    ctx.lineTo(obj.w, obj.h - rad);
+    ctx.arcTo(obj.w, obj.h, obj.w - rad, obj.h, rad);
+    ctx.lineTo(rad, obj.h);
+    ctx.arcTo(0, obj.h, 0, obj.h - rad, rad);
+    ctx.lineTo(0, rad);
+    ctx.arcTo(0, 0, rad, 0, rad);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
   }
-  
-  return <>{dots}</>;
+
+  // label
+  ctx.fillStyle = '#1e293b';
+  ctx.font = `bold 13px sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const label = obj.table_number != null ? `T${obj.table_number}` : (obj.label || '');
+  ctx.fillText(label, obj.w / 2, obj.h / 2 - 6);
+  ctx.font = `11px sans-serif`;
+  ctx.fillStyle = '#64748b';
+  ctx.fillText(`${obj.seats || 4} seats`, obj.w / 2, obj.h / 2 + 8);
+  ctx.restore();
 }
 
 export default function FloorPlanRenderer({
-  stageRef,
   width = 1180,
   height = 690,
   camera = { x: -260, y: -140, scale: 1.18 },
@@ -114,293 +67,123 @@ export default function FloorPlanRenderer({
   showTableStatus = false,
   tableStatusMap = {},
   selectedIds = [],
-  highlightedIds = [],
   onTableClick,
-  onItemClick,
-  onContextMenu,
-  onWheel,
-  draggable = false,
-  onDragEnd,
-  interactive = false,
-  readOnly = false,
-  children
 }) {
-  const gridLines = [];
-  if (showGrid) {
-    const stepMinor = 40;
-    const stepMajor = 200;
-    for (let x = 0; x <= 2400; x += stepMinor) {
-      gridLines.push({
-        points: [x, 0, x, 1700],
-        stroke: x % stepMajor === 0 ? COLORS.gridMajor : COLORS.gridMinor,
-        width: x % stepMajor === 0 ? 1.2 : 0.6
+  const canvasRef = useRef(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    canvas.style.width = width + 'px';
+    canvas.style.height = height + 'px';
+    ctx.scale(dpr, dpr);
+
+    // Background
+    ctx.fillStyle = '#0b1220';
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.save();
+    ctx.translate(camera.x, camera.y);
+    ctx.scale(camera.scale, camera.scale);
+
+    // Grid
+    if (showGrid) {
+      const step = 40, major = 200;
+      for (let x = 0; x <= 2400; x += step) {
+        ctx.strokeStyle = x % major === 0 ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.03)';
+        ctx.lineWidth = x % major === 0 ? 1.2 : 0.6;
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 1700); ctx.stroke();
+      }
+      for (let y = 0; y <= 1700; y += step) {
+        ctx.strokeStyle = y % major === 0 ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.03)';
+        ctx.lineWidth = y % major === 0 ? 1.2 : 0.6;
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(2400, y); ctx.stroke();
+      }
+    }
+
+    const items = roomData?.items || [];
+    const zones = roomData?.zones || [];
+    const walls = roomData?.walls || [];
+    const boundary = roomData?.roomBoundary || [];
+
+    // Room boundary
+    if (boundary.length >= 3) {
+      ctx.beginPath();
+      ctx.moveTo(boundary[0].x, boundary[0].y);
+      boundary.slice(1).forEach(p => ctx.lineTo(p.x, p.y));
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(34,197,94,0.10)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(34,197,94,0.38)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
+    // Zones
+    if (showZones) {
+      zones.forEach(zone => {
+        ctx.fillStyle = zone.fill || 'rgba(139,92,246,0.12)';
+        ctx.strokeStyle = zone.stroke || 'rgba(139,92,246,0.35)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.roundRect?.(zone.x, zone.y, zone.w, zone.h, 16) || ctx.rect(zone.x, zone.y, zone.w, zone.h);
+        ctx.globalAlpha = 0.5;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        ctx.setLineDash([12, 8]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = 'rgba(255,255,255,0.8)';
+        ctx.font = 'bold 14px sans-serif';
+        ctx.fillText(zone.label || '', zone.x + 12, zone.y + 24);
       });
     }
-    for (let y = 0; y <= 1700; y += stepMinor) {
-      gridLines.push({
-        points: [0, y, 2400, y],
-        stroke: y % stepMajor === 0 ? COLORS.gridMajor : COLORS.gridMinor,
-        width: y % stepMajor === 0 ? 1.2 : 0.6
-      });
-    }
-  }
 
-  const items = roomData?.items || [];
-  const walls = roomData?.walls || [];
-  const zones = roomData?.zones || [];
-  const roomBoundary = roomData?.roomBoundary || [];
+    // Walls
+    walls.forEach(w => {
+      if (!w.points?.length) return;
+      ctx.strokeStyle = 'rgba(255,255,255,0.42)';
+      ctx.lineWidth = w.thickness || 10;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.beginPath();
+      ctx.moveTo(w.points[0].x, w.points[0].y);
+      w.points.slice(1).forEach(p => ctx.lineTo(p.x, p.y));
+      ctx.stroke();
+    });
 
-  // Sort all objects by z-index
-  const allObjects = [
-    ...zones.map(z => ({ ...z, type: 'zone', renderOrder: z.z ?? -10 })),
-    ...walls.map(w => ({ ...w, type: 'wall', renderOrder: w.z ?? 0 })),
-    ...items.map(i => ({ ...i, renderOrder: i.z ?? 0 }))
-  ].sort((a, b) => (a.renderOrder ?? 0) - (b.renderOrder ?? 0));
+    // Tables
+    items.filter(i => i.type === 'table').forEach(obj => {
+      const status = showTableStatus ? tableStatusMap[obj.id] : null;
+      const selected = selectedIds.includes(obj.id);
+      drawTable(ctx, obj, status, selected);
+    });
+
+    ctx.restore();
+  }, [width, height, camera, roomData, showGrid, showZones, showTableStatus, tableStatusMap, selectedIds]);
+
+  const handleClick = (e) => {
+    if (!onTableClick) return;
+    const canvas = canvasRef.current;
+    const rect = canvas.getBoundingClientRect();
+    const mx = (e.clientX - rect.left - camera.x) / camera.scale;
+    const my = (e.clientY - rect.top - camera.y) / camera.scale;
+    const items = roomData?.items || [];
+    const hit = items.filter(i => i.type === 'table').find(obj => {
+      return mx >= obj.x && mx <= obj.x + obj.w && my >= obj.y && my <= obj.y + obj.h;
+    });
+    if (hit) onTableClick(hit);
+  };
 
   return (
-  <Stage
-  ref={stageRef}
-  width={width}
-  height={height}
-  x={camera.x}
-  y={camera.y}
-  scaleX={camera.scale}
-  scaleY={camera.scale}
-  draggable={draggable}
-  onDragEnd={onDragEnd}
-  onWheel={onWheel}
-  onContextMenu={(e) => {
-    e.evt?.preventDefault?.(); // IMPORTANT: stops browser right-click menu
-    console.log("STAGE CONTEXT ✅", e.target?.id?.(), e.target?.className);
-    onContextMenu?.(e);
-  }}
-  onMouseDown={(e) => {
-    console.log("STAGE CLICK ✅", e.target?.id?.(), e.target?.className);
-  }}
-  onTap={(e) => {
-    console.log("STAGE TAP ✅", e.target?.id?.(), e.target?.className);
-  }}
->
-
-      {/* Background Layer - NOT listening */}
-      <Layer listening={false}>
-        {/* Grid */}
-        {gridLines.map((g, i) => (
-          <Line key={i} points={g.points} stroke={g.stroke} strokeWidth={g.width} listening={false} />
-        ))}
-
-        {/* Room boundary */}
-        {roomBoundary.length >= 3 && (
-          <>
-            <Line
-              points={toFlat([...roomBoundary, roomBoundary[0]])}
-              closed
-              fill={COLORS.roomFill}
-              stroke={COLORS.roomStroke}
-              strokeWidth={2}
-              listening={false}
-            />
-            <Text
-              x={roomBoundary[0].x + 10}
-              y={roomBoundary[0].y + 10}
-              text={roomData?.roomId || 'ROOM'}
-              fill={COLORS.subtext}
-              fontSize={14}
-              listening={false}
-            />
-          </>
-        )}
-
-        {/* Render all objects in z-order */}
-        {allObjects.map((obj) => {
-          const isSelected = selectedIds.includes(obj.id);
-          const isHighlighted = highlightedIds.includes(obj.id);
-
-          if (obj.type === 'zone' && showZones) {
-            return (
-              <Group key={obj.id} x={obj.x} y={obj.y}>
-                <Rect
-                  width={obj.w}
-                  height={obj.h}
-                  fill={obj.fill}
-                  stroke={isSelected ? COLORS.accent : obj.stroke}
-                  strokeWidth={isSelected ? 3 : 2}
-                  dash={[12, 8]}
-                  cornerRadius={16}
-                  opacity={0.5}
-                  shadowBlur={isSelected ? 10 : 0}
-                  shadowColor={COLORS.accent}
-                  listening={false}
-                />
-                <Text
-                  x={12}
-                  y={12}
-                  text={obj.label}
-                  fill={COLORS.text}
-                  fontSize={16}
-                  fontStyle="700"
-                  listening={false}
-                />
-              </Group>
-            );
-          }
-
-          if (obj.type === 'wall') {
-            return (
-              <Line
-                key={obj.id}
-                id={obj.id}
-                points={toFlat(obj.points || [])}
-                stroke={COLORS.wall}
-                strokeWidth={obj.thickness || 10}
-                lineCap="round"
-                lineJoin="round"
-                opacity={isSelected ? 0.92 : 0.66}
-                shadowBlur={isSelected ? 10 : 0}
-                shadowColor={COLORS.accent}
-                listening={false}
-              />
-            );
-          }
-
-          if (obj.type === 'note') {
-            return (
-              <Group key={obj.id} id={obj.id} x={obj.x} y={obj.y} rotation={obj.rotation || 0}>
-                <Rect
-                  width={obj.w}
-                  height={obj.h}
-                  fill={obj.fill || COLORS.noteFill}
-                  stroke={isSelected ? COLORS.accent : obj.stroke || COLORS.noteStroke}
-                  strokeWidth={isSelected ? 2.5 : 1.6}
-                  cornerRadius={14}
-                  shadowBlur={isSelected ? 14 : 0}
-                  shadowColor={COLORS.accent}
-                  listening={false}
-                />
-                <Text
-                  x={16}
-                  y={16}
-                  text={obj.text || "Note"}
-                  fill={COLORS.text}
-                  fontSize={16}
-                  fontStyle="600"
-                  listening={false}
-                />
-              </Group>
-            );
-          }
-
-          return null;
-        })}
-
-        {children}
-      </Layer>
-
-      {/* Tables Layer - LISTENING for clicks */}
-      <Layer listening={true}>
-        {items.filter(obj => obj.type === 'table').map((obj) => {
-          const isSelected = selectedIds.includes(obj.id);
-          const isHighlighted = highlightedIds.includes(obj.id);
-          const liveStatus = showTableStatus ? tableStatusMap[obj.id] : null;
-          const statusFill = liveStatus === 'combined' ? COLORS.tableCombined : '#ffffff';
-          const statusStroke = liveStatus === 'combined'      ? COLORS.tableStrokeCombined :
-                              liveStatus === 'arrived_early' ? COLORS.tableStrokeArrivedEarly :
-                              liveStatus === 'occupied'      ? COLORS.tableStrokeOccupied :
-                              liveStatus === 'reserved'      ? COLORS.tableStrokeReserved :
-                              liveStatus === 'free'          ? COLORS.tableStrokeFree :
-                              obj.stroke || COLORS.tableStroke;
-          
-          // Generate table label: T{table_number}
-          const tableNumber = obj.table_number || obj.seats || 1;
-          const tableLabel = `T${tableNumber}`;
-          
-          return (
-            <Group
-  key={obj.id}
-  id={obj.id}
-  x={obj.x}
-  y={obj.y}
-  rotation={obj.rotation || 0}
-  listening={true}
-  onMouseDown={(e) => {
-    e.cancelBubble = true;
-    onTableClick?.(obj);
-  }}
-  onTap={(e) => {
-    e.cancelBubble = true;
-    onTableClick?.(obj);
-  }}
->
-  {/* BIG invisible hit box — makes clicking easy */}
-  <Rect
-    x={-14}
-    y={-14}
-    width={obj.w + 28}
-    height={obj.h + 28}
-    fill="transparent"
-    listening={true}
-  />
-
-  {/* Chair dots */}
-  <ChairDots 
-    w={obj.w} 
-    h={obj.h} 
-    seats={obj.seats || 4}
-    shape={obj.shape}
-  />
-
-  {/* Table shape */}
-  {obj.shape === "round" ? (
-    <Circle
-      x={obj.w / 2}
-      y={obj.h / 2}
-      radius={obj.w / 2}
-      fill={statusFill}
-      stroke={statusStroke}
-      strokeWidth={3}
-      listening={false}
+    <canvas
+      ref={canvasRef}
+      onClick={handleClick}
+      style={{ display: 'block', cursor: onTableClick ? 'pointer' : 'default' }}
     />
-  ) : (
-    <Rect
-      width={obj.w}
-      height={obj.h}
-      cornerRadius={8}
-      fill={statusFill}
-      stroke={statusStroke}
-      strokeWidth={3}
-      listening={false}
-    />
-  )}
-
-  {/* Table label */}
-  <Text
-    x={0}
-    y={obj.h / 2 - 16}
-    width={obj.w}
-    align="center"
-    text={`T${obj.table_number ?? obj.label ?? ""}`}
-    fill={COLORS.text}
-    fontSize={15}
-    fontStyle="700"
-    listening={false}
-  />
-  
-  {/* Seats label */}
-  <Text
-    x={0}
-    y={obj.h / 2 + 2}
-    width={obj.w}
-    align="center"
-    text={`${obj.seats || 4} seats`}
-    fill="#64748b"
-    fontSize={11}
-    listening={false}
-  />
-</Group>
-
-          );
-        })}
-      </Layer>
-    </Stage>
   );
 }
