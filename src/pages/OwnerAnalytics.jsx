@@ -30,7 +30,7 @@ import FinancialPerformance from '@/components/analytics/FinancialPerformance';
 import OperationalMetrics from '@/components/analytics/OperationalMetrics';
 import LoyaltyAnalytics from '@/components/analytics/LoyaltyAnalytics';
 import LiveFeed from '@/components/commandcenter/LiveFeed';
-import AnalyticsCustomerIntel from '@/components/analytics/AnalyticsCustomerIntel';
+import AnalyticsCustomerIntel from '@/components/analytics/AnalyticsCustomerIntel.jsx';
 
 // ─── Shared data loader (same as CommandCenter) ──────────────────────────────
 const CACHE_KEY = 'supa_hub_cache';
