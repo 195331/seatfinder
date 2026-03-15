@@ -15,7 +15,7 @@ import LiveSeatingWaitlist from './liveseating/LiveSeatingWaitlist';
 import LiveSeatingTableDetails from './liveseating/LiveSeatingTableDetails';
 import AddToWaitlistDialog from './liveseating/AddToWaitlistDialog';
 
-export default function LiveSeating({ restaurant }) {
+export default function LiveSeating({ restaurant, onViewReservations }) {
   const queryClient = useQueryClient();
   const [selectedTable, setSelectedTable] = useState(null);
   const [showAddWaitlist, setShowAddWaitlist] = useState(false);
