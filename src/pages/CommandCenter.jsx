@@ -39,6 +39,11 @@ async function getSuperHubContext(restaurantId) {
   const todayStr = now.format('YYYY-MM-DD');
   const activeReservations = reservations.filter(r => r.reservation_date === todayStr);
 
+  // Detect large-party reservations (> 6 guests) that need table combining
+  const largePartyAlerts = reservations
+    .filter(r => r.reservation_date === todayStr && r.party_size > 6 && !r.combined_table_ids?.length)
+    .map(r => `${r.user_name || 'Guest'} — ${r.party_size} guests at ${r.reservation_time}`);
+
   // Build 6-hour forecast buckets
   const next6Hours = [];
   for (let i = 0; i < 6; i++) {
