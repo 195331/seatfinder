@@ -279,8 +279,7 @@ export function useFeatureAccess(restaurantId) {
     staleTime: 30000,
   });
 
-  // Prefer subscription entity, fall back to restaurant.subscription_plan
-  const plan = subscription?.plan || restaurantData?.subscription_plan || 'free';
+  const plan = restaurantData?.subscription_plan || 'free';
 
   return {
     plan,
