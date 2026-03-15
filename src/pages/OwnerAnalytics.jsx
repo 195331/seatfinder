@@ -33,7 +33,7 @@ import LiveFeed from '@/components/commandcenter/LiveFeed';
 import AnalyticsCustomerIntel from '@/components/analytics/AnalyticsCustomerIntel.jsx';
 
 // ─── Shared data loader (same as CommandCenter) ──────────────────────────────
-const CACHE_KEY = 'supa_hub_cache';
+const getCacheKey = (restaurantId) => `supa_hub_cache_${restaurantId}`;
 
 async function getSuperHubContext(restaurantId) {
   const [restaurant, waitlist, reservations, seatingHistory, reviews] = await Promise.all([

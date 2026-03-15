@@ -14,7 +14,7 @@ import { useFeatureAccess } from '@/components/subscription/SubscriptionPlans';
 import confetti from 'canvas-confetti';
 import LiveFeed from '@/components/commandcenter/LiveFeed';
 
-const CACHE_KEY = 'supa_hub_cache';
+const getCacheKey = (restaurantId) => `supa_hub_cache_${restaurantId}`;
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
