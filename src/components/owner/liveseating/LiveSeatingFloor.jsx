@@ -225,7 +225,16 @@ export default function LiveSeatingFloor({
             highlightedIds={highlightedIds}
             onTableClick={(tableObj) => {
               if (tableObj.type === 'table') {
-                console.log("Owner table click:", tableObj);
+                if (linkModeActive) {
+                  // In Link Mode, toggle table into pending combination
+                  const fpId = tableObj.id;
+                  setCombinedIds(prev =>
+                    prev.includes(fpId)
+                      ? prev.filter(id => id !== fpId)
+                      : prev.length < 6 ? [...prev, fpId] : prev
+                  );
+                  return;
+                }
                 const liveTable = tables.find(t => t.floorplan_item_id === tableObj.id);
                 if (liveTable) onTableClick?.(liveTable);
               }
