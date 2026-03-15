@@ -36,9 +36,11 @@ export default function LiveFeed({ restaurantId }) {
 
   const fetchEvents = async () => {
     if (!restaurantId) return;
-    // Stagger requests to avoid rate limiting
+    const delay = (ms) => new Promise(res => setTimeout(res, ms));
     const checkins = await base44.entities.Reservation.filter({ restaurant_id: restaurantId, status: 'checked_in' }, '-checked_in_at', 15);
+    await delay(200);
     const reviews = await base44.entities.Review.filter({ restaurant_id: restaurantId, is_hidden: false }, '-created_date', 15);
+    await delay(200);
     const waitlist = await base44.entities.WaitlistEntry.filter({ restaurant_id: restaurantId }, '-created_date', 15);
 
     const combined = [
