@@ -462,7 +462,7 @@ export default function CommandCenter() {
             </div>
 
             {/* Sentiment Bar */}
-            <div className="rounded-xl border border-[#222] bg-[#0d0d0d] p-5 flex items-center gap-6">
+            <div className="rounded-xl border border-[#222] bg-[#0d0d0d]/80 backdrop-blur-sm shadow-lg shadow-black/40 p-5 flex items-center gap-6">
               <div className="shrink-0">
                 <p className="text-xs text-slate-500 uppercase tracking-widest mb-1">Guest Sentiment</p>
                 <p className="text-3xl font-black text-white">{ctx.feedback.sentiment_score}%</p>
@@ -483,6 +483,25 @@ export default function CommandCenter() {
               <p className="shrink-0 text-xs text-slate-500">
                 {ctx.feedback.sentiment_score >= 70 ? '😊 Positive' : ctx.feedback.sentiment_score >= 40 ? '😐 Neutral' : '😟 Needs attention'}
               </p>
+            </div>
+
+            {/* Bottom Section: Customer Intel + Live Feed */}
+            <div className="grid lg:grid-cols-3 gap-5">
+              <div className="lg:col-span-2">
+                {/* Section header */}
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-1 h-5 rounded-full bg-indigo-500" />
+                  <h2 className="text-sm font-bold text-white uppercase tracking-wider">Customer Intelligence</h2>
+                </div>
+                <CustomerIntelPanel restaurantId={restaurantId} />
+              </div>
+              <div className="flex flex-col">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-1 h-5 rounded-full bg-emerald-500" />
+                  <h2 className="text-sm font-bold text-white uppercase tracking-wider">Activity</h2>
+                </div>
+                <LiveFeed restaurantId={restaurantId} />
+              </div>
             </div>
           </>
         )}
