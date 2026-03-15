@@ -19,10 +19,11 @@ const COLORS = {
   tableFree: "#ffffff",
   tableOccupied: "#ffffff",
   tableReserved: "#ffffff",
-  tableStrokeFree: "#10b981",
-  tableStrokeOccupied: "#ef4444",
-  tableStrokeReserved: "#f97316",
-  tableStrokeArrivedEarly: "#3b82f6",
+  tableArrivedEarly: "#ffffff",
+  tableStrokeFree:         "#10B981", // emerald   — Available
+  tableStrokeArrivedEarly: "#F59E0B", // amber     — Arrived Early
+  tableStrokeOccupied:     "#EF4444", // red       — Occupied / Checked In
+  tableStrokeReserved:     "#3B82F6", // blue      — Reserved
   chairDot: "rgba(148,163,184,0.8)"
 };
 
