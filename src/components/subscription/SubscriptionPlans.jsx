@@ -83,14 +83,15 @@ export default function SubscriptionPlans({ restaurantId, currentPlan = 'free' }
   const [upgrading, setUpgrading] = useState(null);
   const [successPlan, setSuccessPlan] = useState(null);
 
-  const { data: subscription } = useQuery({
-    queryKey: ['subscription', restaurantId],
-    queryFn: () => base44.entities.Subscription.filter({ restaurant_id: restaurantId }),
+  const { data: restaurantForPlan } = useQuery({
+    queryKey: ['restaurant', restaurantId],
+    queryFn: () => base44.entities.Restaurant.filter({ id: restaurantId }),
     enabled: !!restaurantId,
-    select: (data) => data[0]
+    select: (data) => data[0],
+    staleTime: 30000,
   });
 
-  const activePlan = subscription?.plan || currentPlan;
+  const activePlan = restaurantForPlan?.subscription_plan || currentPlan;
 
   const handleUpgrade = async (plan) => {
     setUpgrading(plan.id);
