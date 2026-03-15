@@ -82,6 +82,7 @@ export default function LiveFeed({ restaurantId }) {
     isFirst.current = false;
     combined.forEach(e => seenIds.current.add(e.id));
     setEvents(combined);
+    isFetching.current = false;
   };
 
   useEffect(() => { fetchEvents(); }, [restaurantId]);
