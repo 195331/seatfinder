@@ -433,7 +433,7 @@ export default function CommandCenter() {
             {/* Main Stage + Sidebar */}
             <div className="grid lg:grid-cols-3 gap-5">
               {/* Flow Graph (2/3) */}
-              <div className="lg:col-span-2 rounded-xl border border-[#222] bg-[#0d0d0d] p-5">
+              <div className="lg:col-span-2 rounded-xl border border-[#222] bg-[#0d0d0d]/80 backdrop-blur-sm shadow-lg shadow-black/40 p-5">
                 <div className="flex items-center justify-between mb-5">
                   <div>
                     <h2 className="font-bold text-white text-sm uppercase tracking-wider">Flow Graph — Next 6 Hours</h2>
