@@ -30,7 +30,6 @@ import FinancialPerformance from '@/components/analytics/FinancialPerformance';
 import OperationalMetrics from '@/components/analytics/OperationalMetrics';
 import LoyaltyAnalytics from '@/components/analytics/LoyaltyAnalytics';
 import LiveFeed from '@/components/commandcenter/LiveFeed';
-import CustomerIntelPanel from '@/components/commandcenter/CustomerIntelPanel';
 import AnalyticsCustomerIntel from '@/components/analytics/AnalyticsCustomerIntel';
 
 // ─── Shared data loader (same as CommandCenter) ──────────────────────────────
