@@ -36,11 +36,10 @@ export default function LiveFeed({ restaurantId }) {
 
   const fetchEvents = async () => {
     if (!restaurantId) return;
-    const [checkins, reviews, waitlist] = await Promise.all([
-      base44.entities.Reservation.filter({ restaurant_id: restaurantId, status: 'checked_in' }, '-checked_in_at', 15),
-      base44.entities.Review.filter({ restaurant_id: restaurantId, is_hidden: false }, '-created_date', 15),
-      base44.entities.WaitlistEntry.filter({ restaurant_id: restaurantId }, '-created_date', 15),
-    ]);
+    // Stagger requests to avoid rate limiting
+    const checkins = await base44.entities.Reservation.filter({ restaurant_id: restaurantId, status: 'checked_in' }, '-checked_in_at', 15);
+    const reviews = await base44.entities.Review.filter({ restaurant_id: restaurantId, is_hidden: false }, '-created_date', 15);
+    const waitlist = await base44.entities.WaitlistEntry.filter({ restaurant_id: restaurantId }, '-created_date', 15);
 
     const combined = [
       ...checkins.map(r => ({
