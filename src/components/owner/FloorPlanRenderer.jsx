@@ -300,13 +300,12 @@ export default function FloorPlanRenderer({
           const isSelected = selectedIds.includes(obj.id);
           const isHighlighted = highlightedIds.includes(obj.id);
           const liveStatus = showTableStatus ? tableStatusMap[obj.id] : null;
-          const statusFill = liveStatus === 'occupied' ? COLORS.tableOccupied :
-                            liveStatus === 'reserved' ? COLORS.tableReserved :
-                            liveStatus === 'free' ? COLORS.tableFree : obj.fill || COLORS.tableFill;
-          const statusStroke = liveStatus === 'occupied' ? COLORS.tableStrokeOccupied :
-                              liveStatus === 'reserved' ? COLORS.tableStrokeReserved :
-                              liveStatus === 'arrived_early' ? COLORS.tableStrokeArrivedEarly :
-                              liveStatus === 'free' ? COLORS.tableStrokeFree : obj.stroke || COLORS.tableStroke;
+          const statusFill = '#ffffff';
+          const statusStroke = liveStatus === 'arrived_early' ? COLORS.tableStrokeArrivedEarly :
+                              liveStatus === 'occupied'      ? COLORS.tableStrokeOccupied :
+                              liveStatus === 'reserved'      ? COLORS.tableStrokeReserved :
+                              liveStatus === 'free'          ? COLORS.tableStrokeFree :
+                              obj.stroke || COLORS.tableStroke;
           
           // Generate table label: T{table_number}
           const tableNumber = obj.table_number || obj.seats || 1;
