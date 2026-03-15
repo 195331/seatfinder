@@ -13,7 +13,6 @@ import { Button } from '@/components/ui/button';
 import { useFeatureAccess } from '@/components/subscription/SubscriptionPlans';
 import confetti from 'canvas-confetti';
 import LiveFeed from '@/components/commandcenter/LiveFeed';
-import CustomerIntelPanel from '@/components/commandcenter/CustomerIntelPanel';
 
 const CACHE_KEY = 'supa_hub_cache';
 

@@ -559,22 +559,13 @@ export default function OwnerAnalytics() {
                 </p>
               </div>
 
-              {/* Customer Intel + Live Feed */}
-              <div className="grid lg:grid-cols-3 gap-5">
-                <div className="lg:col-span-2">
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="w-1 h-5 rounded-full bg-indigo-500" />
-                    <h2 className="text-sm font-bold text-white uppercase tracking-wider">Customer Intelligence</h2>
-                  </div>
-                  <CustomerIntelPanel restaurantId={restaurantId} />
+              {/* Live Feed */}
+              <div className="flex flex-col">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-1 h-5 rounded-full bg-emerald-500" />
+                  <h2 className="text-sm font-bold text-white uppercase tracking-wider">Activity</h2>
                 </div>
-                <div className="flex flex-col">
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="w-1 h-5 rounded-full bg-emerald-500" />
-                    <h2 className="text-sm font-bold text-white uppercase tracking-wider">Activity</h2>
-                  </div>
-                  <LiveFeed restaurantId={restaurantId} />
-                </div>
+                <LiveFeed restaurantId={restaurantId} />
               </div>
             </>
           )}
