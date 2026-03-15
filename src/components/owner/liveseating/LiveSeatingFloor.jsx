@@ -60,16 +60,59 @@ export default function LiveSeatingFloor({
   const currentRoom = floorPlan?.rooms?.[activeLayer];
   const layers = floorPlan?.rooms ? Object.keys(floorPlan.rooms) : ['MAIN'];
 
-  // Build table status map
+  // Build table status map (combined tables get 'combined' status → purple)
   const tableStatusMap = useMemo(() => {
     const map = {};
     for (const t of tables) {
       if (t?.floorplan_item_id) {
-        map[t.floorplan_item_id] = t.status;
+        const isGroupBooking = t.party_name?.startsWith('GROUP_BOOKING_');
+        map[t.floorplan_item_id] = isGroupBooking ? 'combined' : t.status;
+      }
+    }
+    // Also mark pending combination selections
+    for (const fpId of combinedIds) {
+      map[fpId] = 'combined';
+    }
+    return map;
+  }, [tables, combinedIds]);
+
+  // Build centre map for SVG overlay lines
+  const centreMap = useMemo(() => {
+    const map = {};
+    const roomItems = Object.values(floorPlan?.rooms || {}).flatMap(r => r?.items || []);
+    for (const item of roomItems) {
+      if (item.type === 'table') {
+        map[item.id] = {
+          x: item.x + (item.w || 80) / 2,
+          y: item.y + (item.h || 80) / 2,
+        };
       }
     }
     return map;
-  }, [tables]);
+  }, [floorPlan]);
+
+  // Convert stage coords → overlay pixel
+  const toPixel = ({ x, y }) => ({
+    px: x * camera.scale + camera.x,
+    py: y * camera.scale + camera.y,
+  });
+
+  // Build SVG link lines for currently combined IDs
+  const linkLines = useMemo(() => {
+    const lines = [];
+    const ids = combinedIds.filter(id => centreMap[id]);
+    for (let i = 0; i < ids.length - 1; i++) {
+      const a = centreMap[ids[i]];
+      const b = centreMap[ids[i + 1]];
+      if (a && b) {
+        const { px: x1, py: y1 } = toPixel(a);
+        const { px: x2, py: y2 } = toPixel(b);
+        lines.push({ x1, y1, x2, y2, key: `${ids[i]}-${ids[i + 1]}` });
+      }
+    }
+    return lines;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [combinedIds, centreMap, camera]);
 
   // Build highlighted tables
   const highlightedIds = useMemo(() => {
