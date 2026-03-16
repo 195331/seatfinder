@@ -38,6 +38,8 @@ const OCCASIONS = [
   { value: 'celebration', label: '🎉 Celebration' }
 ];
 
+const LEGACY_DIETARY_MAP = { 'Nut-Free': 'Nut Allergy', 'Tree-Nut-Free': 'Nut Allergy' };
+
 export default function SpecialRequestsForm({ 
   specialRequests, 
   dietaryNeeds = [],
@@ -47,10 +49,15 @@ export default function SpecialRequestsForm({
   onOccasionChange,
   showAITip = false
 }) {
+  // Normalize any legacy dietary values (e.g. "Nut-Free" → "Nut Allergy")
+  const normalizedNeeds = dietaryNeeds
+    .map(d => LEGACY_DIETARY_MAP[d] || d)
+    .filter((d, i, arr) => arr.indexOf(d) === i);
+
   const toggleDietaryNeed = (need) => {
-    const updated = dietaryNeeds.includes(need)
-      ? dietaryNeeds.filter(n => n !== need)
-      : [...dietaryNeeds, need];
+    const updated = normalizedNeeds.includes(need)
+      ? normalizedNeeds.filter(n => n !== need)
+      : [...normalizedNeeds, need];
     onDietaryNeedsChange(updated);
   };
 
