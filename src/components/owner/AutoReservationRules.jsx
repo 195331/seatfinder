@@ -464,6 +464,20 @@ function RuleEditor({ rule, onSave, onCancel }) {
         </div>
       </div>
 
+      <div className="flex items-center gap-2 pt-2">
+        <input
+          type="checkbox"
+          id="requireTable"
+          checked={formData.conditions.require_table_availability}
+          onChange={(e) => setFormData({
+            ...formData,
+            conditions: { ...formData.conditions, require_table_availability: e.target.checked }
+          })}
+          className="rounded"
+        />
+        <Label htmlFor="requireTable" className="cursor-pointer">Require Table Availability</Label>
+      </div>
+
       <div className="flex justify-end gap-3 pt-4 border-t">
         <Button variant="outline" onClick={onCancel}>Cancel</Button>
         <Button onClick={() => onSave(formData)}>
