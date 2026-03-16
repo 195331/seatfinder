@@ -766,7 +766,6 @@ export default function RestaurantDetail() {
                   isSubmitting={reserveMutation.isPending}
                   onReserveTable={(payload) => {
                     if (payload.wants_pre_order && restaurant?.enable_preorder) {
-                      // trigger pre-order flow
                       reserveMutation.mutate(payload);
                     } else {
                       reserveMutation.mutate({ ...payload, skipPreOrder: true });
@@ -774,6 +773,8 @@ export default function RestaurantDetail() {
                   }}
                   currentUser={currentUser}
                   restaurant={restaurant}
+                  returnToReservation={returnToReservation}
+                  onReturnHandled={() => setReturnToReservation(null)}
                 />
               </CardContent>
             </Card>
