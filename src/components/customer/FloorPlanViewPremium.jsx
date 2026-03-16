@@ -163,7 +163,10 @@ export default function FloorPlanViewPremium({
       return;
     }
 
-    const savedDietary = currentUser?.preferences?.dietary_restrictions || [];
+    const LEGACY_DIETARY_MAP = { 'Nut-Free': 'Nut Allergy', 'Tree-Nut-Free': 'Nut Allergy' };
+    const savedDietary = (currentUser?.preferences?.dietary_restrictions || [])
+      .map(d => LEGACY_DIETARY_MAP[d] || d)
+      .filter((d, i, arr) => arr.indexOf(d) === i); // dedupe
     setReservationData((prev) => ({
       ...prev,
       partySize: tableObj.seats || tableEntity.capacity || 2,
