@@ -9,8 +9,15 @@ import { cn } from "@/lib/utils";
 import { DIETARY_OPTIONS } from '@/components/customer/SpecialRequestsForm';
 
 // Map dietary option labels to dietary_tags values (lowercase, hyphenated)
+// Also normalize legacy values like "Nut-Free" → "nut-allergy"
+const LEGACY_TAG_MAP = {
+  'nut-free': 'nut-allergy',
+  'tree-nut-free': 'nut-allergy',
+};
+
 function normalizeTag(label) {
-  return label.toLowerCase().replace(/ /g, '-');
+  const base = label.toLowerCase().replace(/ /g, '-');
+  return LEGACY_TAG_MAP[base] || base;
 }
 
 function itemMatchesDietaryNeeds(item, dietaryNeeds) {
