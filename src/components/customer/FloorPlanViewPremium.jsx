@@ -463,7 +463,13 @@ export default function FloorPlanViewPremium({
       </Dialog>
 
       {/* Reservation Dialog */}
-      <Dialog open={showReserveDialog} onOpenChange={setShowReserveDialog}>
+      <Dialog open={showReserveDialog} onOpenChange={(open) => {
+        if (!open) {
+          setShowReserveDialog(false);
+          setSelectedTable(null);
+          setReservationData({ date: null, time: "", partySize: 2, notes: "", seatingPreference: "", specialRequests: "", dietaryNeeds: [], occasion: "none", wantsPreOrder: false });
+        }
+      }}>
         <DialogContent className="sm:max-w-md max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle>
