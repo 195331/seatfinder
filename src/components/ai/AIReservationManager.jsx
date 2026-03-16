@@ -229,24 +229,36 @@ export default function AIReservationManager({ restaurantId, restaurantName, res
         </div>
 
         {/* Rules Summary */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="p-3 bg-white rounded-lg border border-slate-200">
-            <p className="text-xs text-slate-500">Max Party Size</p>
-            <p className="font-semibold">{rules.maxPartySize} guests</p>
+        {dbRules.filter(r => r.is_active && r.action === 'auto_approve').length === 0 ? (
+          <p className="text-xs text-slate-400 italic text-center py-2">No active auto-approve rules. Configure rules in the Auto Rules tab.</p>
+        ) : (
+          <div className="grid grid-cols-2 gap-3">
+            <div className="p-3 bg-white rounded-lg border border-slate-200">
+              <p className="text-xs text-slate-500">Max Party Size</p>
+              <p className="font-semibold">{rules.maxPartySize !== null ? `${rules.maxPartySize} guests` : 'Any'}</p>
+            </div>
+            <div className="p-3 bg-white rounded-lg border border-slate-200">
+              <p className="text-xs text-slate-500">Min Advance Notice</p>
+              <p className="font-semibold">{rules.minAdvanceHours !== null ? `${rules.minAdvanceHours} hours` : 'None'}</p>
+            </div>
+            <div className="p-3 bg-white rounded-lg border border-slate-200">
+              <p className="text-xs text-slate-500">Max Advance Booking</p>
+              <p className="font-semibold">{rules.maxAdvanceDays !== null ? `${rules.maxAdvanceDays} days` : 'Unlimited'}</p>
+            </div>
+            <div className="p-3 bg-white rounded-lg border border-slate-200">
+              <p className="text-xs text-slate-500">Table Availability</p>
+              <p className="font-semibold">{rules.requireTableAvailability ? 'Required' : 'Optional'}</p>
+            </div>
+            <div className="p-3 bg-white rounded-lg border border-slate-200">
+              <p className="text-xs text-slate-500 flex items-center gap-1"><CalendarDays className="w-3 h-3" />Days Active</p>
+              <p className="font-semibold text-sm">{rules.daysOfWeek.length > 0 ? rules.daysOfWeek.map(d => DAYS[d]).join(', ') : 'All days'}</p>
+            </div>
+            <div className="p-3 bg-white rounded-lg border border-slate-200">
+              <p className="text-xs text-slate-500 flex items-center gap-1"><Timer className="w-3 h-3" />Time of Day</p>
+              <p className="font-semibold text-sm">{rules.timeSlots.length > 0 ? rules.timeSlots.join(', ') : 'Any time'}</p>
+            </div>
           </div>
-          <div className="p-3 bg-white rounded-lg border border-slate-200">
-            <p className="text-xs text-slate-500">Min Advance Notice</p>
-            <p className="font-semibold">{rules.minAdvanceHours} hours</p>
-          </div>
-          <div className="p-3 bg-white rounded-lg border border-slate-200">
-            <p className="text-xs text-slate-500">Max Advance Booking</p>
-            <p className="font-semibold">{rules.maxAdvanceDays} days</p>
-          </div>
-          <div className="p-3 bg-white rounded-lg border border-slate-200">
-            <p className="text-xs text-slate-500">Table Availability</p>
-            <p className="font-semibold">{rules.requireTableAvailability ? 'Required' : 'Optional'}</p>
-          </div>
-        </div>
+        )}
 
         {/* Pending Review */}
         {pendingReservations.length > 0 && (
