@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Sparkles, Settings, Check, X, Clock, Users, Loader2, AlertTriangle } from 'lucide-react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Sparkles, Check, X, Clock, Users, Loader2, AlertTriangle, CalendarDays, Timer } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,16 +9,42 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
+const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
 export default function AIReservationManager({ restaurantId, restaurantName, reservations, tables }) {
   const queryClient = useQueryClient();
   const [autoApproveEnabled, setAutoApproveEnabled] = useState(false);
   const [processing, setProcessing] = useState(false);
-  const [rules, setRules] = useState({
-    maxPartySize: 6,
-    minAdvanceHours: 2,
-    maxAdvanceDays: 30,
-    requireTableAvailability: true
+
+  // Load rules from DB
+  const { data: dbRules = [] } = useQuery({
+    queryKey: ['reservationRules', restaurantId],
+    queryFn: () => base44.entities.ReservationRule.filter({ restaurant_id: restaurantId }, 'priority'),
+    enabled: !!restaurantId,
   });
+
+  // Derive effective rule summary from active auto-approve rules
+  const rules = useMemo(() => {
+    const active = dbRules.filter(r => r.is_active && r.action === 'auto_approve');
+    if (active.length === 0) {
+      return { maxPartySize: null, minAdvanceHours: null, maxAdvanceDays: null, requireTableAvailability: null, daysOfWeek: [], timeSlots: [] };
+    }
+    // Use the most permissive values across all active auto-approve rules
+    const maxPartySize = Math.max(...active.map(r => r.conditions?.max_party_size || 999).filter(v => v !== 999));
+    const minAdvanceHours = Math.min(...active.map(r => r.conditions?.min_advance_hours || 0));
+    const maxAdvanceDays = Math.max(...active.map(r => r.conditions?.max_advance_days || 0));
+    const requireTableAvailability = active.some(r => r.conditions?.require_table_availability !== false);
+    const daysOfWeek = [...new Set(active.flatMap(r => r.conditions?.days_of_week || []))].sort((a, b) => a - b);
+    const timeSlots = [...new Set(active.flatMap(r => r.conditions?.time_slots || []))];
+    return {
+      maxPartySize: isFinite(maxPartySize) ? maxPartySize : null,
+      minAdvanceHours,
+      maxAdvanceDays: maxAdvanceDays > 0 ? maxAdvanceDays : null,
+      requireTableAvailability,
+      daysOfWeek,
+      timeSlots,
+    };
+  }, [dbRules]);
 
   const pendingReservations = reservations.filter(r => r.status === 'pending');
 
