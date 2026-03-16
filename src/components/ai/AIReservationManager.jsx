@@ -100,25 +100,54 @@ export default function AIReservationManager({ restaurantId, restaurantName, res
     const issues = [];
     let canAutoApprove = true;
 
+    // No active auto-approve rules = manual review
+    const activeAutoApprove = dbRules.filter(r => r.is_active && r.action === 'auto_approve');
+    if (activeAutoApprove.length === 0) {
+      issues.push('No active auto-approve rules configured');
+      return { canAutoApprove: false, issues };
+    }
+
     // Check party size
-    if (reservation.party_size > rules.maxPartySize) {
-      issues.push(`Party size (${reservation.party_size}) exceeds auto-approve limit`);
+    if (rules.maxPartySize !== null && reservation.party_size > rules.maxPartySize) {
+      issues.push(`Party size (${reservation.party_size}) exceeds max of ${rules.maxPartySize}`);
       canAutoApprove = false;
     }
 
     // Check advance booking time
-    const reservationDate = new Date(`${reservation.reservation_date}T${reservation.reservation_time}`);
+    const reservationDate = new Date(`${reservation.reservation_date}T${reservation.reservation_time || '00:00'}`);
     const now = new Date();
     const hoursUntil = (reservationDate - now) / (1000 * 60 * 60);
-    
-    if (hoursUntil < rules.minAdvanceHours) {
-      issues.push('Too short notice for auto-approval');
+
+    if (rules.minAdvanceHours !== null && hoursUntil < rules.minAdvanceHours) {
+      issues.push(`Too short notice (min ${rules.minAdvanceHours}h required)`);
       canAutoApprove = false;
     }
 
-    if (hoursUntil > rules.maxAdvanceDays * 24) {
-      issues.push('Booking too far in advance');
+    if (rules.maxAdvanceDays !== null && hoursUntil > rules.maxAdvanceDays * 24) {
+      issues.push(`Booking too far in advance (max ${rules.maxAdvanceDays} days)`);
       canAutoApprove = false;
+    }
+
+    // Check day of week
+    if (rules.daysOfWeek.length > 0) {
+      const resvDay = new Date(reservation.reservation_date).getDay();
+      if (!rules.daysOfWeek.includes(resvDay)) {
+        issues.push(`Day not covered by any auto-approve rule`);
+        canAutoApprove = false;
+      }
+    }
+
+    // Check time slot
+    if (rules.timeSlots.length > 0 && reservation.reservation_time) {
+      const t = reservation.reservation_time;
+      const inSlot = rules.timeSlots.some(slot => {
+        const [start, end] = slot.split('-');
+        return t >= start && t <= end;
+      });
+      if (!inSlot) {
+        issues.push(`Time not within allowed slots`);
+        canAutoApprove = false;
+      }
     }
 
     // Check table availability
