@@ -229,7 +229,7 @@ export default function RestaurantDetail() {
           }
         }
 
-        // Also mark table as reserved immediately so others see it
+        // Mark table as reserved optimistically (will be reverted if user cancels pre-order)
         await base44.entities.Table.update(payload.table_id, { status: 'reserved' }).catch(() => {});
         queryClient.setQueryData(['tables', restaurantId], (old = []) =>
           old.map(t => t.id === payload.table_id ? { ...t, status: 'reserved' } : t)
