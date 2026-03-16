@@ -182,11 +182,19 @@ export default function RestaurantDetail() {
 
   // Waitlist form state lifted here so it persists across tab switches
   const [waitlistForm, setWaitlistForm] = useState({
-    guest_name: currentUser?.full_name || '',
+    guest_name: '',
     guest_phone: '',
     party_size: 2,
   });
   const [waitlistShowForm, setWaitlistShowForm] = useState(false);
+
+  // Sync waitlist guest name when user loads
+  useEffect(() => {
+    if (currentUser?.full_name && !waitlistForm.guest_name) {
+      setWaitlistForm(f => ({ ...f, guest_name: currentUser.full_name }));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser?.full_name]);
 
   // Reserve table mutation
   const reserveMutation = useMutation({
