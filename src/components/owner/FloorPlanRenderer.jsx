@@ -54,7 +54,98 @@ function drawTable(ctx, obj, status, selected) {
   ctx.font = `11px sans-serif`;
   ctx.fillStyle = '#64748b';
   ctx.fillText(`${obj.seats || 4} seats`, obj.w / 2, obj.h / 2 + 8);
+
+  // Perimeter seat dots
+  const seatCount = obj.seats || 4;
+  const dotR = 4.5;
+  const seatPositions = getSeatPositions(obj, seatCount);
+  seatPositions.forEach(({ x, y }) => {
+    ctx.beginPath();
+    ctx.arc(x, y, dotR, 0, Math.PI * 2);
+    ctx.fillStyle = '#1e293b';
+    ctx.fill();
+    ctx.lineWidth = 0.5;
+    ctx.strokeStyle = 'rgba(255,255,255,0.45)';
+    ctx.stroke();
+  });
+
   ctx.restore();
+}
+
+function getSeatPositions(obj, count) {
+  const { w, h } = obj;
+  const offset = 5; // how far center of dot sits outside edge (dot radius + slight overlap)
+  const positions = [];
+
+  if (obj.shape === 'round') {
+    const cx = w / 2, cy = h / 2;
+    const r = w / 2 + offset;
+    for (let i = 0; i < count; i++) {
+      const angle = (2 * Math.PI * i) / count - Math.PI / 2;
+      positions.push({ x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle) });
+    }
+    return positions;
+  }
+
+  // For rectangular/square tables: distribute seats along 4 sides
+  // Cardinal distribution for small counts, then fill sides evenly
+  const sides = [
+    { axis: 'top',    count: 0 },
+    { axis: 'right',  count: 0 },
+    { axis: 'bottom', count: 0 },
+    { axis: 'left',   count: 0 },
+  ];
+
+  // Assign seats per side based on count
+  const perSide = [
+    [0, 1, 0, 1], // 2
+    [1, 0, 1, 1], // 3 — top, bottom, left
+    [1, 1, 1, 1], // 4
+    [1, 1, 2, 1], // 5
+    [2, 1, 2, 1], // 6
+    [2, 1, 2, 2], // 7
+    [2, 2, 2, 2], // 8
+    [2, 2, 3, 2], // 9
+    [3, 2, 3, 2], // 10
+  ];
+
+  const idx = Math.min(Math.max(count - 2, 0), perSide.length - 1);
+  const dist = perSide[idx];
+  // Adjust total to match exactly
+  const assigned = dist.reduce((a, b) => a + b, 0);
+  const distCopy = [...dist];
+  // If count differs from preset, redistribute remainder
+  let rem = count - assigned;
+  for (let i = 0; rem > 0; i = (i + 1) % 4, rem--) distCopy[i]++;
+
+  const placeSide = (axis, n) => {
+    if (n === 0) return;
+    for (let i = 0; i < n; i++) {
+      const t = n === 1 ? 0.5 : i / (n - 1); // 0..1 along side
+      const pad = 12;
+      switch (axis) {
+        case 'top':
+          positions.push({ x: pad + (w - 2 * pad) * t, y: -offset });
+          break;
+        case 'bottom':
+          positions.push({ x: pad + (w - 2 * pad) * t, y: h + offset });
+          break;
+        case 'left':
+          positions.push({ x: -offset, y: pad + (h - 2 * pad) * t });
+          break;
+        case 'right':
+          positions.push({ x: w + offset, y: pad + (h - 2 * pad) * t });
+          break;
+      }
+    }
+  };
+
+  placeSide('top',    distCopy[0]);
+  placeSide('right',  distCopy[1]);
+  placeSide('bottom', distCopy[2]);
+  placeSide('left',   distCopy[3]);
+
+  return positions;
 }
 
 export default function FloorPlanRenderer({
