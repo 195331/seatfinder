@@ -36,7 +36,9 @@ export default function FloorPlanViewPremium({
   onReserveTable,
   isSubmitting,
   currentUser,
-  restaurant = null
+  restaurant = null,
+  returnToReservation = null,
+  onReturnHandled = null
 }) {
   const wrapRef = useRef(null);
 
