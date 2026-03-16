@@ -786,6 +786,10 @@ export default function RestaurantDetail() {
               <CustomerWaitlistJoin
                 restaurantId={restaurantId}
                 currentUser={currentUser}
+                form={waitlistForm}
+                onFormChange={setWaitlistForm}
+                showForm={waitlistShowForm}
+                onShowFormChange={setWaitlistShowForm}
               />
             ) : (
               <Card className="border-0 shadow-sm">
