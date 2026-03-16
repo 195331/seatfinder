@@ -10,10 +10,22 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import moment from 'moment';
 
-export default function CustomerWaitlistJoin({ restaurantId, currentUser }) {
+export default function CustomerWaitlistJoin({ 
+  restaurantId, 
+  currentUser,
+  form: externalForm,
+  onFormChange,
+  showForm: externalShowForm,
+  onShowFormChange
+}) {
   const queryClient = useQueryClient();
-  const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ guest_name: currentUser?.full_name || '', guest_phone: '', party_size: 2 });
+  // Use lifted state if provided, otherwise manage locally (fallback)
+  const [localForm, setLocalForm] = useState({ guest_name: currentUser?.full_name || '', guest_phone: '', party_size: 2 });
+  const [localShowForm, setLocalShowForm] = useState(false);
+  const form = externalForm ?? localForm;
+  const setForm = onFormChange ?? setLocalForm;
+  const showForm = externalShowForm ?? localShowForm;
+  const setShowForm = onShowFormChange ?? setLocalShowForm;
   const [joined, setJoined] = useState(false);
 
   const { data: waitlist = [] } = useQuery({
