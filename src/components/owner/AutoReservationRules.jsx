@@ -310,7 +310,8 @@ function RuleEditor({ rule, onSave, onCancel }) {
       min_party_size: rule?.conditions?.min_party_size || 1,
       max_party_size: rule?.conditions?.max_party_size || 10,
       min_advance_hours: rule?.conditions?.min_advance_hours || 0,
-      max_advance_days: rule?.conditions?.max_advance_days || 30
+      max_advance_days: rule?.conditions?.max_advance_days || 30,
+      require_table_availability: rule?.conditions?.require_table_availability !== false
     }
   });
 
