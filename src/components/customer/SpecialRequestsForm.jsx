@@ -104,20 +104,18 @@ export default function SpecialRequestsForm({
               className="flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer hover:bg-slate-50 transition-colors"
             >
               <Checkbox
-                checked={dietaryNeeds.includes(option)}
+                checked={normalizedNeeds.includes(option)}
                 onCheckedChange={() => toggleDietaryNeed(option)}
               />
               <span className="text-sm">{option}</span>
             </label>
           ))}
         </div>
-        {dietaryNeeds.filter(n => n !== 'Nut-Free').length > 0 && (
+        {normalizedNeeds.length > 0 && (
           <div className="mt-2 flex gap-1 flex-wrap">
-            {dietaryNeeds
-              .filter(n => n !== 'Nut-Free')
-              .map((need) => (
-                <Badge key={need} variant="secondary">{need}</Badge>
-              ))}
+            {normalizedNeeds.map((need) => (
+              <Badge key={need} variant="secondary">{need}</Badge>
+            ))}
           </div>
         )}
       </div>
