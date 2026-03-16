@@ -208,6 +208,30 @@ export default function FloorPlanViewPremium({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeLayer, hasFloorPlan]);
 
+  // Re-open reservation dialog when returning from pre-order back button
+  useEffect(() => {
+    if (!returnToReservation) return;
+    // Find the table entity to restore
+    const tableEntity = (Array.isArray(tables) ? tables : []).find(t => t.id === returnToReservation.table_id);
+    if (tableEntity) {
+      setSelectedTable(tableEntity);
+      setReservationData({
+        date: returnToReservation.reservation_date ? new Date(returnToReservation.reservation_date) : null,
+        time: returnToReservation.reservation_time || "",
+        partySize: returnToReservation.party_size || 2,
+        notes: returnToReservation.notes || "",
+        seatingPreference: "",
+        specialRequests: returnToReservation.special_requests || "",
+        dietaryNeeds: returnToReservation.dietary_needs || [],
+        occasion: returnToReservation.occasion || "none",
+        wantsPreOrder: returnToReservation.wants_pre_order || false
+      });
+      setShowReserveDialog(true);
+      onReturnHandled?.();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [returnToReservation]);
+
   // Pan/zoom handling on the overlay (NOT Konva)
   const dragRef = useRef({ down: false, sx: 0, sy: 0, cx: 0, cy: 0, moved: false, hit: null });
 
