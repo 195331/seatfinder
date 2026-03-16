@@ -814,8 +814,16 @@ export default function RestaurantDetail() {
       {showPreOrderFlow && restaurant?.enable_preorder && (
         <Dialog open={showPreOrderFlow} onOpenChange={(open) => {
           if (!open) {
+            // X button: revert table to free and cancel everything
+            if (pendingReservation?.table_id) {
+              base44.entities.Table.update(pendingReservation.table_id, { status: 'free' }).catch(() => {});
+              queryClient.setQueryData(['tables', restaurantId], (old = []) =>
+                old.map(t => t.id === pendingReservation.table_id ? { ...t, status: 'free' } : t)
+              );
+            }
             setShowPreOrderFlow(false);
             setPendingReservation(null);
+            setCart([]);
           }
         }}>
           <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
@@ -854,8 +862,17 @@ export default function RestaurantDetail() {
                 });
               }}
               onBack={() => {
+                // Back arrow: revert table to free and re-open the reservation dialog
+                if (pendingReservation?.table_id) {
+                  base44.entities.Table.update(pendingReservation.table_id, { status: 'free' }).catch(() => {});
+                  queryClient.setQueryData(['tables', restaurantId], (old = []) =>
+                    old.map(t => t.id === pendingReservation.table_id ? { ...t, status: 'free' } : t)
+                  );
+                }
+                setReturnToReservation(pendingReservation);
                 setShowPreOrderFlow(false);
                 setPendingReservation(null);
+                setCart([]);
               }}
               isSubmitting={reserveMutation.isPending}
             />
