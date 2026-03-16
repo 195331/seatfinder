@@ -31,6 +31,15 @@ function itemMatchesDietaryNeeds(item, dietaryNeeds) {
   return dietaryNeeds.every(need => itemTags.includes(normalizeTag(need)));
 }
 
+const DISPLAY_NORMALIZE = {
+  'Nut-Free': 'Nut Allergy',
+  'Tree-Nut-Free': 'Nut Allergy',
+};
+
+function normalizeDisplayNeed(need) {
+  return DISPLAY_NORMALIZE[need] || need;
+}
+
 export default function PreOrderCart({ 
   menuItems, 
   cart, 
@@ -42,6 +51,8 @@ export default function PreOrderCart({
   isSubmitting,
   userDietaryNeeds = []
 }) {
+  // Normalize legacy dietary need labels before using them
+  userDietaryNeeds = userDietaryNeeds.map(normalizeDisplayNeed);
   const [specialInstructions, setSpecialInstructions] = useState('');
   const [filterActive, setFilterActive] = useState(false);
   const [menuTab, setMenuTab] = useState('matching'); // 'matching' | 'all'
