@@ -239,6 +239,7 @@ export default function RestaurantDetail() {
       // If pre-order enabled and user opted in, show pre-order flow first
       if (restaurant?.enable_preorder && !payload.skipPreOrder && payload.wants_pre_order !== false) {
         setPendingReservation(payload);
+        setReturnToReservation(null); // clear any prior return state
         setShowPreOrderFlow(true);
         return { skipToast: true };
       }
