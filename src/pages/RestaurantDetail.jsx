@@ -177,6 +177,17 @@ export default function RestaurantDetail() {
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [completedReservation, setCompletedReservation] = useState(null);
 
+  // State to return to reservation dialog (from pre-order back button)
+  const [returnToReservation, setReturnToReservation] = useState(null);
+
+  // Waitlist form state lifted here so it persists across tab switches
+  const [waitlistForm, setWaitlistForm] = useState({
+    guest_name: currentUser?.full_name || '',
+    guest_phone: '',
+    party_size: 2,
+  });
+  const [waitlistShowForm, setWaitlistShowForm] = useState(false);
+
   // Reserve table mutation
   const reserveMutation = useMutation({
     mutationFn: async (payload) => {
