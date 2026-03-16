@@ -104,11 +104,13 @@ export default function SpecialRequestsForm({
             </label>
           ))}
         </div>
-        {dietaryNeeds.length > 0 && (
+        {dietaryNeeds.filter(n => n !== 'Nut-Free').length > 0 && (
           <div className="mt-2 flex gap-1 flex-wrap">
-            {dietaryNeeds.map((need) => (
-              <Badge key={need} variant="secondary">{need}</Badge>
-            ))}
+            {dietaryNeeds
+              .filter(n => n !== 'Nut-Free')
+              .map((need) => (
+                <Badge key={need} variant="secondary">{need}</Badge>
+              ))}
           </div>
         )}
       </div>
