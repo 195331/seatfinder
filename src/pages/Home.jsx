@@ -852,19 +852,7 @@ export default function Home() {
               </>
             )}
 
-            {/* AI Search - Always at Top when Active */}
-            <div ref={aiResultsRef} className={showAISearch ? "mb-8 scroll-mt-24" : "hidden"}>
-              <DinerAI
-                restaurants={filteredRestaurants}
-                currentUser={currentUser}
-                onResultsClick={handleRestaurantClick}
-                onFiltersApply={(filters) => setFilters(prev => ({ ...prev, ...filters }))}
-                onResultsReady={() => aiResultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                embeddedMode={true}
-                externalQuery={aiSearchQuery}
-                externalTrigger={aiTrigger}
-              />
-            </div>
+
 
             {/* Netflix-style Top Rated Section */}
             {exploreView === 'all' && !loadingRestaurants && filteredRestaurants.length > 0 && (
@@ -1074,27 +1062,7 @@ export default function Home() {
         onFiltersChange={setFilters}
       />
 
-      {/* Surprise Me Dialog */}
-      {showSurpriseMe && (
-        <Dialog open={showSurpriseMe} onOpenChange={setShowSurpriseMe}>
-          <DialogContent className="sm:max-w-2xl">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-purple-600" />
-                AI Surprise Recommendation
-              </DialogTitle>
-            </DialogHeader>
-            <SurpriseMe
-              restaurants={restaurants}
-              currentUser={currentUser}
-              onRestaurantClick={(r) => {
-                setShowSurpriseMe(false);
-                handleRestaurantClick(r);
-              }}
-            />
-          </DialogContent>
-        </Dialog>
-      )}
+
 
       {/* AI Concierge */}
       <AIConcierge
