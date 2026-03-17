@@ -32,9 +32,6 @@ import ReservationManagerPremium from "@/components/owner/ReservationManagerPrem
 import FloorPlanBuilderPremium from "@/components/owner/FloorPlanBuilderPremium";
 
 import AITableAssigner from "@/components/ai/AITableAssigner";
-import OccupancyForecaster from "@/components/ai/OccupancyForecaster";
-import AIRecommendations from "@/components/ai/AIRecommendations";
-import AIReviewAnalyzer from "@/components/ai/AIReviewAnalyzer";
 import AIReservationManager from "@/components/ai/AIReservationManager";
 import AIFloorPlanOptimizer from "@/components/ai/AIFloorPlanOptimizer";
 
@@ -58,14 +55,10 @@ import AIDynamicPricing from "@/components/ai/AIDynamicPricing";
 import AIMenuOptimizer from "@/components/ai/AIMenuOptimizer";
 
 import ShiftModePanel from "@/components/owner/ShiftModePanel";
-import OwnerAI from "@/components/ai/OwnerAI";
 import NotificationBell from "@/components/notifications/NotificationBell";
 
-import AIStaffScheduler from "@/components/ai/AIStaffScheduler";
 import InventoryManager from "@/components/owner/InventoryManager";
-import AIInventoryInsights from "@/components/ai/AIInventoryInsights";
 import CustomerProfileManager from "@/components/owner/CustomerProfileManager";
-import AITableOptimizer from "@/components/ai/AITableOptimizer";
 import AICustomerInsights from "@/components/analytics/AICustomerInsights";
 import AIMenuSuggestions from "@/components/ai/AIMenuSuggestions";
 import OwnerMessages from "@/components/messaging/OwnerMessages";

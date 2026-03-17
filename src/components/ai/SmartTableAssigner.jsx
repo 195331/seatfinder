@@ -24,6 +24,7 @@ Reservation:
 - Time: ${reservation.reservation_time}
 - Duration: ~90 minutes
 - Special requests: ${reservation.special_requests || 'none'}
+- Seating preferences: ${preferences.length > 0 ? preferences.join(', ') : 'none'}
 
 Available Tables:
 ${tables.map(t => `- ${t.label}: ${t.capacity} seats, position (${t.position_x}, ${t.position_y}), shape: ${t.shape}`).join('\n')}
@@ -33,9 +34,9 @@ ${reservations.map(r => `- ${r.reservation_time}: ${r.party_size} people`).join(
 
 Optimize for:
 1. Table capacity matching (avoid wasting large tables on small parties)
-2. Proximity to amenities (bar for parties of 2, quieter areas for larger groups)
+2. Seating preferences (quiet/corner = edges, window/view = near walls, bar area, outdoor/patio if specified, private/romantic = small table at edges)
 3. Minimize gaps between bookings
-4. Strategic placement (window seats for dates, central for groups)
+4. Strategic placement (window seats for dates, central for groups, round tables for parties of 2)
 
 Return JSON:
 {
