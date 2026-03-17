@@ -63,7 +63,6 @@ export default function Home() {
   const [exploreView, setExploreView] = useState('all'); // 'all', 'discover', 'foryou'
   const [userLocation, setUserLocation] = useState(null);
   const [sortBy, setSortBy] = useState('verified'); // 'verified', 'distance', 'rating'
-  const [showSurpriseMe, setShowSurpriseMe] = useState(false);
   const [showFilterPanel, setShowFilterPanel] = useState(false);
   const [showAISuggestions, setShowAISuggestions] = useState(false);
   const mapRef = useRef(null);
@@ -969,11 +968,11 @@ export default function Home() {
                                           Let AI find your perfect hidden gem right now
                                         </p>
                                         <Button
-                                          onClick={() => setShowSurpriseMe(true)}
-                                          className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg hover:shadow-xl hover:shadow-purple-500/30 hover:-translate-y-0.5 transition-all rounded-full px-8 h-12"
+                                         onClick={() => { setShowAISearch(true); setAISearchQuery('Surprise me with something new'); setAITrigger(t => t + 1); }}
+                                         className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg hover:shadow-xl hover:shadow-purple-500/30 hover:-translate-y-0.5 transition-all rounded-full px-8 h-12"
                                         >
-                                          <Sparkles className="w-5 h-5 mr-2" />
-                                          Surprise Me
+                                         <Sparkles className="w-5 h-5 mr-2" />
+                                         Surprise Me
                                         </Button>
                                       </div>
                                     </div>
