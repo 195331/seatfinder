@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Sparkles, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
-export default function SmartTableAssigner({ reservation, restaurant, onTableAssigned }) {
+export default function SmartTableAssigner({ reservation, restaurant, onTableAssigned, preferences = [] }) {
   const suggestTableMutation = useMutation({
     mutationFn: async () => {
       const tables = await base44.entities.Table.filter({ restaurant_id: restaurant.id, status: 'free' });

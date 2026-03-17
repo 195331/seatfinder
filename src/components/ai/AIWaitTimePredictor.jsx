@@ -17,9 +17,10 @@ export default function AIWaitTimePredictor({ restaurantId, partySize, currentWa
           base44.entities.WaitlistEntry.filter({ restaurant_id: restaurantId, status: 'seated' }, '-seated_at', 30)
         ]);
 
-        // Calculate average turnover time from seated waitlist entries
+        // Calculate average turnover time from seated waitlist entries (last 6 hours only to avoid stale/bugged data)
+        const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000);
         const turnoverTimes = waitlistHistory
-          .filter(w => w.seated_at && w.created_date)
+          .filter(w => w.seated_at && w.created_date && new Date(w.seated_at) > sixHoursAgo)
           .map(w => {
             const waitedMs = new Date(w.seated_at) - new Date(w.created_date);
             return waitedMs / 60000; // Convert to minutes
