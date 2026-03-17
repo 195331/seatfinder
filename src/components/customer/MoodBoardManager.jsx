@@ -8,7 +8,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import RestaurantCard from './RestaurantCard';
-import MoodBoardAI from '../ai/MoodBoardAI';
 import { cn } from "@/lib/utils";
 
 export default function MoodBoardManager({ currentUser, allRestaurants, onRestaurantClick }) {
