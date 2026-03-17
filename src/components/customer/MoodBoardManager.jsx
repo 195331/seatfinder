@@ -221,16 +221,6 @@ export default function MoodBoardManager({ currentUser, allRestaurants, onRestau
 
       {selectedBoard && (
         <>
-          {/* AI Suggestions */}
-          {allRestaurants && allRestaurants.length > 0 && (
-            <div className="mb-4">
-              <MoodBoardAI
-                moodBoard={selectedBoard}
-                restaurants={allRestaurants}
-                onRestaurantClick={onRestaurantClick}
-              />
-            </div>
-          )}
           
           <Card>
             <CardContent className="p-6">
