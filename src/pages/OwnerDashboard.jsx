@@ -824,16 +824,7 @@ export default function OwnerDashboard() {
                   description="Get powerful AI-driven insights, occupancy forecasting, and review analysis."
                 >
                   <div className="space-y-6">
-                    <OwnerAI restaurant={currentRestaurant} />
-
-                    <AITableOptimizer restaurantId={selectedRestaurantId} />
-
                     <AICustomerInsights restaurantId={selectedRestaurantId} />
-
-                    <div className="grid lg:grid-cols-2 gap-6">
-                      <OccupancyForecaster restaurantId={selectedRestaurantId} />
-                      <AIRecommendations restaurantId={selectedRestaurantId} restaurant={currentRestaurant} />
-                    </div>
 
                     <PredictiveAnalytics restaurantId={selectedRestaurantId} />
 
@@ -845,13 +836,10 @@ export default function OwnerDashboard() {
                       <ABTestingSuggestions restaurantId={selectedRestaurantId} />
                     </div>
 
-                    <div className="grid lg:grid-cols-2 gap-6">
-                      <AIFloorPlanOptimizer
-                        restaurantId={selectedRestaurantId}
-                        currentLayout={currentRestaurant?.floor_plan_data}
-                      />
-                      <AIReviewAnalyzer restaurantId={selectedRestaurantId} />
-                    </div>
+                    <AIFloorPlanOptimizer
+                      restaurantId={selectedRestaurantId}
+                      currentLayout={currentRestaurant?.floor_plan_data}
+                    />
                   </div>
                 </FeatureGate>
               </TabsContent>
@@ -927,14 +915,11 @@ export default function OwnerDashboard() {
               </TabsContent>
 
               <TabsContent value="staff">
-                <AIStaffScheduler restaurantId={selectedRestaurantId} />
+                <p className="text-slate-500 text-sm">Staff scheduling coming soon.</p>
               </TabsContent>
 
               <TabsContent value="inventory">
-                <div className="grid lg:grid-cols-2 gap-6">
-                  <InventoryManager restaurantId={selectedRestaurantId} />
-                  <AIInventoryInsights restaurantId={selectedRestaurantId} />
-                </div>
+                <InventoryManager restaurantId={selectedRestaurantId} />
               </TabsContent>
 
               <TabsContent value="customers">
