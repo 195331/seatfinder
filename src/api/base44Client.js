@@ -171,7 +171,11 @@ const auth = {
       },
     });
   },
-
+// Legacy compatibility — some pages call this
+  logUserInApp: async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.user || null;
+  },
   // Logout
   logout: async (redirectUrl) => {
     await supabase.auth.signOut();
