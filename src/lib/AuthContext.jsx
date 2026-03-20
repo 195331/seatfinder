@@ -11,26 +11,23 @@ export const AuthProvider = ({ children }) => {
   const [authError, setAuthError] = useState(null);
   const [appPublicSettings, setAppPublicSettings] = useState({ id: 'seatfinder' });
 
-  useEffect(() => {
-    // Check initial session
-    checkSession();
-
-    // Listen for auth state changes (login, logout, token refresh)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (session?.user) {
-          await loadUserProfile(session.user);
-        } else {
-          setUser(null);
-          setIsAuthenticated(false);
-        }
-        setIsLoadingAuth(false);
+useEffect(() => {
+  // Listen for auth state changes only — no separate checkSession call
+  const { data: { subscription } } = supabase.auth.onAuthStateChange(
+    async (event, session) => {
+      if (session?.user) {
+        await loadUserProfile(session.user);
+      } else {
+        setUser(null);
+        setIsAuthenticated(false);
       }
-    );
+      setIsLoadingAuth(false);
+    }
+  );
 
-    return () => subscription.unsubscribe();
-  }, []);
-
+  return () => subscription.unsubscribe();
+}, []);
+  
   const checkSession = async () => {
     try {
       setIsLoadingAuth(true);
