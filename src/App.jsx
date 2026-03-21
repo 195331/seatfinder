@@ -19,8 +19,6 @@ const LayoutWrapper = ({ children, currentPageName }) => Layout ?
 const AuthenticatedApp = () => {
   const { isLoadingPublicSettings } = useAuth();
 
-  // Only block on public settings (always false in our new setup)
-  // Never block on isLoadingAuth — auth resolves in background
   if (isLoadingPublicSettings) {
     return (
       <div className="fixed inset-0 flex items-center justify-center">
