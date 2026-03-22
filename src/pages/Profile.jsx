@@ -1,158 +1,106 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { base44 } from '@/api/base44Client';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabaseClient';
 import { createPageUrl } from '@/utils';
-import { ArrowLeft, Check, Loader2, Camera, X, Trophy, Star, TrendingUp } from 'lucide-react';
+import { Check, Loader2, ArrowLeft } from 'lucide-react';
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import BadgeProgress from '@/components/gamification/BadgeProgress';
-import DailyCheckIn from '@/components/gamification/DailyCheckIn';
-import { LEVEL_THRESHOLDS } from '@/components/gamification/GamificationTracker';
 
 const FOOD_AVATARS = [
-  { id: 'pizza', emoji: '🍕', name: 'Pizza' },
-  { id: 'burger', emoji: '🍔', name: 'Burger' },
-  { id: 'sushi', emoji: '🍣', name: 'Sushi' },
-  { id: 'taco', emoji: '🌮', name: 'Taco' },
-  { id: 'ramen', emoji: '🍜', name: 'Ramen' },
-  { id: 'salad', emoji: '🥗', name: 'Salad' },
-  { id: 'steak', emoji: '🥩', name: 'Steak' },
-  { id: 'pasta', emoji: '🍝', name: 'Pasta' },
-  { id: 'icecream', emoji: '🍦', name: 'Ice Cream' },
-  { id: 'donut', emoji: '🍩', name: 'Donut' },
-  { id: 'cake', emoji: '🎂', name: 'Cake' },
-  { id: 'cookie', emoji: '🍪', name: 'Cookie' },
-  { id: 'fries', emoji: '🍟', name: 'Fries' },
-  { id: 'hotdog', emoji: '🌭', name: 'Hot Dog' },
-  { id: 'sandwich', emoji: '🥪', name: 'Sandwich' },
-  { id: 'croissant', emoji: '🥐', name: 'Croissant' },
-  { id: 'bagel', emoji: '🥯', name: 'Bagel' },
-  { id: 'pancakes', emoji: '🥞', name: 'Pancakes' },
-  { id: 'waffle', emoji: '🧇', name: 'Waffle' },
-  { id: 'bacon', emoji: '🥓', name: 'Bacon' },
-  { id: 'egg', emoji: '🍳', name: 'Egg' },
-  { id: 'cheese', emoji: '🧀', name: 'Cheese' },
-  { id: 'popcorn', emoji: '🍿', name: 'Popcorn' },
-  { id: 'pretzel', emoji: '🥨', name: 'Pretzel' },
-  { id: 'dumpling', emoji: '🥟', name: 'Dumpling' },
-  { id: 'curry', emoji: '🍛', name: 'Curry' },
-  { id: 'bento', emoji: '🍱', name: 'Bento' },
-  { id: 'shrimp', emoji: '🍤', name: 'Shrimp' },
-  { id: 'lobster', emoji: '🦞', name: 'Lobster' },
-  { id: 'cupcake', emoji: '🧁', name: 'Cupcake' },
+  { id: 'pizza', emoji: '🍕' }, { id: 'burger', emoji: '🍔' },
+  { id: 'sushi', emoji: '🍣' }, { id: 'taco', emoji: '🌮' },
+  { id: 'ramen', emoji: '🍜' }, { id: 'salad', emoji: '🥗' },
+  { id: 'steak', emoji: '🥩' }, { id: 'pasta', emoji: '🍝' },
+  { id: 'icecream', emoji: '🍦' }, { id: 'donut', emoji: '🍩' },
+  { id: 'cake', emoji: '🎂' }, { id: 'cookie', emoji: '🍪' },
+  { id: 'fries', emoji: '🍟' }, { id: 'hotdog', emoji: '🌭' },
+  { id: 'sandwich', emoji: '🥪' }, { id: 'croissant', emoji: '🥐' },
+  { id: 'bagel', emoji: '🥯' }, { id: 'pancakes', emoji: '🥞' },
+  { id: 'waffle', emoji: '🧇' }, { id: 'bacon', emoji: '🥓' },
+  { id: 'egg', emoji: '🍳' }, { id: 'cheese', emoji: '🧀' },
+  { id: 'popcorn', emoji: '🍿' }, { id: 'pretzel', emoji: '🥨' },
+  { id: 'dumpling', emoji: '🥟' }, { id: 'curry', emoji: '🍛' },
+  { id: 'bento', emoji: '🍱' }, { id: 'shrimp', emoji: '🍤' },
+  { id: 'lobster', emoji: '🦞' }, { id: 'cupcake', emoji: '🧁' },
 ];
 
 export default function Profile() {
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(null);
   const [selectedAvatar, setSelectedAvatar] = useState(null);
-  const [profileImage, setProfileImage] = useState(null);
-  const [fullName, setFullName] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
   const [isNewUser, setIsNewUser] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const fileInputRef = useRef(null);
-
-  // Fetch user stats
-  const { data: stats } = useQuery({
-    queryKey: ['userStats', currentUser?.id],
-    queryFn: async () => {
-      const result = await base44.entities.UserStats.filter({ user_id: currentUser.id });
-      return Array.isArray(result) ? result[0] : null;
-    },
-    enabled: !!currentUser,
-  });
+  const [isSaving, setIsSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const isAuth = await base44.auth.isAuthenticated();
-        if (!isAuth) {
-          base44.auth.redirectToLogin(createPageUrl('Profile'));
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) {
+          navigate(createPageUrl('Landing'));
           return;
         }
-        const user = await base44.auth.me();
-        setCurrentUser(user);
-        setFullName(user.full_name || '');
-        setSelectedAvatar(user.avatar || null);
-        setProfileImage(user.profile_image || null);
-        setIsNewUser(!user.profile_complete);
+
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+
+        setCurrentUser({
+          id: session.user.id,
+          email: session.user.email,
+          full_name: profile?.full_name || session.user.user_metadata?.full_name || '',
+          ...profile,
+        });
+
+        setSelectedAvatar(profile?.avatar || null);
+        setIsNewUser(!profile?.profile_complete);
+
+        // If profile already complete, skip straight to Home
+        if (profile?.profile_complete) {
+          navigate(createPageUrl('Home'));
+          return;
+        }
       } catch (e) {
         navigate(createPageUrl('Home'));
+      } finally {
+        setLoading(false);
       }
     };
     fetchUser();
   }, [navigate]);
 
-  const handleImageUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please select an image file');
-      return;
-    }
-
-    setUploading(true);
-    try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      setProfileImage(file_url);
-      setSelectedAvatar(null); // Clear emoji avatar when using image
-      toast.success('Image uploaded!');
-    } catch (error) {
-      toast.error('Failed to upload image');
-    }
-    setUploading(false);
-  };
-
-  const handleRemoveImage = () => {
-    setProfileImage(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
   const handleSave = async () => {
-    if (!selectedAvatar && !profileImage) {
-      toast.error("Please select an avatar or upload a photo");
-      return;
-    }
-    
     setIsSaving(true);
     try {
-      await base44.auth.updateMe({
-        avatar: selectedAvatar,
-        profile_image: profileImage,
-        profile_complete: true
-      });
-
-      if (isNewUser) {
-        // Create welcome notification
-        await base44.entities.Notification.create({
-          user_id: currentUser.id,
-          user_email: currentUser.email,
-          type: 'welcome',
-          title: 'Welcome to SeatFinder!',
-          message: 'Your account is all set up. Start exploring restaurants and making reservations!'
+      const { error } = await supabase
+        .from('profiles')
+        .upsert({
+          id: currentUser.id,
+          email: currentUser.email,
+          full_name: currentUser.full_name,
+          avatar: selectedAvatar,
+          profile_complete: true,
         });
-      }
 
-      toast.success("Profile saved!");
+      if (error) throw error;
+
+      toast.success('Profile saved!');
       navigate(createPageUrl('Home'));
     } catch (e) {
-      toast.error("Failed to save profile");
+      toast.error('Failed to save profile');
+    } finally {
+      setIsSaving(false);
     }
-    setIsSaving(false);
   };
 
-  if (!currentUser) {
+  const handleSkip = () => {
+    navigate(createPageUrl('Home'));
+  };
+
+  if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
@@ -160,10 +108,13 @@ export default function Profile() {
     );
   }
 
+  if (!currentUser) return null;
+
   return (
     <div className="min-h-screen bg-slate-50">
+      {/* Header */}
       <header className="bg-white border-b sticky top-0 z-50">
-        <div className="max-w-2xl mx-auto px-4 py-4">
+        <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             {!isNewUser && (
               <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="rounded-full">
@@ -174,165 +125,73 @@ export default function Profile() {
               <h1 className="font-bold text-lg">
                 {isNewUser ? 'Complete Your Profile' : 'Edit Profile'}
               </h1>
-              <p className="text-sm text-slate-500">
-                {isNewUser ? 'Choose your food avatar!' : 'Update your profile'}
-              </p>
+              <p className="text-sm text-slate-500">Choose your food avatar!</p>
             </div>
           </div>
+          <button
+            onClick={handleSkip}
+            className="text-sm text-slate-400 hover:text-slate-600 transition-colors"
+          >
+            Skip →
+          </button>
         </div>
       </header>
 
       <main className="max-w-2xl mx-auto px-4 py-6 space-y-6">
-        {/* Current Avatar Preview */}
-        <Card className="border-0 shadow-lg">
-          <CardContent className="py-8 text-center">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleImageUpload}
-              className="hidden"
-            />
-            <div className="relative w-24 h-24 mx-auto mb-4">
-              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-emerald-100 to-teal-100 flex items-center justify-center text-5xl overflow-hidden">
-                {uploading ? (
-                  <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
-                ) : profileImage ? (
-                  <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
-                ) : selectedAvatar ? (
-                  FOOD_AVATARS.find(a => a.id === selectedAvatar)?.emoji
-                ) : (
-                  '🍽️'
-                )}
-              </div>
-              {profileImage && (
-                <button
-                  onClick={handleRemoveImage}
-                  className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
+        {/* Avatar Preview */}
+        <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
+          <div className="w-24 h-24 rounded-full bg-gradient-to-br from-emerald-100 to-teal-100 flex items-center justify-center text-5xl mx-auto mb-4">
+            {selectedAvatar
+              ? FOOD_AVATARS.find(a => a.id === selectedAvatar)?.emoji
+              : '🍽️'}
+          </div>
+          <h2 className="text-xl font-semibold">{currentUser.full_name || currentUser.email}</h2>
+          <p className="text-slate-500 text-sm">{currentUser.email}</p>
+        </div>
+
+        {/* Avatar Grid */}
+        <div className="bg-white rounded-2xl shadow-lg p-6">
+          <h3 className="font-bold text-lg mb-1">Choose a Food Avatar</h3>
+          <p className="text-sm text-slate-500 mb-4">Pick an emoji that represents you</p>
+          <div className="grid grid-cols-5 sm:grid-cols-6 gap-3">
+            {FOOD_AVATARS.map((avatar) => (
               <button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-                className="absolute -bottom-1 -right-1 w-8 h-8 bg-emerald-500 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-emerald-600 transition-colors"
+                key={avatar.id}
+                onClick={() => setSelectedAvatar(avatar.id)}
+                className={cn(
+                  "relative aspect-square rounded-xl flex items-center justify-center text-3xl transition-all hover:scale-105",
+                  selectedAvatar === avatar.id
+                    ? "bg-emerald-100 ring-2 ring-emerald-500 ring-offset-2"
+                    : "bg-slate-100 hover:bg-slate-200"
+                )}
               >
-                <Camera className="w-4 h-4" />
+                {avatar.emoji}
+                {selectedAvatar === avatar.id && (
+                  <div className="absolute -top-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center">
+                    <Check className="w-3 h-3 text-white" />
+                  </div>
+                )}
               </button>
-            </div>
-            <h2 className="text-xl font-semibold">{fullName || currentUser.email}</h2>
-            <p className="text-slate-500">{currentUser.email}</p>
-            <p className="text-xs text-slate-400 mt-2">
-              {currentUser.role || currentUser.user_type || 'User'}
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Avatar Selection */}
-        <Card className="border-0 shadow-lg">
-          <CardHeader>
-            <CardTitle>Or Choose a Food Avatar</CardTitle>
-            <p className="text-sm text-slate-500">Pick an emoji if you don't want to upload a photo</p>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-5 sm:grid-cols-6 gap-3">
-              {FOOD_AVATARS.map((avatar) => (
-                <button
-                  key={avatar.id}
-                  onClick={() => {
-                    setSelectedAvatar(avatar.id);
-                    setProfileImage(null); // Clear uploaded image when selecting emoji
-                  }}
-                  className={cn(
-                    "relative aspect-square rounded-xl flex flex-col items-center justify-center transition-all hover:scale-105",
-                    selectedAvatar === avatar.id && !profileImage
-                      ? "bg-emerald-100 ring-2 ring-emerald-500 ring-offset-2"
-                      : "bg-slate-100 hover:bg-slate-200"
-                  )}
-                >
-                  <span className="text-3xl">{avatar.emoji}</span>
-                  {selectedAvatar === avatar.id && !profileImage && (
-                    <div className="absolute -top-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center">
-                      <Check className="w-3 h-3 text-white" />
-                    </div>
-                  )}
-                </button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Gamification Stats */}
-        {!isNewUser && stats && (
-          <>
-            {/* Daily Check-In */}
-            <DailyCheckIn currentUser={currentUser} />
-
-            {/* Level & Points */}
-            <Card className="border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center">
-                      <Trophy className="w-6 h-6 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-lg text-purple-900">Level {stats.level || 1}</h3>
-                      <p className="text-sm text-purple-700">{stats.total_points || 0} Total Points</p>
-                    </div>
-                  </div>
-                  <Badge className="bg-purple-600 text-white px-4 py-2">
-                    <TrendingUp className="w-4 h-4 mr-1" />
-                    {stats.points_to_next_level || 100} to next
-                  </Badge>
-                </div>
-                
-                <Progress 
-                  value={((LEVEL_THRESHOLDS[stats.level] - stats.points_to_next_level) / LEVEL_THRESHOLDS[stats.level]) * 100} 
-                  className="h-3"
-                />
-                
-                <div className="grid grid-cols-3 gap-4 mt-6">
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-purple-900">{stats.review_count || 0}</p>
-                    <p className="text-xs text-purple-700">Reviews</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-purple-900">{stats.reservation_count || 0}</p>
-                    <p className="text-xs text-purple-700">Reservations</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-purple-900">{stats.check_in_streak || 0}</p>
-                    <p className="text-xs text-purple-700">Day Streak</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Badge Progress */}
-            <BadgeProgress userId={currentUser.id} />
-          </>
-        )}
+            ))}
+          </div>
+        </div>
 
         {/* Save Button */}
         <Button
           onClick={handleSave}
-          disabled={isSaving || (!selectedAvatar && !profileImage)}
+          disabled={isSaving || !selectedAvatar}
           className="w-full h-12 rounded-full text-base bg-emerald-600 hover:bg-emerald-700"
         >
           {isSaving ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Saving...
-            </>
+            <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</>
           ) : (
-            <>
-              <Check className="w-4 h-4 mr-2" />
-              {isNewUser ? 'Complete Setup' : 'Save Changes'}
-            </>
+            <><Check className="w-4 h-4 mr-2" />Complete Setup</>
           )}
         </Button>
+
+        <p className="text-center text-sm text-slate-400">
+          You can always change this later in settings
+        </p>
       </main>
     </div>
   );
