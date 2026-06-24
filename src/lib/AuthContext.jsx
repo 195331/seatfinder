@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { supabase } from '@/lib/supabaseClient';
+import { base44 } from '@/api/base44Client';
 
 const AuthContext = createContext();
 
@@ -7,87 +7,40 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
-  const [isLoadingPublicSettings, setIsLoadingPublicSettings] = useState(false);
+  const [isLoadingPublicSettings] = useState(false);
   const [authError, setAuthError] = useState(null);
   const [appPublicSettings] = useState({ id: 'seatfinder' });
 
   useEffect(() => {
-    // Set a hard timeout — never spin forever
-    const timeout = setTimeout(() => {
-      setIsLoadingAuth(false);
-    }, 3000);
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        clearTimeout(timeout);
-        if (session?.user) {
-          await loadUserProfile(session.user);
+    const checkAuth = async () => {
+      try {
+        const authed = await base44.auth.isAuthenticated();
+        if (authed) {
+          const me = await base44.auth.me();
+          setUser(me);
+          setIsAuthenticated(true);
         } else {
-          setUser(null);
           setIsAuthenticated(false);
         }
+      } catch (err) {
+        if (err?.type === 'user_not_registered') {
+          setAuthError(err);
+        } else {
+          setIsAuthenticated(false);
+        }
+      } finally {
         setIsLoadingAuth(false);
       }
-    );
-
-    return () => {
-      clearTimeout(timeout);
-      subscription.unsubscribe();
     };
+    checkAuth();
   }, []);
 
-  const loadUserProfile = async (authUser) => {
-    try {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', authUser.id)
-        .single();
-
-      if (!profile) {
-        await supabase.from('profiles').insert({
-          id: authUser.id,
-          email: authUser.email,
-          full_name: authUser.user_metadata?.full_name || '',
-          avatar_url: authUser.user_metadata?.avatar_url || '',
-        });
-      }
-
-      setUser({
-        id: authUser.id,
-        email: authUser.email,
-        full_name: profile?.full_name || authUser.user_metadata?.full_name || '',
-        avatar_url: profile?.avatar_url || authUser.user_metadata?.avatar_url || '',
-        ...profile,
-      });
-      setIsAuthenticated(true);
-    } catch (error) {
-      console.error('Profile load failed:', error);
-      setUser({ id: authUser.id, email: authUser.email });
-      setIsAuthenticated(true);
-    }
-  };
-
   const logout = async (redirectUrl) => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setIsAuthenticated(false);
-    window.location.href = redirectUrl || '/';
+    await base44.auth.logout(redirectUrl || '/login');
   };
 
   const navigateToLogin = () => {
-    supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: window.location.origin },
-    });
-  };
-
-  const checkAppState = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user) {
-      await loadUserProfile(session.user);
-    }
-    setIsLoadingAuth(false);
+    window.location.href = '/login';
   };
 
   return (
@@ -100,7 +53,6 @@ export const AuthProvider = ({ children }) => {
       appPublicSettings,
       logout,
       navigateToLogin,
-      checkAppState,
     }}>
       {children}
     </AuthContext.Provider>

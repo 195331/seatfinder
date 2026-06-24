@@ -1,0 +1,66 @@
+{
+  "name": "CustomerLoyalty",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string"
+    },
+    "restaurant_id": {
+      "type": "string"
+    },
+    "program_id": {
+      "type": "string"
+    },
+    "total_points": {
+      "type": "number",
+      "default": 0
+    },
+    "available_points": {
+      "type": "number",
+      "default": 0
+    },
+    "lifetime_points": {
+      "type": "number",
+      "default": 0,
+      "description": "Total points ever earned"
+    },
+    "current_tier": {
+      "type": "string",
+      "default": "Bronze"
+    },
+    "visits": {
+      "type": "number",
+      "default": 0
+    },
+    "total_spent": {
+      "type": "number",
+      "default": 0
+    },
+    "last_visit": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "rewards_redeemed": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "reward_id": {
+            "type": "string"
+          },
+          "redeemed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "points_used": {
+            "type": "number"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "user_id",
+    "restaurant_id"
+  ]
+}

@@ -1,0 +1,106 @@
+{
+  "name": "User",
+  "type": "object",
+  "properties": {
+    "user_type": {
+      "type": "string",
+      "enum": [
+        "diner",
+        "owner",
+        "admin"
+      ],
+      "default": "diner"
+    },
+    "profile_complete": {
+      "type": "boolean",
+      "default": false
+    },
+    "avatar": {
+      "type": "string",
+      "description": "Food emoji avatar ID"
+    },
+    "profile_image": {
+      "type": "string",
+      "description": "Uploaded profile picture URL"
+    },
+    "bio": {
+      "type": "string",
+      "description": "User bio (max 200 chars)"
+    },
+    "preferences": {
+      "type": "object",
+      "properties": {
+        "favorite_cuisines": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "dietary_restrictions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "preferred_amenities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "taste_profile": {
+      "type": "object",
+      "properties": {
+        "outdoor_seating": {
+          "type": "boolean"
+        },
+        "kid_friendly": {
+          "type": "boolean"
+        },
+        "bar_seating": {
+          "type": "boolean"
+        },
+        "vegetarian_friendly": {
+          "type": "boolean"
+        }
+      }
+    },
+    "recently_viewed": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Recently viewed restaurant IDs"
+    },
+    "express_profile": {
+      "type": "object",
+      "properties": {
+        "default_party_size": {
+          "type": "number",
+          "default": 2
+        },
+        "phone": {
+          "type": "string"
+        },
+        "seating_prefs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "booth, window, bar, patio, outdoor, quiet"
+        }
+      }
+    },
+    "active_waitlists": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Current waitlist entry IDs (max 2)",
+      "maxItems": 2
+    }
+  },
+  "required": []
+}

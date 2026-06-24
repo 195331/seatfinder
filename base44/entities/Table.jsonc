@@ -1,0 +1,112 @@
+{
+  "name": "Table",
+  "type": "object",
+  "properties": {
+    "restaurant_id": {
+      "type": "string"
+    },
+    "area_id": {
+      "type": "string",
+      "description": "Reference to RestaurantArea"
+    },
+    "label": {
+      "type": "string",
+      "description": "Table label (T1, T2, Bar 1)"
+    },
+    "capacity": {
+      "type": "number",
+      "default": 4
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "free",
+        "occupied",
+        "reserved"
+      ],
+      "default": "free"
+    },
+    "position_x": {
+      "type": "number",
+      "description": "X position on floorplan"
+    },
+    "position_y": {
+      "type": "number",
+      "description": "Y position on floorplan"
+    },
+    "shape": {
+      "type": "string",
+      "enum": [
+        "square",
+        "round",
+        "rectangle",
+        "booth"
+      ],
+      "default": "square"
+    },
+    "rotation": {
+      "type": "number",
+      "default": 0,
+      "description": "Rotation in degrees"
+    },
+    "width": {
+      "type": "number",
+      "default": 80
+    },
+    "height": {
+      "type": "number",
+      "default": 80
+    },
+    "layer": {
+      "type": "string",
+      "enum": [
+        "main",
+        "roof",
+        "lounge"
+      ],
+      "default": "main",
+      "description": "Which layer/room this table belongs to"
+    },
+    "floorplan_item_id": {
+      "type": "string",
+      "description": "Reference to floor plan builder item ID"
+    },
+    "room_id": {
+      "type": "string",
+      "description": "Room/layer ID from floor plan"
+    },
+    "z_index": {
+      "type": "number",
+      "default": 0,
+      "description": "Z-index for layering"
+    },
+    "zone_type": {
+      "type": "string",
+      "enum": [
+        "quiet",
+        "bar",
+        "family",
+        "outdoor",
+        "vip"
+      ],
+      "description": "Zone type assignment from floor plan"
+    },
+    "party_name": {
+      "type": "string",
+      "description": "Name of seated party"
+    },
+    "party_size": {
+      "type": "number",
+      "description": "Size of seated party"
+    },
+    "seated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When party was seated"
+    }
+  },
+  "required": [
+    "restaurant_id",
+    "label"
+  ]
+}

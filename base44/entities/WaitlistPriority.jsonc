@@ -1,0 +1,30 @@
+{
+  "name": "WaitlistPriority",
+  "type": "object",
+  "properties": {
+    "restaurant_id": {
+      "type": "string"
+    },
+    "priority_name": {
+      "type": "string",
+      "description": "VIP, Regular Member, First-time, etc."
+    },
+    "priority_level": {
+      "type": "number",
+      "description": "Higher number = higher priority"
+    },
+    "auto_assign_rules": {
+      "type": "object",
+      "description": "Conditions for auto-assigning this priority"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "restaurant_id",
+    "priority_name",
+    "priority_level"
+  ]
+}

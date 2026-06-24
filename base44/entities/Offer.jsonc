@@ -1,0 +1,95 @@
+{
+  "name": "Offer",
+  "type": "object",
+  "properties": {
+    "restaurant_id": {
+      "type": "string",
+      "description": "Restaurant offering the deal"
+    },
+    "title": {
+      "type": "string",
+      "description": "Offer title"
+    },
+    "description": {
+      "type": "string"
+    },
+    "offer_type": {
+      "type": "string",
+      "enum": [
+        "percentage_discount",
+        "fixed_discount",
+        "free_item",
+        "buy_one_get_one",
+        "loyalty_bonus"
+      ],
+      "default": "percentage_discount"
+    },
+    "discount_value": {
+      "type": "number",
+      "description": "Percentage or dollar amount"
+    },
+    "free_item_name": {
+      "type": "string",
+      "description": "Name of free item if applicable"
+    },
+    "target_segment": {
+      "type": "string",
+      "enum": [
+        "all",
+        "new_customers",
+        "frequent_visitors",
+        "high_spenders",
+        "lapsed_customers",
+        "cuisine_lovers"
+      ],
+      "default": "all"
+    },
+    "min_spend": {
+      "type": "number",
+      "description": "Minimum spend required"
+    },
+    "valid_from": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "valid_until": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "days_active": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "description": "Days of week (0=Sunday)"
+    },
+    "time_slots": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Time slots when valid"
+    },
+    "max_uses_per_customer": {
+      "type": "number",
+      "default": 1
+    },
+    "total_uses": {
+      "type": "number",
+      "default": 0
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    },
+    "ai_generated": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "restaurant_id",
+    "title",
+    "offer_type"
+  ]
+}

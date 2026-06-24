@@ -1,0 +1,102 @@
+{
+  "name": "MealPlan",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "User who owns this meal plan"
+    },
+    "week_start_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Monday of the week"
+    },
+    "preferences": {
+      "type": "object",
+      "description": "Dietary preferences used to generate this plan",
+      "properties": {
+        "dietary_restrictions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "allergies": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "favorite_cuisines": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "calorie_target": {
+          "type": "number"
+        },
+        "meals_to_plan": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "meals": {
+      "type": "object",
+      "description": "Meals by day and meal type",
+      "properties": {
+        "monday": {
+          "type": "object"
+        },
+        "tuesday": {
+          "type": "object"
+        },
+        "wednesday": {
+          "type": "object"
+        },
+        "thursday": {
+          "type": "object"
+        },
+        "friday": {
+          "type": "object"
+        },
+        "saturday": {
+          "type": "object"
+        },
+        "sunday": {
+          "type": "object"
+        }
+      }
+    },
+    "locked_meals": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Meal IDs that user wants to keep when regenerating"
+    },
+    "shopping_list": {
+      "type": "object",
+      "description": "Consolidated shopping list by category"
+    },
+    "servings": {
+      "type": "number",
+      "default": 2,
+      "description": "Number of servings for all meals"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Current active meal plan"
+    }
+  },
+  "required": [
+    "user_id",
+    "week_start_date",
+    "preferences",
+    "meals"
+  ]
+}

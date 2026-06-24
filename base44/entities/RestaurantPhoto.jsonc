@@ -1,0 +1,32 @@
+{
+  "name": "RestaurantPhoto",
+  "type": "object",
+  "properties": {
+    "restaurant_id": {
+      "type": "string"
+    },
+    "user_id": {
+      "type": "string"
+    },
+    "photo_url": {
+      "type": "string"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "food",
+        "interior",
+        "exterior"
+      ],
+      "description": "Photo category"
+    },
+    "caption": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "restaurant_id",
+    "photo_url",
+    "category"
+  ]
+}

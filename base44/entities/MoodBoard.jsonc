@@ -1,0 +1,56 @@
+{
+  "name": "MoodBoard",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "Creator of the mood board"
+    },
+    "name": {
+      "type": "string",
+      "description": "Mood board name"
+    },
+    "description": {
+      "type": "string"
+    },
+    "theme": {
+      "type": "string",
+      "enum": [
+        "date_night",
+        "celebration",
+        "business",
+        "casual",
+        "fine_dining",
+        "brunch",
+        "late_night",
+        "family",
+        "custom"
+      ],
+      "default": "custom"
+    },
+    "restaurant_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Restaurants in this mood board"
+    },
+    "cover_image": {
+      "type": "string",
+      "description": "Cover photo URL"
+    },
+    "is_public": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether others can view this"
+    },
+    "like_count": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "user_id",
+    "name"
+  ]
+}

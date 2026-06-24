@@ -1,0 +1,82 @@
+{
+  "name": "WaitlistEntry",
+  "type": "object",
+  "properties": {
+    "restaurant_id": {
+      "type": "string"
+    },
+    "user_id": {
+      "type": "string",
+      "description": "Optional user reference"
+    },
+    "guest_name": {
+      "type": "string"
+    },
+    "guest_phone": {
+      "type": "string"
+    },
+    "party_size": {
+      "type": "number",
+      "default": 2
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "waiting",
+        "notified",
+        "confirmed",
+        "seated",
+        "cancelled",
+        "no_show",
+        "skipped"
+      ],
+      "default": "waiting"
+    },
+    "priority": {
+      "type": "string",
+      "description": "VIP, Member, Regular, etc."
+    },
+    "priority_level": {
+      "type": "number",
+      "default": 0,
+      "description": "Higher = more priority"
+    },
+    "position": {
+      "type": "number",
+      "description": "Manual position in line (1-indexed)"
+    },
+    "estimated_wait_minutes": {
+      "type": "number"
+    },
+    "ai_predicted_wait_minutes": {
+      "type": "number",
+      "description": "AI-calculated wait time"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "notified_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When table ready SMS was sent"
+    },
+    "confirmed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When guest confirmed via SMS link"
+    },
+    "confirmation_token": {
+      "type": "string",
+      "description": "Unique token for confirmation link"
+    },
+    "seated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "restaurant_id",
+    "party_size",
+    "guest_phone"
+  ]
+}

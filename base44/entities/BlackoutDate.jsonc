@@ -1,0 +1,35 @@
+{
+  "name": "BlackoutDate",
+  "type": "object",
+  "properties": {
+    "restaurant_id": {
+      "type": "string",
+      "description": "Restaurant ID"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Blocked date"
+    },
+    "reason": {
+      "type": "string",
+      "description": "Reason for blocking (e.g., Private Event, Maintenance)"
+    },
+    "is_full_day": {
+      "type": "boolean",
+      "default": true,
+      "description": "Block entire day or specific times"
+    },
+    "blocked_times": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Specific time slots to block (if not full day)"
+    }
+  },
+  "required": [
+    "restaurant_id",
+    "date"
+  ]
+}

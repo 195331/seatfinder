@@ -1,0 +1,49 @@
+{
+  "name": "CustomerNote",
+  "type": "object",
+  "properties": {
+    "restaurant_id": {
+      "type": "string"
+    },
+    "customer_id": {
+      "type": "string",
+      "description": "User ID of the customer"
+    },
+    "customer_email": {
+      "type": "string"
+    },
+    "note": {
+      "type": "string",
+      "description": "Staff note about customer preferences"
+    },
+    "note_type": {
+      "type": "string",
+      "enum": [
+        "preference",
+        "allergy",
+        "behavior",
+        "vip",
+        "complaint",
+        "general"
+      ],
+      "default": "general"
+    },
+    "staff_id": {
+      "type": "string",
+      "description": "Staff member who added the note"
+    },
+    "staff_name": {
+      "type": "string"
+    },
+    "is_important": {
+      "type": "boolean",
+      "default": false,
+      "description": "Flag for critical notes (allergies, VIP)"
+    }
+  },
+  "required": [
+    "restaurant_id",
+    "customer_id",
+    "note"
+  ]
+}

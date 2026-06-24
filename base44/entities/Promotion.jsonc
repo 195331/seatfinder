@@ -1,0 +1,68 @@
+{
+  "name": "Promotion",
+  "type": "object",
+  "properties": {
+    "restaurant_id": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "discount",
+        "happy_hour",
+        "special_menu",
+        "event",
+        "loyalty_bonus"
+      ],
+      "default": "discount"
+    },
+    "discount_percent": {
+      "type": "number"
+    },
+    "valid_from": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "valid_until": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "days_active": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "description": "Days of week (0=Sunday)"
+    },
+    "time_start": {
+      "type": "string"
+    },
+    "time_end": {
+      "type": "string"
+    },
+    "target_tiers": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Loyalty tiers this applies to"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    },
+    "image_url": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "restaurant_id",
+    "title"
+  ]
+}

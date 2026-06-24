@@ -1,0 +1,69 @@
+{
+  "name": "ReservationRule",
+  "type": "object",
+  "properties": {
+    "restaurant_id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string",
+      "description": "Rule name"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    },
+    "action": {
+      "type": "string",
+      "enum": [
+        "auto_approve",
+        "auto_decline",
+        "flag_review"
+      ],
+      "default": "auto_approve"
+    },
+    "conditions": {
+      "type": "object",
+      "description": "Rule conditions",
+      "properties": {
+        "min_party_size": {
+          "type": "number"
+        },
+        "max_party_size": {
+          "type": "number"
+        },
+        "time_slots": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "days_of_week": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "min_advance_hours": {
+          "type": "number"
+        },
+        "max_advance_days": {
+          "type": "number"
+        },
+        "require_table_available": {
+          "type": "boolean"
+        }
+      }
+    },
+    "priority": {
+      "type": "number",
+      "default": 0,
+      "description": "Higher priority rules are evaluated first"
+    }
+  },
+  "required": [
+    "restaurant_id",
+    "name",
+    "action"
+  ]
+}

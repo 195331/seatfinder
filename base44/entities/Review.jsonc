@@ -1,0 +1,81 @@
+{
+  "name": "Review",
+  "type": "object",
+  "properties": {
+    "restaurant_id": {
+      "type": "string"
+    },
+    "user_id": {
+      "type": "string"
+    },
+    "user_name": {
+      "type": "string"
+    },
+    "rating": {
+      "type": "number",
+      "description": "Overall rating 1-5 stars"
+    },
+    "food_rating": {
+      "type": "number",
+      "description": "Food quality rating 1-5"
+    },
+    "service_rating": {
+      "type": "number",
+      "description": "Service quality rating 1-5"
+    },
+    "ambiance_rating": {
+      "type": "number",
+      "description": "Ambiance rating 1-5"
+    },
+    "value_rating": {
+      "type": "number",
+      "description": "Value for money rating 1-5"
+    },
+    "comment": {
+      "type": "string"
+    },
+    "photos": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Photo URLs"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Review tags like Kid-friendly, Outdoor seating"
+    },
+    "vibe_rating": {
+      "type": "number",
+      "description": "Ambience rating 1-5 (1=Cozy, 5=Energetic)"
+    },
+    "noise_level": {
+      "type": "number",
+      "description": "Noise level 1-5 (1=Quiet, 5=Loud)"
+    },
+    "is_hidden": {
+      "type": "boolean",
+      "default": false
+    },
+    "restaurant_response": {
+      "type": "string",
+      "description": "Restaurant owner's response to review"
+    },
+    "restaurant_response_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When restaurant responded"
+    },
+    "restaurant_response_by": {
+      "type": "string",
+      "description": "User ID of restaurant owner who responded"
+    }
+  },
+  "required": [
+    "restaurant_id",
+    "rating"
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "name": "AnalyticsEvent",
+  "type": "object",
+  "properties": {
+    "restaurant_id": {
+      "type": "string"
+    },
+    "user_id": {
+      "type": "string"
+    },
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "view",
+        "call_click",
+        "directions_click",
+        "website_click",
+        "menu_click",
+        "waitlist_join",
+        "favorite_add",
+        "favorite_remove"
+      ],
+      "description": "Type of engagement event"
+    },
+    "metadata": {
+      "type": "object"
+    }
+  },
+  "required": [
+    "restaurant_id",
+    "event_type"
+  ]
+}

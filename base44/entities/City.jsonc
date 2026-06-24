@@ -1,0 +1,40 @@
+{
+  "name": "City",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "City name"
+    },
+    "slug": {
+      "type": "string",
+      "description": "URL-friendly slug"
+    },
+    "state": {
+      "type": "string",
+      "description": "State abbreviation"
+    },
+    "latitude": {
+      "type": "number",
+      "description": "Center latitude"
+    },
+    "longitude": {
+      "type": "number",
+      "description": "Center longitude"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether city is live"
+    },
+    "restaurant_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of restaurants"
+    }
+  },
+  "required": [
+    "name",
+    "slug"
+  ]
+}

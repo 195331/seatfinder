@@ -1,0 +1,25 @@
+{
+  "name": "SeatingHistory",
+  "type": "object",
+  "properties": {
+    "restaurant_id": {
+      "type": "string"
+    },
+    "available_seats": {
+      "type": "number"
+    },
+    "total_seats": {
+      "type": "number"
+    },
+    "occupancy_percent": {
+      "type": "number"
+    },
+    "recorded_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "restaurant_id"
+  ]
+}

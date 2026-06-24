@@ -1,0 +1,61 @@
+{
+  "name": "InventoryItem",
+  "type": "object",
+  "properties": {
+    "restaurant_id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string",
+      "description": "Ingredient name"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "protein",
+        "produce",
+        "dairy",
+        "dry_goods",
+        "beverages",
+        "other"
+      ],
+      "default": "other"
+    },
+    "current_quantity": {
+      "type": "number",
+      "default": 0,
+      "description": "Current stock level"
+    },
+    "unit": {
+      "type": "string",
+      "default": "units",
+      "description": "e.g., lbs, kg, units, liters"
+    },
+    "reorder_threshold": {
+      "type": "number",
+      "default": 10,
+      "description": "Alert when stock falls below this"
+    },
+    "linked_menu_items": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Menu item IDs that use this ingredient"
+    },
+    "supplier": {
+      "type": "string"
+    },
+    "cost_per_unit": {
+      "type": "number"
+    },
+    "last_restocked": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "restaurant_id",
+    "name"
+  ]
+}

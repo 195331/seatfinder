@@ -1,0 +1,64 @@
+{
+  "name": "DinerProfile",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string"
+    },
+    "favorite_cuisines": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Top cuisine preferences"
+    },
+    "visited_restaurants": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Restaurant IDs visited"
+    },
+    "total_visits": {
+      "type": "number",
+      "default": 0
+    },
+    "average_spend": {
+      "type": "number",
+      "default": 0
+    },
+    "total_spent": {
+      "type": "number",
+      "default": 0
+    },
+    "preferred_price_level": {
+      "type": "number",
+      "description": "Most common price level visited"
+    },
+    "preferred_party_size": {
+      "type": "number",
+      "default": 2
+    },
+    "last_visit_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "behavioral_tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Tags like frequent_visitor, high_spender, weekend_diner"
+    },
+    "offers_redeemed": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Offer IDs redeemed"
+    }
+  },
+  "required": [
+    "user_id"
+  ]
+}

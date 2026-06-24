@@ -1,0 +1,99 @@
+{
+  "name": "Reservation",
+  "type": "object",
+  "properties": {
+    "restaurant_id": {
+      "type": "string"
+    },
+    "table_id": {
+      "type": "string"
+    },
+    "user_id": {
+      "type": "string"
+    },
+    "user_name": {
+      "type": "string"
+    },
+    "user_email": {
+      "type": "string"
+    },
+    "party_size": {
+      "type": "number",
+      "default": 2
+    },
+    "reservation_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "reservation_time": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "declined",
+        "cancelled",
+        "arrived_early",
+        "checked_in"
+      ],
+      "default": "pending"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "special_requests": {
+      "type": "string",
+      "description": "Special requests like seating preferences, accessibility needs"
+    },
+    "dietary_needs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Dietary restrictions and allergies"
+    },
+    "occasion": {
+      "type": "string",
+      "enum": [
+        "none",
+        "birthday",
+        "anniversary",
+        "business",
+        "date",
+        "celebration"
+      ],
+      "default": "none",
+      "description": "Special occasion"
+    },
+    "is_recurring": {
+      "type": "boolean",
+      "default": false,
+      "description": "Part of a recurring reservation series"
+    },
+    "recurring_series_id": {
+      "type": "string",
+      "description": "Links to parent recurring reservation series"
+    },
+    "owner_response_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "check_in_token": {
+      "type": "string",
+      "description": "Unique UUID token for the check-in URL"
+    },
+    "checked_in_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the guest checked in or arrived early"
+    }
+  },
+  "required": [
+    "restaurant_id",
+    "table_id",
+    "user_id",
+    "party_size"
+  ]
+}

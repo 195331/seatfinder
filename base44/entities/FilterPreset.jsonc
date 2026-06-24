@@ -1,0 +1,30 @@
+{
+  "name": "FilterPreset",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string",
+      "description": "Preset name (Date Night, Quick Lunch)"
+    },
+    "icon": {
+      "type": "string",
+      "description": "Emoji or icon name"
+    },
+    "filters": {
+      "type": "object",
+      "description": "Saved filter configuration"
+    },
+    "is_system": {
+      "type": "boolean",
+      "default": false,
+      "description": "System-provided preset"
+    }
+  },
+  "required": [
+    "name",
+    "filters"
+  ]
+}

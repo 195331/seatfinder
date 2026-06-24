@@ -1,0 +1,32 @@
+{
+  "name": "ReviewComment",
+  "type": "object",
+  "properties": {
+    "review_id": {
+      "type": "string",
+      "description": "Review being commented on"
+    },
+    "user_id": {
+      "type": "string"
+    },
+    "user_name": {
+      "type": "string"
+    },
+    "user_email": {
+      "type": "string"
+    },
+    "comment": {
+      "type": "string",
+      "description": "Comment text"
+    },
+    "is_hidden": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "review_id",
+    "user_id",
+    "comment"
+  ]
+}

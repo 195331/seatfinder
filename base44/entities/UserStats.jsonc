@@ -1,0 +1,76 @@
+{
+  "name": "UserStats",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "User ID reference"
+    },
+    "user_email": {
+      "type": "string"
+    },
+    "user_name": {
+      "type": "string"
+    },
+    "total_points": {
+      "type": "number",
+      "default": 0,
+      "description": "Total points earned"
+    },
+    "level": {
+      "type": "number",
+      "default": 1,
+      "description": "User level (1-50)"
+    },
+    "points_to_next_level": {
+      "type": "number",
+      "default": 100,
+      "description": "Points needed for next level"
+    },
+    "review_count": {
+      "type": "number",
+      "default": 0
+    },
+    "reservation_count": {
+      "type": "number",
+      "default": 0
+    },
+    "favorite_count": {
+      "type": "number",
+      "default": 0
+    },
+    "mood_board_count": {
+      "type": "number",
+      "default": 0
+    },
+    "follower_count": {
+      "type": "number",
+      "default": 0
+    },
+    "following_count": {
+      "type": "number",
+      "default": 0
+    },
+    "check_in_streak": {
+      "type": "number",
+      "default": 0,
+      "description": "Consecutive daily check-ins"
+    },
+    "last_check_in": {
+      "type": "string",
+      "format": "date",
+      "description": "Last daily check-in date"
+    },
+    "achievements_unlocked": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Array of achievement badge types earned"
+    }
+  },
+  "required": [
+    "user_id"
+  ]
+}

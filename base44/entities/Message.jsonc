@@ -1,0 +1,42 @@
+{
+  "name": "Message",
+  "type": "object",
+  "properties": {
+    "restaurant_id": {
+      "type": "string",
+      "description": "Restaurant being messaged"
+    },
+    "sender_id": {
+      "type": "string",
+      "description": "User sending message"
+    },
+    "sender_name": {
+      "type": "string"
+    },
+    "sender_email": {
+      "type": "string"
+    },
+    "message": {
+      "type": "string",
+      "description": "Message content"
+    },
+    "is_from_restaurant": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether message is from restaurant to user"
+    },
+    "is_read": {
+      "type": "boolean",
+      "default": false
+    },
+    "thread_id": {
+      "type": "string",
+      "description": "Groups messages in conversation"
+    }
+  },
+  "required": [
+    "restaurant_id",
+    "sender_id",
+    "message"
+  ]
+}

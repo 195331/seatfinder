@@ -27,9 +27,6 @@ export default function VibeBar({ reviews = [], className = '' }) {
   const [isVisible, setIsVisible] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
-  // Early return if no reviews
-  if (!reviews || reviews.length === 0) return null;
-
   const restaurantId = reviews[0]?.restaurant_id || 'unknown';
 
   useEffect(() => {
@@ -47,6 +44,9 @@ export default function VibeBar({ reviews = [], className = '' }) {
 
     return () => observer.disconnect();
   }, [restaurantId]);
+
+  // Early return if no reviews
+  if (!reviews || reviews.length === 0) return null;
 
   const vibeReviews = reviews.filter(r => r && r.vibe_rating);
   

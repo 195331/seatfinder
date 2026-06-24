@@ -1,0 +1,236 @@
+{
+  "name": "Restaurant",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Restaurant name"
+    },
+    "slug": {
+      "type": "string",
+      "description": "URL-friendly slug"
+    },
+    "city_id": {
+      "type": "string",
+      "description": "Reference to city"
+    },
+    "neighborhood": {
+      "type": "string",
+      "description": "Neighborhood name"
+    },
+    "address": {
+      "type": "string",
+      "description": "Full address"
+    },
+    "latitude": {
+      "type": "number"
+    },
+    "longitude": {
+      "type": "number"
+    },
+    "cuisine": {
+      "type": "string",
+      "description": "Primary cuisine type"
+    },
+    "cuisines": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "All cuisine tags"
+    },
+    "price_level": {
+      "type": "number",
+      "enum": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "description": "1-4 dollar signs"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "website": {
+      "type": "string"
+    },
+    "menu_url": {
+      "type": "string"
+    },
+    "cover_image": {
+      "type": "string",
+      "description": "Main photo URL"
+    },
+    "photos": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Gallery photo URLs"
+    },
+    "total_seats": {
+      "type": "number",
+      "default": 0
+    },
+    "available_seats": {
+      "type": "number",
+      "default": 0
+    },
+    "is_full": {
+      "type": "boolean",
+      "default": false,
+      "description": "No more walk-ins flag"
+    },
+    "seating_updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Last seating update"
+    },
+    "has_outdoor": {
+      "type": "boolean",
+      "default": false
+    },
+    "has_bar_seating": {
+      "type": "boolean",
+      "default": false
+    },
+    "is_kid_friendly": {
+      "type": "boolean",
+      "default": false
+    },
+    "waitlist_enabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the public waitlist is enabled for guests (requires Pro plan)"
+    },
+    "opening_hours": {
+      "type": "object",
+      "description": "Hours by day"
+    },
+    "reservation_time_slots": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Custom reservation time slots (e.g. ['11:00','12:00']). If empty, default slots are used."
+    },
+    "average_rating": {
+      "type": "number",
+      "default": 0
+    },
+    "review_count": {
+      "type": "number",
+      "default": 0
+    },
+    "favorite_count": {
+      "type": "number",
+      "default": 0
+    },
+    "view_count": {
+      "type": "number",
+      "default": 0
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "suspended"
+      ],
+      "default": "pending"
+    },
+    "owner_id": {
+      "type": "string",
+      "description": "Primary owner user ID"
+    },
+    "subscription_plan": {
+      "type": "string",
+      "enum": [
+        "free",
+        "pro",
+        "plus"
+      ],
+      "default": "free"
+    },
+    "subscription_expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "floor_plan_data": {
+      "type": "object",
+      "description": "Stored floor plan layout with areas and tables"
+    },
+    "instant_confirm_enabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "Auto-approve reservations with rules"
+    },
+    "instant_confirm_rules": {
+      "type": "object",
+      "properties": {
+        "days": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "time_ranges": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "min_party_size": {
+          "type": "number"
+        },
+        "max_party_size": {
+          "type": "number"
+        },
+        "blackout_dates": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "shift_mode_active": {
+      "type": "boolean",
+      "default": false
+    },
+    "last_shift_nudge": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "update_streak_days": {
+      "type": "number",
+      "default": 0,
+      "description": "Consecutive days with timely updates"
+    },
+    "reliability_score": {
+      "type": "number",
+      "default": 0,
+      "description": "0-100 based on update consistency"
+    },
+    "enable_preorder": {
+      "type": "boolean",
+      "default": false,
+      "description": "Enable pre-order with reservation"
+    },
+    "manual_override_active": {
+      "type": "boolean",
+      "default": false,
+      "description": "Is manual override for available seats active?"
+    },
+    "manual_adjustment_offset": {
+      "type": "number",
+      "default": 0,
+      "description": "Manual offset for available seats when override is active"
+    }
+  },
+  "required": [
+    "name",
+    "city_id"
+  ]
+}

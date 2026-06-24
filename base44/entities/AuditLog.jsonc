@@ -1,0 +1,73 @@
+{
+  "name": "AuditLog",
+  "type": "object",
+  "properties": {
+    "restaurant_id": {
+      "type": "string"
+    },
+    "action_type": {
+      "type": "string",
+      "enum": [
+        "waitlist_position_change",
+        "reservation_status_change",
+        "table_reassign",
+        "priority_change",
+        "seating_auto_decrease",
+        "seating_auto_increase",
+        "seating_manual_adjustment",
+        "pos_table_paid",
+        "pos_table_closed"
+      ],
+      "description": "Type of action performed"
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "system_automation",
+        "manual_adjustment"
+      ],
+      "default": "system_automation",
+      "description": "Whether this was triggered by automation or a human"
+    },
+    "entity_type": {
+      "type": "string",
+      "enum": [
+        "waitlist",
+        "reservation",
+        "table",
+        "restaurant"
+      ],
+      "description": "What entity was modified"
+    },
+    "entity_id": {
+      "type": "string",
+      "description": "ID of the modified entity"
+    },
+    "performed_by": {
+      "type": "string",
+      "description": "User ID who performed the action"
+    },
+    "performed_by_name": {
+      "type": "string"
+    },
+    "old_value": {
+      "type": "object",
+      "description": "State before change"
+    },
+    "new_value": {
+      "type": "object",
+      "description": "State after change"
+    },
+    "reason": {
+      "type": "string",
+      "description": "Reason for change (manual note or automation trigger)"
+    }
+  },
+  "required": [
+    "restaurant_id",
+    "action_type",
+    "entity_type",
+    "entity_id",
+    "performed_by"
+  ]
+}

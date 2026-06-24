@@ -1,0 +1,57 @@
+{
+  "name": "Achievement",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "User who earned the achievement"
+    },
+    "badge_type": {
+      "type": "string",
+      "enum": [
+        "first_review",
+        "review_master_5",
+        "review_master_10",
+        "review_master_25",
+        "review_master_50",
+        "frequent_diner_5",
+        "frequent_diner_10",
+        "frequent_diner_25",
+        "frequent_diner_50",
+        "social_butterfly",
+        "explorer",
+        "foodie",
+        "influencer",
+        "night_owl",
+        "early_bird",
+        "weekend_warrior",
+        "weekday_regular",
+        "photo_enthusiast",
+        "globe_trotter",
+        "cuisine_explorer",
+        "local_hero",
+        "reservation_pro",
+        "loyalty_legend",
+        "taste_maker",
+        "five_star_reviewer"
+      ],
+      "description": "Type of achievement"
+    },
+    "badge_name": {
+      "type": "string",
+      "description": "Display name of the badge"
+    },
+    "badge_icon": {
+      "type": "string",
+      "description": "Emoji or icon for the badge"
+    },
+    "earned_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "user_id",
+    "badge_type"
+  ]
+}

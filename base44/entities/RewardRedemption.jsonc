@@ -1,0 +1,57 @@
+{
+  "name": "RewardRedemption",
+  "type": "object",
+  "properties": {
+    "token": {
+      "type": "string",
+      "description": "Unique redemption token (UUID)"
+    },
+    "user_id": {
+      "type": "string"
+    },
+    "user_name": {
+      "type": "string"
+    },
+    "restaurant_id": {
+      "type": "string"
+    },
+    "loyalty_id": {
+      "type": "string"
+    },
+    "reward_name": {
+      "type": "string"
+    },
+    "reward_description": {
+      "type": "string"
+    },
+    "points_cost": {
+      "type": "number"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "redeemed",
+        "expired"
+      ],
+      "default": "pending"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Token expires 15 minutes after creation"
+    },
+    "redeemed_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "token",
+    "user_id",
+    "restaurant_id",
+    "loyalty_id",
+    "reward_name",
+    "points_cost"
+  ]
+}

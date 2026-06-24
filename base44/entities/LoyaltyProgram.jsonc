@@ -1,0 +1,84 @@
+{
+  "name": "LoyaltyProgram",
+  "type": "object",
+  "properties": {
+    "restaurant_id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string",
+      "description": "Program name"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    },
+    "points_per_dollar": {
+      "type": "number",
+      "default": 1,
+      "description": "Points earned per dollar spent"
+    },
+    "signup_bonus": {
+      "type": "number",
+      "default": 0,
+      "description": "Bonus points for joining"
+    },
+    "tiers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "min_points": {
+            "type": "number"
+          },
+          "multiplier": {
+            "type": "number"
+          },
+          "perks": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "description": "Loyalty tiers (Bronze, Silver, Gold, etc.)"
+    },
+    "rewards": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "points_required": {
+            "type": "number"
+          },
+          "description": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "discount",
+              "free_item",
+              "priority_seating",
+              "special_offer"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "restaurant_id",
+    "name"
+  ]
+}

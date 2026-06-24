@@ -5,10 +5,11 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 export default function NetflixTopRated({ restaurants, onRestaurantClick, favoriteIds }) {
-  if (!restaurants || restaurants.length === 0) return null;
-
   const scrollContainerRef = React.useRef(null);
   const [scrollProgress, setScrollProgress] = React.useState(0);
+
+  if (!restaurants || restaurants.length === 0) return null;
+
   const topRestaurants = restaurants.slice(0, 10);
 
   const getRankLabel = (rank) => {
@@ -33,11 +34,10 @@ export default function NetflixTopRated({ restaurants, onRestaurantClick, favori
 
   React.useEffect(() => {
     const container = scrollContainerRef.current;
-    if (container) {
-      container.addEventListener('scroll', handleScroll);
-      handleScroll(); // Initial calculation
-      return () => container.removeEventListener('scroll', handleScroll);
-    }
+    if (!container) return;
+    container.addEventListener('scroll', handleScroll);
+    handleScroll();
+    return () => container.removeEventListener('scroll', handleScroll);
   }, []);
 
   return (

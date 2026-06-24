@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { createPageUrl } from '@/utils';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -33,16 +32,11 @@ export default function ForgotPassword() {
     setIsLoading(true);
 
     try {
-      await base44.auth.resetPassword(email);
-      setSuccess(true);
+      await base44.auth.resetPasswordRequest(email);
     } catch (err) {
-      console.error('Reset password error:', err);
-      if (err.message?.includes('not found')) {
-        setError('No account found with this email address.');
-      } else {
-        setError('Failed to send reset email. Please try again.');
-      }
+      // always show generic success to not reveal whether email exists
     } finally {
+      setSuccess(true);
       setIsLoading(false);
     }
   };
@@ -57,7 +51,7 @@ export default function ForgotPassword() {
         <div className="bg-white rounded-3xl shadow-2xl p-8">
           {/* Back Button */}
           <button
-            onClick={() => navigate(createPageUrl('Login'))}
+            onClick={() => navigate('/login')}
             className="flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-8 transition-colors group"
           >
             <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
@@ -138,7 +132,7 @@ export default function ForgotPassword() {
 
           {success && (
             <Button
-              onClick={() => navigate(createPageUrl('Login'))}
+              onClick={() => navigate('/login')}
               className="w-full h-14 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl transition-all text-base"
             >
               Back to sign in

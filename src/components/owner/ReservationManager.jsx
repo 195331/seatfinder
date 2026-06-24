@@ -279,9 +279,8 @@ export default function ReservationManager({ reservations, restaurantName }) {
                     <p className="font-medium text-slate-900">{reservation.user_name}</p>
                     <p className="text-sm text-slate-600">
                       {moment(reservation.reservation_date).format('MMM D')} at {formatTime(reservation.reservation_time)} • {reservation.party_size} guests
-                      </p>
-                      <p className="text-xs text-slate-400">Reserved on {moment(reservation.created_date).format('MMM D, YYYY [at] h:mm A')}</p>
                     </p>
+                    <p className="text-xs text-slate-400">Reserved on {moment(reservation.created_date).format('MMM D, YYYY [at] h:mm A')}</p>
                     {(() => {
                       const preOrder = getPreOrderForReservation(reservation.id);
                       if (preOrder) {

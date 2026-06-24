@@ -1,0 +1,86 @@
+{
+  "name": "PreOrder",
+  "type": "object",
+  "properties": {
+    "reservation_id": {
+      "type": "string",
+      "description": "Reference to reservation"
+    },
+    "restaurant_id": {
+      "type": "string",
+      "description": "Reference to restaurant"
+    },
+    "user_id": {
+      "type": "string"
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "menu_item_id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "price": {
+            "type": "number"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "item_notes": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Pre-ordered menu items"
+    },
+    "special_instructions": {
+      "type": "string",
+      "description": "Special instructions for the kitchen"
+    },
+    "total_amount": {
+      "type": "number",
+      "description": "Total order amount"
+    },
+    "payment_status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "pay_at_restaurant"
+      ],
+      "default": "pay_at_restaurant"
+    },
+    "kitchen_status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "in_progress",
+        "completed"
+      ],
+      "default": "pending",
+      "description": "Kitchen preparation status"
+    },
+    "kitchen_started_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "kitchen_completed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "edited_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Last time order was edited"
+    }
+  },
+  "required": [
+    "reservation_id",
+    "restaurant_id",
+    "user_id",
+    "items"
+  ]
+}

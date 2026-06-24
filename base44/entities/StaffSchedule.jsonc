@@ -1,0 +1,59 @@
+{
+  "name": "StaffSchedule",
+  "type": "object",
+  "properties": {
+    "restaurant_id": {
+      "type": "string"
+    },
+    "staff_id": {
+      "type": "string",
+      "description": "Reference to RestaurantStaff"
+    },
+    "staff_name": {
+      "type": "string"
+    },
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "shift_start": {
+      "type": "string",
+      "description": "HH:mm format"
+    },
+    "shift_end": {
+      "type": "string",
+      "description": "HH:mm format"
+    },
+    "role_assignment": {
+      "type": "string",
+      "enum": [
+        "host",
+        "server",
+        "bartender",
+        "busser",
+        "manager"
+      ],
+      "default": "server"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "scheduled",
+        "confirmed",
+        "cancelled",
+        "completed"
+      ],
+      "default": "scheduled"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "restaurant_id",
+    "staff_id",
+    "date",
+    "shift_start",
+    "shift_end"
+  ]
+}
