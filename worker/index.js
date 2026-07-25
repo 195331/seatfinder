@@ -2,6 +2,10 @@
 // Handles /api/* server-side (so OPENAI_API_KEY never reaches the browser),
 // and falls through to the static SPA assets for everything else.
 
+// Cloudflare Workers AI model. Llama 3.3 70b is a strong general-purpose
+// instruction-following model and supports JSON mode for structured output.
+const MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
+
 async function invokeLLM(request, env) {
   const { prompt, response_json_schema } = await request.json();
 
@@ -12,46 +16,43 @@ async function invokeLLM(request, env) {
     });
   }
 
-  const body = {
-    model: 'gpt-4o-mini',
+  const input = {
     messages: [{ role: 'user', content: prompt }],
   };
 
-  // If the caller wants structured JSON back, ask OpenAI to guarantee it.
+  // If the caller wants structured JSON back, ask the model to guarantee it.
   if (response_json_schema) {
-    body.response_format = {
+    input.response_format = {
       type: 'json_schema',
-      json_schema: {
-        name: 'response',
-        schema: response_json_schema,
-        strict: true,
-      },
+      json_schema: response_json_schema,
     };
   }
 
-  const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${env.OPENAI_API_KEY}`,
-    },
-    body: JSON.stringify(body),
-  });
-
-  if (!openaiRes.ok) {
-    const errText = await openaiRes.text();
-    return new Response(JSON.stringify({ error: 'OpenAI request failed', detail: errText }), {
+  let data;
+  try {
+    data = await env.AI.run(MODEL, input);
+  } catch (err) {
+    return new Response(JSON.stringify({ error: 'Workers AI request failed', detail: err.message }), {
       status: 502,
       headers: { 'Content-Type': 'application/json' },
     });
   }
 
-  const data = await openaiRes.json();
-  const content = data.choices?.[0]?.message?.content ?? '';
+  const content = data.response ?? '';
 
   // Match base44's old contract: InvokeLLM returned the raw string,
   // or a parsed object when response_json_schema was passed.
-  const result = response_json_schema ? JSON.parse(content) : content;
+  let result = content;
+  if (response_json_schema) {
+    try {
+      result = typeof content === 'string' ? JSON.parse(content) : content;
+    } catch {
+      return new Response(JSON.stringify({ error: 'Model did not return valid JSON', detail: content }), {
+        status: 502,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+  }
 
   return new Response(JSON.stringify({ result }), {
     headers: { 'Content-Type': 'application/json' },
