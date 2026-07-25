@@ -200,6 +200,47 @@ const functions = {
   },
 };
 
+// ─── Integrations Layer ────────────────────────────────────────────────────────
+// Mimics base44.integrations.Core.* — InvokeLLM now routes through the
+// Cloudflare Worker's /api/ai/invoke-llm endpoint, which holds the OpenAI key
+// server-side. Never call OpenAI directly from the browser.
+
+const integrations = {
+  Core: {
+    InvokeLLM: async ({ prompt, response_json_schema = null }) => {
+      const res = await fetch('/api/ai/invoke-llm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt, response_json_schema }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `InvokeLLM failed (${res.status})`);
+      }
+      const { result } = await res.json();
+      return result;
+    },
+
+    // Not yet backed by a real provider — throw clearly instead of silently
+    // failing, so any component using these surfaces a real error.
+    SendEmail: async () => {
+      throw new Error('SendEmail integration is not wired up yet.');
+    },
+    SendSMS: async () => {
+      throw new Error('SendSMS integration is not wired up yet.');
+    },
+    UploadFile: async () => {
+      throw new Error('UploadFile integration is not wired up yet.');
+    },
+    GenerateImage: async () => {
+      throw new Error('GenerateImage integration is not wired up yet.');
+    },
+    ExtractDataFromUploadedFile: async () => {
+      throw new Error('ExtractDataFromUploadedFile integration is not wired up yet.');
+    },
+  },
+};
+
 // ─── Entities Registry ────────────────────────────────────────────────────────
 // Add every entity your app uses here. The name must match your Supabase table
 // (after automatic snake_case + pluralization conversion).
@@ -215,4 +256,5 @@ export const base44 = {
   auth,
   entities,
   functions,
+  integrations,
 };
