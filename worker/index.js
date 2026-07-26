@@ -2,11 +2,10 @@
 // Handles /api/* server-side (so OPENAI_API_KEY never reaches the browser),
 // and falls through to the static SPA assets for everything else.
 
-// Groq: fast inference, generous free tier. qwen3-32b gives 60 req/min
-// (vs 30 for llama-3.3-70b), better headroom for concurrent AI components.
-// Note: Groq's docs flag this model as possibly being phased out in favor
-// of openai/gpt-oss-120b — watch for that if requests start failing.
-const MODEL = 'qwen/qwen3-32b';
+// Groq: fast inference, generous free tier. gpt-oss-120b is Groq's
+// current recommended model (qwen3-32b and llama-3.3-70b were deprecated
+// June 2026). Check console.groq.com/docs/deprecations if this breaks again.
+const MODEL = 'openai/gpt-oss-120b';
 
 async function invokeLLM(request, env) {
   const { prompt, response_json_schema } = await request.json();
@@ -21,9 +20,9 @@ async function invokeLLM(request, env) {
   const body = {
     model: MODEL,
     messages: [{ role: 'user', content: prompt }],
-    // qwen3 is a reasoning model; without this it prepends <think>...</think>
-    // blocks that would break plain-text and JSON consumers alike.
-    reasoning_effort: 'none',
+    // gpt-oss models support low/medium/high reasoning effort. 'low' keeps
+    // latency down for a restaurant app's UI-facing AI features.
+    reasoning_effort: 'low',
   };
 
   if (response_json_schema) {
@@ -73,19 +72,6 @@ async function invokeLLM(request, env) {
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-
-    // TEMPORARY — remove after debugging the key issue.
-    if (url.pathname === '/api/ai/debug-key') {
-      const key = env.GROQ_API_KEY || '';
-      return new Response(JSON.stringify({
-        present: !!env.GROQ_API_KEY,
-        length: key.length,
-        prefix: key.slice(0, 5),
-        suffix: key.slice(-4),
-        startsWithGsk: key.startsWith('gsk_'),
-        hasWhitespace: /\s/.test(key),
-      }), { headers: { 'Content-Type': 'application/json' } });
-    }
 
     if (url.pathname === '/api/ai/invoke-llm' && request.method === 'POST') {
       try {
