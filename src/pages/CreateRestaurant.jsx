@@ -61,10 +61,20 @@ export default function CreateRestaurant() {
         }
         const user = await base44.auth.me();
         setCurrentUser(user);
+
         if (user.user_type !== 'owner' && user.user_type !== 'admin') {
-          await base44.auth.updateMe({ user_type: 'owner' });
+          try {
+            await base44.auth.updateMe({ user_type: 'owner' });
+          } catch (updateErr) {
+            // Don't bounce the user home over a failed profile update —
+            // surface it instead so the real cause (e.g. an RLS policy
+            // blocking the write) is visible.
+            console.error('Failed to update user_type to owner:', updateErr);
+            toast.error('Could not set up your owner profile. Some features may not work — check the console for details.');
+          }
         }
       } catch (e) {
+        console.error('CreateRestaurant auth check failed:', e);
         navigate(createPageUrl('Home'));
       }
     };

@@ -2,9 +2,8 @@
 // Handles /api/* server-side (so OPENAI_API_KEY never reaches the browser),
 // and falls through to the static SPA assets for everything else.
 
-// Cloudflare Workers AI model. Llama 3.3 70b is a strong general-purpose
-// instruction-following model and supports JSON mode for structured output.
-const MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
+// Groq: fast inference, generous free tier (30 req/min, 14,400/day, no card).
+const MODEL = 'llama-3.3-70b-versatile';
 
 async function invokeLLM(request, env) {
   const { prompt, response_json_schema } = await request.json();
@@ -16,36 +15,42 @@ async function invokeLLM(request, env) {
     });
   }
 
-  const input = {
+  const body = {
+    model: MODEL,
     messages: [{ role: 'user', content: prompt }],
   };
 
-  // If the caller wants structured JSON back, ask the model to guarantee it.
   if (response_json_schema) {
-    input.response_format = {
-      type: 'json_schema',
-      json_schema: response_json_schema,
-    };
+    body.response_format = { type: 'json_object' };
+    body.messages[0].content +=
+      '\n\nRespond ONLY with valid JSON matching this schema, no other text: ' +
+      JSON.stringify(response_json_schema);
   }
 
-  let data;
-  try {
-    data = await env.AI.run(MODEL, input);
-  } catch (err) {
-    return new Response(JSON.stringify({ error: 'Workers AI request failed', detail: err.message }), {
+  const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${env.GROQ_API_KEY}`,
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!groqRes.ok) {
+    const errText = await groqRes.text();
+    return new Response(JSON.stringify({ error: 'Groq request failed', detail: errText }), {
       status: 502,
       headers: { 'Content-Type': 'application/json' },
     });
   }
 
-  const content = data.response ?? '';
+  const data = await groqRes.json();
+  const content = data.choices?.[0]?.message?.content ?? '';
 
-  // Match base44's old contract: InvokeLLM returned the raw string,
-  // or a parsed object when response_json_schema was passed.
   let result = content;
   if (response_json_schema) {
     try {
-      result = typeof content === 'string' ? JSON.parse(content) : content;
+      result = JSON.parse(content);
     } catch {
       return new Response(JSON.stringify({ error: 'Model did not return valid JSON', detail: content }), {
         status: 502,
