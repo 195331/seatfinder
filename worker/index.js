@@ -74,6 +74,19 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
+    // TEMPORARY — remove after debugging the key issue.
+    if (url.pathname === '/api/ai/debug-key') {
+      const key = env.GROQ_API_KEY || '';
+      return new Response(JSON.stringify({
+        present: !!env.GROQ_API_KEY,
+        length: key.length,
+        prefix: key.slice(0, 5),
+        suffix: key.slice(-4),
+        startsWithGsk: key.startsWith('gsk_'),
+        hasWhitespace: /\s/.test(key),
+      }), { headers: { 'Content-Type': 'application/json' } });
+    }
+
     if (url.pathname === '/api/ai/invoke-llm' && request.method === 'POST') {
       try {
         return await invokeLLM(request, env);
