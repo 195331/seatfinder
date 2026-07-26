@@ -2,8 +2,11 @@
 // Handles /api/* server-side (so OPENAI_API_KEY never reaches the browser),
 // and falls through to the static SPA assets for everything else.
 
-// Groq: fast inference, generous free tier (30 req/min, 14,400/day, no card).
-const MODEL = 'llama-3.3-70b-versatile';
+// Groq: fast inference, generous free tier. qwen3-32b gives 60 req/min
+// (vs 30 for llama-3.3-70b), better headroom for concurrent AI components.
+// Note: Groq's docs flag this model as possibly being phased out in favor
+// of openai/gpt-oss-120b — watch for that if requests start failing.
+const MODEL = 'qwen/qwen3-32b';
 
 async function invokeLLM(request, env) {
   const { prompt, response_json_schema } = await request.json();
@@ -18,6 +21,9 @@ async function invokeLLM(request, env) {
   const body = {
     model: MODEL,
     messages: [{ role: 'user', content: prompt }],
+    // qwen3 is a reasoning model; without this it prepends <think>...</think>
+    // blocks that would break plain-text and JSON consumers alike.
+    reasoning_effort: 'none',
   };
 
   if (response_json_schema) {
