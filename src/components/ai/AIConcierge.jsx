@@ -34,7 +34,7 @@ export default function AIConcierge({ restaurants, currentUser, onRestaurantClic
         has_bar_seating: r.has_bar_seating,
         average_rating: r.average_rating,
         available_seats: r.available_seats,
-        opening_hours: r.opening_hours
+        hours: r.hours
       }));
 
       const userPreferences = currentUser?.preferences || {};
