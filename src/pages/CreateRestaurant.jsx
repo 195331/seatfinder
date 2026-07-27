@@ -43,7 +43,7 @@ export default function CreateRestaurant() {
     has_bar_seating: false,
     is_kid_friendly: false,
     cover_image: '',
-    opening_hours: {},
+    hours: {},
   });
 
   const [floorPlanData, setFloorPlanData] = useState({
@@ -391,8 +391,8 @@ export default function CreateRestaurant() {
                   Opening Hours
                 </Label>
                 <OpeningHoursEditor
-                  hours={formData.opening_hours}
-                  onChange={(hours) => updateField('opening_hours', hours)}
+                  hours={formData.hours}
+                  onChange={(hours) => updateField('hours', hours)}
                 />
               </div>
 

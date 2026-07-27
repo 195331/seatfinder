@@ -136,7 +136,7 @@ export default function RestaurantSettings() {
       latitude: formData.latitude,
       longitude: formData.longitude,
       cover_image: formData.cover_image,
-      opening_hours: formData.opening_hours,
+      hours: formData.hours,
       reservation_time_slots: formData.reservation_time_slots || [],
     });
   };
@@ -367,8 +367,8 @@ export default function RestaurantSettings() {
               </CardHeader>
               <CardContent>
                 <OpeningHoursEditor
-                  hours={formData.opening_hours || {}}
-                  onChange={(hours) => updateField('opening_hours', hours)}
+                  hours={formData.hours || {}}
+                  onChange={(hours) => updateField('hours', hours)}
                 />
               </CardContent>
             </Card>

@@ -655,14 +655,14 @@ export default function RestaurantDetail() {
                     )}
                   </div>
 
-                  {restaurant.opening_hours && (
+                  {restaurant.hours && (
                     <div>
                       <h3 className="font-semibold mb-2 flex items-center gap-2">
                         <Clock className="w-4 h-4" />
                         Hours
                       </h3>
                       <div className="text-sm space-y-1 text-slate-600">
-                        {Object.entries(restaurant.opening_hours).map(([day, hours]) => (
+                        {Object.entries(restaurant.hours).map(([day, hours]) => (
                           <div key={day} className="flex justify-between">
                             <span className="capitalize">{day}</span>
                             <span>

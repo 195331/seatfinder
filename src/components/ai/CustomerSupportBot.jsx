@@ -55,7 +55,7 @@ Restaurant Info:
 - Available Seats: ${restaurant.available_seats} / ${restaurant.total_seats}
 - Phone: ${restaurant.phone}
 - Website: ${restaurant.website || 'Not provided'}
-- Opening Hours: ${JSON.stringify(restaurant.opening_hours || {})}
+- Opening Hours: ${JSON.stringify(restaurant.hours || {})}
 
 ${context.user ? `User Info:
 - Name: ${context.user.full_name}
