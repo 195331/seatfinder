@@ -119,7 +119,7 @@ export default function Layout({ children, currentPageName }) {
                 </Link>
               )}
               
-              {currentUser?.role === 'admin' && (
+              {(currentUser?.role === 'admin' || currentUser?.user_type === 'admin') && (
                 <Link to={createPageUrl('AdminDashboard')}>
                   <button className="flex flex-col items-center gap-1 px-4 py-2 text-slate-500">
                     <Shield className="w-5 h-5" />
