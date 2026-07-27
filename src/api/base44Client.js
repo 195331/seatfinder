@@ -171,6 +171,67 @@ const auth = {
       },
     });
   },
+
+  // OAuth login with any provider — used by Login.jsx / Register.jsx buttons.
+  // provider: 'google' | 'microsoft' (Supabase calls this 'azure') | 'facebook'
+  loginWithProvider: async (provider, redirectPath = '/') => {
+    const providerMap = {
+      google: 'google',
+      microsoft: 'azure',
+      facebook: 'facebook',
+    };
+    const supabaseProvider = providerMap[provider] || provider;
+
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: supabaseProvider,
+      options: {
+        redirectTo: `${window.location.origin}${redirectPath}`,
+      },
+    });
+    if (error) throw error;
+  },
+
+  // Email/password login — used by Login.jsx's form.
+  loginViaEmailPassword: async (email, password) => {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+    return data;
+  },
+
+  // Email/password signup — used by Register.jsx's form. Supabase sends a
+  // confirmation email; if your Supabase Auth email template is set to send
+  // a numeric OTP code (rather than a magic link), the user enters it next
+  // via verifyOtp below. Check Authentication → Email Templates in Supabase
+  // if codes aren't arriving.
+  register: async ({ email, password }) => {
+    const { data, error } = await supabase.auth.signUp({ email, password });
+    if (error) throw error;
+    return data;
+  },
+
+  // Confirms the OTP code sent after signup.
+  verifyOtp: async ({ email, otpCode }) => {
+    const { data, error } = await supabase.auth.verifyOtp({
+      email,
+      token: otpCode,
+      type: 'signup',
+    });
+    if (error) throw error;
+    // Supabase's client already persists the session automatically here —
+    // return the access token so callers expecting one (e.g. setToken) still work.
+    return { access_token: data.session?.access_token };
+  },
+
+  // No-op: Supabase's client persists the session itself once verifyOtp
+  // succeeds, so there's nothing extra to store. Kept so existing calls
+  // to base44.auth.setToken(...) don't throw.
+  setToken: () => {},
+
+  // Resends the signup OTP code.
+  resendOtp: async (email) => {
+    const { error } = await supabase.auth.resend({ type: 'signup', email });
+    if (error) throw error;
+  },
 // Legacy compatibility — some pages call this
   logUserInApp: async () => {
     const { data: { session } } = await supabase.auth.getSession();
