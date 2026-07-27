@@ -308,7 +308,7 @@ export default function ProfileDrawer({ currentUser, onLogout, open: controlledO
                   </Link>
                 )}
 
-                {currentUser.role === 'admin' && (
+                {(currentUser.role === 'admin' || currentUser.user_type === 'admin') && (
                   <Link to={createPageUrl('AdminDashboard')} onClick={() => setOpen(false)}>
                     <div className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-xl">
                       <div className="flex items-center gap-3">
