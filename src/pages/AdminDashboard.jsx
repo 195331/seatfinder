@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
+import { toast } from 'sonner';
 import { 
   Shield, MapPin, Store, Users, Check, X, Eye, 
   AlertTriangle, Plus, Trash2, Search, MoreVertical
@@ -96,32 +97,56 @@ export default function AdminDashboard() {
       queryClient.invalidateQueries(['adminCities']);
       setShowCityDialog(false);
       setCityForm({ name: '', slug: '', state: '', latitude: '', longitude: '', is_active: true });
-    }
+    },
+    onError: (error) => {
+      console.error('Failed to create city:', error);
+      toast.error(`Failed to create city: ${error.message || 'Unknown error'}`);
+    },
   });
 
   const updateCityMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.City.update(id, data),
-    onSuccess: () => queryClient.invalidateQueries(['adminCities'])
+    onSuccess: () => queryClient.invalidateQueries(['adminCities']),
+    onError: (error) => {
+      console.error('Failed to update city:', error);
+      toast.error(`Failed to update city: ${error.message || 'Unknown error'}`);
+    },
   });
 
   const deleteCityMutation = useMutation({
     mutationFn: (id) => base44.entities.City.delete(id),
-    onSuccess: () => queryClient.invalidateQueries(['adminCities'])
+    onSuccess: () => queryClient.invalidateQueries(['adminCities']),
+    onError: (error) => {
+      console.error('Failed to delete city:', error);
+      toast.error(`Failed to delete city: ${error.message || 'Unknown error'}`);
+    },
   });
 
   const updateRestaurantMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Restaurant.update(id, data),
-    onSuccess: () => queryClient.invalidateQueries(['adminRestaurants'])
+    onSuccess: () => queryClient.invalidateQueries(['adminRestaurants']),
+    onError: (error) => {
+      console.error('Failed to update restaurant:', error);
+      toast.error(`Failed to update restaurant: ${error.message || 'Unknown error'}`);
+    },
   });
 
   const updateUserMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.User.update(id, data),
-    onSuccess: () => queryClient.invalidateQueries(['adminUsers'])
+    onSuccess: () => queryClient.invalidateQueries(['adminUsers']),
+    onError: (error) => {
+      console.error('Failed to update user:', error);
+      toast.error(`Failed to update user: ${error.message || 'Unknown error'}`);
+    },
   });
 
   const hideReviewMutation = useMutation({
     mutationFn: ({ id, hidden }) => base44.entities.Review.update(id, { is_hidden: hidden }),
-    onSuccess: () => queryClient.invalidateQueries(['adminReviews'])
+    onSuccess: () => queryClient.invalidateQueries(['adminReviews']),
+    onError: (error) => {
+      console.error('Failed to update review:', error);
+      toast.error(`Failed to update review: ${error.message || 'Unknown error'}`);
+    },
   });
 
   // Stats
