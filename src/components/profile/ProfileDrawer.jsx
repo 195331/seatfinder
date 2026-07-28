@@ -296,7 +296,7 @@ export default function ProfileDrawer({ currentUser, onLogout, open: controlledO
                   </div>
                 </Link>
 
-                {(currentUser.user_type === 'owner' || currentUser.role === 'admin') && (
+                {(currentUser.user_type === 'owner' || currentUser.user_type === 'admin' || currentUser.role === 'admin') && (
                   <Link to={createPageUrl('OwnerDashboard')} onClick={() => setOpen(false)}>
                     <div className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-xl">
                       <div className="flex items-center gap-3">
