@@ -110,7 +110,7 @@ export default function Layout({ children, currentPageName }) {
                   </>
                 )}
               
-              {(currentUser?.user_type === 'owner' || currentUser?.role === 'admin') && (
+              {(currentUser?.user_type === 'owner' || currentUser?.user_type === 'admin' || currentUser?.role === 'admin') && (
                 <Link to={createPageUrl('OwnerDashboard')}>
                   <button className="flex flex-col items-center gap-1 px-4 py-2 text-slate-500">
                     <Store className="w-5 h-5" />
