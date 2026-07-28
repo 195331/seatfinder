@@ -347,7 +347,7 @@ export default function FloorPlanBuilderPremium({ restaurant, onPublish }) {
           y: t.position_y ?? 0,
           w: preset.w,
           h: preset.h,
-          shape: t.shape || preset.shape,
+          shape: preset.shape,
           seats: capacity,
           label: t.label || `${capacity}`,
           rotation: t.rotation || 0,
