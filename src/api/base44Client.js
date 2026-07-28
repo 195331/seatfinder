@@ -290,8 +290,25 @@ const integrations = {
     SendSMS: async () => {
       throw new Error('SendSMS integration is not wired up yet.');
     },
-    UploadFile: async () => {
-      throw new Error('UploadFile integration is not wired up yet.');
+    // Uploads a file to Supabase Storage and returns a public URL.
+    // Requires a public bucket named 'uploads' — create it via Supabase
+    // dashboard: Storage → New bucket → name 'uploads' → toggle Public on.
+    // Also needs a storage policy allowing authenticated INSERT, e.g.:
+    //   CREATE POLICY "Authenticated users can upload"
+    //   ON storage.objects FOR INSERT
+    //   WITH CHECK (bucket_id = 'uploads' AND auth.uid() IS NOT NULL);
+    UploadFile: async ({ file }) => {
+      if (!file) throw new Error('No file provided to UploadFile');
+      const ext = file.name?.split('.').pop() || 'bin';
+      const path = `${crypto.randomUUID()}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('uploads')
+        .upload(path, file, { cacheControl: '3600', upsert: false });
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage.from('uploads').getPublicUrl(path);
+      return { file_url: data.publicUrl };
     },
     GenerateImage: async () => {
       throw new Error('GenerateImage integration is not wired up yet.');

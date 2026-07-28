@@ -307,18 +307,47 @@ export default function FloorPlanBuilderPremium({ restaurant, onPublish }) {
 
   const current = rooms[roomId];
 
-  // Load saved floor plan
+  // Load saved floor plan. Restaurants created via the registration flow
+  // (CreateRestaurant.jsx) store floor_plan_data as {areas, tables} — a
+  // different, simpler shape than this editor's {rooms} format. If we
+  // don't see .rooms yet, build a starting MAIN room from the real Table
+  // rows already in the database (liveTables), rather than the redundant
+  // JSON blob, so nothing entered during registration is lost.
   useEffect(() => {
-    if (!restaurant?.floor_plan_data?.rooms) return;
-    const fp = restaurant.floor_plan_data;
-    setRooms(prev => {
-      const next = { ...prev };
-      for (const k of Object.keys(next)) {
-        if (fp.rooms[k]) next[k] = { ...next[k], ...fp.rooms[k] };
-      }
-      return next;
-    });
-  }, [restaurant?.id]);
+    if (restaurant?.floor_plan_data?.rooms) {
+      const fp = restaurant.floor_plan_data;
+      setRooms(prev => {
+        const next = { ...prev };
+        for (const k of Object.keys(next)) {
+          if (fp.rooms[k]) next[k] = { ...next[k], ...fp.rooms[k] };
+        }
+        return next;
+      });
+      return;
+    }
+    if (Array.isArray(liveTables) && liveTables.length > 0) {
+      const items = liveTables.map(t => ({
+        id: t.id,
+        type: 'table',
+        x: t.position_x ?? 0,
+        y: t.position_y ?? 0,
+        w: t.shape === 'round' ? 64 : 86,
+        h: t.shape === 'round' ? 64 : 56,
+        shape: t.shape || 'round',
+        seats: t.capacity || 2,
+        label: t.label || `${t.capacity || 2}`,
+        rotation: t.rotation || 0,
+        fill: COLORS.tableFill,
+        stroke: COLORS.tableStroke,
+        locked: false,
+        z: 0,
+      }));
+      setRooms(prev => ({
+        ...prev,
+        MAIN: { ...prev.MAIN, items },
+      }));
+    }
+  }, [restaurant?.id, liveTables]);
 
   // Resize observer
   useEffect(() => {
@@ -710,9 +739,13 @@ export default function FloorPlanBuilderPremium({ restaurant, onPublish }) {
       await base44.entities.Restaurant.update(restaurant.id, { floor_plan_data: floorPlanData, total_seats: totalSeats, available_seats: totalSeats });
       const existing = await base44.entities.Table.filter({ restaurant_id: restaurant.id });
       const existingByFpId = new Map((existing || []).filter(t => t.floorplan_item_id).map(t => [t.floorplan_item_id, t]));
+      // Fallback for tables migrated from the registration flow, which don't
+      // have a floorplan_item_id yet — match on the table's own id instead,
+      // since we seed item.id = table.id when loading legacy tables above.
+      const existingById = new Map((existing || []).map(t => [t.id, t]));
       const keep = new Set();
       for (const t of allTables) {
-        const found = existingByFpId.get(t.id);
+        const found = existingByFpId.get(t.id) || existingById.get(t.id);
         const roomKey = Object.entries(rooms).find(([, room]) => room.items.some(i => i.id === t.id))?.[0] || 'MAIN';
         const payload = { restaurant_id: restaurant.id, floorplan_item_id: t.id, label: `T${t.label || t.seats}`, capacity: t.seats, status: found?.status || 'free', position_x: t.x, position_y: t.y, shape: t.shape, rotation: t.rotation || 0, room_id: roomKey, z_index: t.z || 0 };
         if (found?.id) { await base44.entities.Table.update(found.id, payload); keep.add(found.id); }

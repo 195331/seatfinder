@@ -12,10 +12,10 @@ const SUGGESTIONS = [
   { id: 6, icon: Heart, label: 'Family-friendly dining', query: 'kid friendly family restaurant', gradient: 'from-green-500 to-lime-500' },
 ];
 
-export default function AISearchSuggestions({ show, onSelect }) {
+export default function AISearchSuggestions({ searchQuery, onSuggestionClick, onClose }) {
   return (
     <AnimatePresence>
-      {show && (
+      {true && (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -25,6 +25,12 @@ export default function AISearchSuggestions({ show, onSelect }) {
           <div className="flex items-center gap-2 mb-3 pb-3 border-b border-slate-100">
             <Sparkles className="w-4 h-4 text-purple-600" />
             <span className="text-sm font-semibold text-slate-700">AI Search Suggestions</span>
+            <button
+              onClick={onClose}
+              className="ml-auto text-slate-400 hover:text-slate-600"
+            >
+              ✕
+            </button>
           </div>
           <div className="grid gap-2">
             {SUGGESTIONS.map((suggestion) => {
@@ -32,7 +38,7 @@ export default function AISearchSuggestions({ show, onSelect }) {
               return (
                 <button
                   key={suggestion.id}
-                  onClick={() => onSelect(suggestion.query)}
+                  onClick={() => onSuggestionClick(suggestion.query)}
                   className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 transition-all group text-left"
                 >
                   <div className={cn("w-8 h-8 rounded-full bg-gradient-to-r flex items-center justify-center", suggestion.gradient)}>
