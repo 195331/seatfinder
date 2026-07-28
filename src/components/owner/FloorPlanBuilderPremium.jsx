@@ -14,38 +14,103 @@ import {
 const CANVAS_W = 2400, CANVAS_H = 1700;
 const GRID = 40;
 
-const COLORS = {
-  canvasBg: "#0b1220", gridMajor: "rgba(255,255,255,0.06)", gridMinor: "rgba(255,255,255,0.03)",
-  text: "rgba(255,255,255,0.92)", subtext: "rgba(255,255,255,0.60)", accent: "#22c55e",
-  tableFill: "rgba(255,255,255,0.08)", tableStroke: "rgba(255,255,255,0.18)",
-  wall: "rgba(255,255,255,0.42)", roomFill: "rgba(34,197,94,0.10)", roomStroke: "rgba(34,197,94,0.38)",
-  noteFill: "rgba(59,130,246,0.10)", noteStroke: "rgba(59,130,246,0.35)", danger: "#ef4444",
-  tableFree: "rgba(16,185,129,0.25)", tableOccupied: "rgba(245,158,11,0.25)",
-  tableReserved: "rgba(59,130,246,0.25)", tableStrokeFree: "rgba(16,185,129,0.6)",
-  tableStrokeOccupied: "rgba(245,158,11,0.6)", tableStrokeReserved: "rgba(59,130,246,0.6)",
-  collisionFill: "rgba(239,68,68,0.35)", collisionStroke: "#ef4444",
-  boxSelectFill: "rgba(34,197,94,0.08)", boxSelectStroke: "rgba(34,197,94,0.6)"
+const THEMES = {
+  slate: {
+    label: 'Minimal slate',
+    COLORS: {
+      canvasBg: "#FBFBFA", gridMajor: "rgba(0,0,0,0.06)", gridMinor: "rgba(0,0,0,0.03)",
+      text: "rgba(20,20,18,0.92)", subtext: "rgba(20,20,18,0.55)", accent: "#3C3489",
+      tableFill: "#FFFFFF", tableStroke: "#888780",
+      wall: "rgba(20,20,18,0.5)", roomFill: "rgba(60,52,137,0.08)", roomStroke: "rgba(60,52,137,0.35)",
+      noteFill: "rgba(24,95,165,0.08)", noteStroke: "rgba(24,95,165,0.3)", danger: "#A32D2D",
+      tableFree: "rgba(15,110,86,0.15)", tableOccupied: "rgba(133,79,11,0.15)",
+      tableReserved: "rgba(24,95,165,0.15)", tableStrokeFree: "#0F6E56",
+      tableStrokeOccupied: "#854F0B", tableStrokeReserved: "#185FA5",
+      collisionFill: "rgba(163,45,45,0.25)", collisionStroke: "#A32D2D",
+      boxSelectFill: "rgba(60,52,137,0.08)", boxSelectStroke: "rgba(60,52,137,0.5)"
+    },
+    UI: {
+      bg: "rgba(255,255,255,0.85)", border: "rgba(0,0,0,0.1)",
+      text: "rgba(20,20,18,0.92)", subtext: "rgba(20,20,18,0.5)",
+      pillOn: "#3C3489", pillOnText: "white",
+      pillOff: "rgba(0,0,0,0.05)", pillOffText: "rgba(20,20,18,0.65)",
+      pillBorder: "rgba(0,0,0,0.12)"
+    }
+  },
+  warm: {
+    label: 'Studio warm',
+    COLORS: {
+      canvasBg: "#FFFDFB", gridMajor: "rgba(216,90,48,0.12)", gridMinor: "rgba(216,90,48,0.06)",
+      text: "rgba(74,27,12,0.92)", subtext: "rgba(74,27,12,0.6)", accent: "#D85A30",
+      tableFill: "#FAECE7", tableStroke: "#D85A30",
+      wall: "rgba(74,27,12,0.45)", roomFill: "rgba(216,90,48,0.08)", roomStroke: "rgba(216,90,48,0.35)",
+      noteFill: "rgba(186,117,23,0.1)", noteStroke: "rgba(186,117,23,0.35)", danger: "#993C1D",
+      tableFree: "rgba(59,109,17,0.18)", tableOccupied: "rgba(133,79,11,0.18)",
+      tableReserved: "rgba(24,95,165,0.15)", tableStrokeFree: "#3B6D11",
+      tableStrokeOccupied: "#854F0B", tableStrokeReserved: "#185FA5",
+      collisionFill: "rgba(153,60,29,0.3)", collisionStroke: "#993C1D",
+      boxSelectFill: "rgba(216,90,48,0.08)", boxSelectStroke: "rgba(216,90,48,0.5)"
+    },
+    UI: {
+      bg: "rgba(250,243,236,0.9)", border: "rgba(240,153,123,0.5)",
+      text: "rgba(74,27,12,0.92)", subtext: "rgba(74,27,12,0.55)",
+      pillOn: "#D85A30", pillOnText: "#FAECE7",
+      pillOff: "rgba(216,90,48,0.08)", pillOffText: "#993C1D",
+      pillBorder: "rgba(240,153,123,0.6)"
+    }
+  },
+  dark: {
+    label: 'Precision dark',
+    COLORS: {
+      canvasBg: "#0b1220", gridMajor: "rgba(255,255,255,0.06)", gridMinor: "rgba(255,255,255,0.03)",
+      text: "rgba(255,255,255,0.92)", subtext: "rgba(255,255,255,0.60)", accent: "#378ADD",
+      tableFill: "rgba(255,255,255,0.08)", tableStroke: "#378ADD",
+      wall: "rgba(255,255,255,0.42)", roomFill: "rgba(55,138,221,0.10)", roomStroke: "rgba(55,138,221,0.38)",
+      noteFill: "rgba(59,130,246,0.10)", noteStroke: "rgba(59,130,246,0.35)", danger: "#ef4444",
+      tableFree: "rgba(16,185,129,0.25)", tableOccupied: "rgba(245,158,11,0.25)",
+      tableReserved: "rgba(59,130,246,0.25)", tableStrokeFree: "rgba(16,185,129,0.6)",
+      tableStrokeOccupied: "rgba(245,158,11,0.6)", tableStrokeReserved: "rgba(59,130,246,0.6)",
+      collisionFill: "rgba(239,68,68,0.35)", collisionStroke: "#ef4444",
+      boxSelectFill: "rgba(55,138,221,0.08)", boxSelectStroke: "rgba(55,138,221,0.6)"
+    },
+    UI: {
+      bg: "rgba(0,0,0,0.65)", border: "rgba(255,255,255,0.1)",
+      text: "rgba(255,255,255,0.9)", subtext: "rgba(255,255,255,0.45)",
+      pillOn: "#378ADD", pillOnText: "white",
+      pillOff: "rgba(255,255,255,0.07)", pillOffText: "rgba(255,255,255,0.65)",
+      pillBorder: "rgba(255,255,255,0.12)"
+    }
+  }
 };
 
-// Glassmorphic dark toolbar tokens
-const UI = {
-  bg: "rgba(0,0,0,0.65)",
-  border: "rgba(255,255,255,0.1)",
-  text: "rgba(255,255,255,0.9)",
-  subtext: "rgba(255,255,255,0.45)",
-  pillOn: "#22c55e",
-  pillOnText: "white",
-  pillOff: "rgba(255,255,255,0.07)",
-  pillOffText: "rgba(255,255,255,0.65)",
-  pillBorder: "rgba(255,255,255,0.12)"
-};
+const THEME_STORAGE_KEY = 'seatfinder_floorplan_theme';
 
-const ZONE_TYPES = [
+function getInitialTheme() {
+  const saved = typeof window !== 'undefined' && localStorage.getItem(THEME_STORAGE_KEY);
+  if (saved && THEMES[saved]) return saved;
+  // Auto: match system preference when the owner hasn't chosen manually.
+  const prefersDark = typeof window !== 'undefined' &&
+    window.matchMedia?.('(prefers-color-scheme: dark)').matches;
+  return prefersDark ? 'dark' : 'slate';
+}
+
+// Same 5 category identities across all themes (purple=quiet, red=bar,
+// green=family, blue=outdoor, amber=vip) — only fill/stroke opacity
+// differs, since the dark theme's values read fine against a near-black
+// canvas but would barely show up against the light themes' backgrounds.
+const ZONE_TYPES_DARK = [
   { id: 'quiet',   label: '🤫 Quiet',   fill: 'rgba(139,92,246,0.12)', stroke: 'rgba(139,92,246,0.45)' },
   { id: 'bar',     label: '🍷 Bar',     fill: 'rgba(239,68,68,0.12)',  stroke: 'rgba(239,68,68,0.45)'  },
   { id: 'family',  label: '👨‍👩‍👧 Family', fill: 'rgba(34,197,94,0.12)', stroke: 'rgba(34,197,94,0.45)'  },
   { id: 'outdoor', label: '🌳 Outdoor', fill: 'rgba(59,130,246,0.12)', stroke: 'rgba(59,130,246,0.45)' },
   { id: 'vip',     label: '⭐ VIP',     fill: 'rgba(234,179,8,0.12)',  stroke: 'rgba(234,179,8,0.45)'  }
+];
+const ZONE_TYPES_LIGHT = [
+  { id: 'quiet',   label: '🤫 Quiet',   fill: 'rgba(139,92,246,0.16)', stroke: 'rgba(124,58,237,0.6)' },
+  { id: 'bar',     label: '🍷 Bar',     fill: 'rgba(239,68,68,0.16)',  stroke: 'rgba(220,38,38,0.6)'  },
+  { id: 'family',  label: '👨‍👩‍👧 Family', fill: 'rgba(34,197,94,0.16)', stroke: 'rgba(21,128,61,0.6)'  },
+  { id: 'outdoor', label: '🌳 Outdoor', fill: 'rgba(59,130,246,0.16)', stroke: 'rgba(29,78,216,0.6)' },
+  { id: 'vip',     label: '⭐ VIP',     fill: 'rgba(234,179,8,0.16)',  stroke: 'rgba(161,98,7,0.6)'  }
 ];
 
 const TABLE_PRESETS = [
@@ -80,8 +145,10 @@ function drawScene(ctx, W, H, cam, room, opts) {
   const {
     showGrid, showZones, showTableStatus, tableStatusMap,
     selectedIds, draftPoints, tool, rectDraft, zoneDraft,
-    selectedZoneType, roomId, boxSelect, collisionIds
+    selectedZoneType, roomId, boxSelect, collisionIds, colors, zoneTypes
   } = opts;
+  const COLORS = colors;
+  const ZONE_TYPES = zoneTypes;
 
   ctx.clearRect(0, 0, W, H);
   ctx.fillStyle = COLORS.canvasBg;
@@ -313,6 +380,16 @@ export default function FloorPlanBuilderPremium({ restaurant, onPublish }) {
 
   const current = rooms[roomId];
 
+  const [themeId, setThemeId] = useState(getInitialTheme);
+  const COLORS = THEMES[themeId].COLORS;
+  const UI = THEMES[themeId].UI;
+  const ZONE_TYPES = themeId === 'dark' ? ZONE_TYPES_DARK : ZONE_TYPES_LIGHT;
+
+  function changeTheme(id) {
+    setThemeId(id);
+    localStorage.setItem(THEME_STORAGE_KEY, id);
+  }
+
   // Load saved floor plan. Restaurants created via the registration flow
   // (CreateRestaurant.jsx) store floor_plan_data as {areas, tables} — a
   // different, simpler shape than this editor's {rooms} format. If we
@@ -453,11 +530,11 @@ export default function FloorPlanBuilderPremium({ restaurant, onPublish }) {
     drawScene(ctx, canvasSize.w, canvasSize.h, cam, current, {
       showGrid, showZones, showTableStatus, tableStatusMap, selectedIds,
       draftPoints, tool, rectDraft, zoneDraft, selectedZoneType,
-      roomId, boxSelect, collisionIds
+      roomId, boxSelect, collisionIds, colors: COLORS, zoneTypes: ZONE_TYPES
     });
   }, [cam, current, showGrid, showZones, showTableStatus, tableStatusMap,
       selectedIds, draftPoints, tool, rectDraft, zoneDraft, selectedZoneType,
-      roomId, boxSelect, collisionIds, canvasSize]);
+      roomId, boxSelect, collisionIds, canvasSize, COLORS, ZONE_TYPES]);
 
   // ─── Helpers ──────────────────────────────────────────────────────────────
   function updateRoom(patchFn) {
@@ -930,11 +1007,28 @@ export default function FloorPlanBuilderPremium({ restaurant, onPublish }) {
 
           {/* Right: toggles + zoom + publish */}
           <div className="flex flex-wrap items-center gap-2">
-            <Toggle label="Grid"       value={showGrid}         onChange={setShowGrid}         color="#22c55e" />
-            <Toggle label="No-overlap" value={collisionGuard}   onChange={setCollisionGuard}   color="#3b82f6" />
-            <Toggle label="Snap"       value={snapGrid}         onChange={setSnapGrid}         color="#3b82f6" />
-            <Toggle label="Zones"      value={showZones}        onChange={setShowZones}        color="#22c55e" />
-            <Toggle label="Live"       value={showTableStatus}  onChange={setShowTableStatus}  color="#22c55e" />
+            <Toggle label="Grid"       value={showGrid}         onChange={setShowGrid}         color={UI.pillOn} />
+            <Toggle label="No-overlap" value={collisionGuard}   onChange={setCollisionGuard}   color={UI.pillOn} />
+            <Toggle label="Snap"       value={snapGrid}         onChange={setSnapGrid}         color={UI.pillOn} />
+            <Toggle label="Zones"      value={showZones}        onChange={setShowZones}        color={UI.pillOn} />
+            <Toggle label="Live"       value={showTableStatus}  onChange={setShowTableStatus}  color={UI.pillOn} />
+
+            <div className="flex items-center gap-1.5 pl-2 border-l" style={{ borderColor: UI.pillBorder }}>
+              {Object.entries(THEMES).map(([id, t]) => (
+                <button
+                  key={id}
+                  onClick={() => changeTheme(id)}
+                  title={t.label}
+                  aria-label={t.label}
+                  className="w-6 h-6 rounded-full transition-all"
+                  style={{
+                    background: t.COLORS.canvasBg,
+                    border: `2px solid ${id === themeId ? t.COLORS.accent : UI.pillBorder}`,
+                    boxShadow: id === themeId ? `0 0 0 2px ${t.COLORS.accent}33` : 'none',
+                  }}
+                />
+              ))}
+            </div>
 
             <div className="flex items-center gap-1 pl-2 border-l" style={{ borderColor: UI.pillBorder }}>
               {[
@@ -958,7 +1052,7 @@ export default function FloorPlanBuilderPremium({ restaurant, onPublish }) {
               onClick={handlePublish}
               disabled={isSaving}
               className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all disabled:opacity-60"
-              style={{ background: 'linear-gradient(135deg,#22c55e,#16a34a)', color: 'white', boxShadow: '0 0 14px rgba(34,197,94,0.35)' }}
+              style={{ background: `linear-gradient(135deg, ${UI.pillOn}, ${UI.pillOn})`, color: UI.pillOnText, boxShadow: `0 0 14px ${UI.pillOn}55` }}
             >
               <Save className="w-3.5 h-3.5" />
               {isSaving ? "Saving…" : "Publish"}
