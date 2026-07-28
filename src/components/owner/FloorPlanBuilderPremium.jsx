@@ -297,6 +297,12 @@ export default function FloorPlanBuilderPremium({ restaurant, onPublish }) {
     refetchInterval: 15000
   });
 
+  const { data: liveAreas = [] } = useQuery({
+    queryKey: ['liveAreas', restaurant?.id],
+    queryFn: () => base44.entities.RestaurantArea.filter({ restaurant_id: restaurant.id }),
+    enabled: !!restaurant?.id,
+  });
+
   const tableStatusMap = useMemo(() => {
     const map = {};
     for (const t of (Array.isArray(liveTables) ? liveTables : [])) {
@@ -326,28 +332,71 @@ export default function FloorPlanBuilderPremium({ restaurant, onPublish }) {
       return;
     }
     if (Array.isArray(liveTables) && liveTables.length > 0) {
-      const items = liveTables.map(t => ({
-        id: t.id,
-        type: 'table',
-        x: t.position_x ?? 0,
-        y: t.position_y ?? 0,
-        w: t.shape === 'round' ? 64 : 86,
-        h: t.shape === 'round' ? 64 : 56,
-        shape: t.shape || 'round',
-        seats: t.capacity || 2,
-        label: t.label || `${t.capacity || 2}`,
-        rotation: t.rotation || 0,
-        fill: COLORS.tableFill,
-        stroke: COLORS.tableStroke,
-        locked: false,
-        z: 0,
-      }));
+      const items = liveTables.map(t => {
+        const capacity = t.capacity || 2;
+        // Match the closest real preset for this capacity, same sizing
+        // the editor itself uses when you place a new table — rather than
+        // one fixed size for every table regardless of seats.
+        const preset = TABLE_PRESETS.reduce((closest, p) =>
+          Math.abs(p.seats - capacity) < Math.abs(closest.seats - capacity) ? p : closest
+        , TABLE_PRESETS[0]);
+        return {
+          id: t.id,
+          type: 'table',
+          x: t.position_x ?? 0,
+          y: t.position_y ?? 0,
+          w: preset.w,
+          h: preset.h,
+          shape: t.shape || preset.shape,
+          seats: capacity,
+          label: t.label || `${capacity}`,
+          rotation: t.rotation || 0,
+          fill: COLORS.tableFill,
+          stroke: COLORS.tableStroke,
+          locked: false,
+          z: 0,
+        };
+      });
+
+      // Areas from registration have no saved geometry (just a name and
+      // table membership), so draw a zone rectangle bounding each area's
+      // real tables, labeled with the area's name — a reasonable starting
+      // visual rather than losing that grouping entirely.
+      const zt = ZONE_TYPES[0];
+      const zones = (liveAreas || [])
+        .map(area => {
+          const members = liveTables.filter(t => t.area_id === area.id);
+          if (members.length === 0) return null;
+          const pad = 40;
+          const xs = members.map(t => t.position_x ?? 0);
+          const ys = members.map(t => t.position_y ?? 0);
+          const minX = Math.min(...xs) - pad;
+          const minY = Math.min(...ys) - pad;
+          const maxX = Math.max(...xs) + pad;
+          const maxY = Math.max(...ys) + pad;
+          return {
+            id: area.id,
+            type: 'zone',
+            zoneType: zt.id,
+            x: minX,
+            y: minY,
+            w: Math.max(maxX - minX, 120),
+            h: Math.max(maxY - minY, 120),
+            label: area.name,
+            fill: zt.fill,
+            stroke: zt.stroke,
+            locked: false,
+            z: -1,
+          };
+        })
+        .filter(Boolean);
+
       setRooms(prev => ({
         ...prev,
-        MAIN: { ...prev.MAIN, items },
+        MAIN: { ...prev.MAIN, items, zones },
       }));
     }
-  }, [restaurant?.id, liveTables]);
+  }, [restaurant?.id, liveTables, liveAreas]);
 
   // Resize observer
   useEffect(() => {
@@ -426,11 +475,45 @@ export default function FloorPlanBuilderPremium({ restaurant, onPublish }) {
 
   function hitTestItem(world) {
     const items = current?.items || [];
-    return [...items].reverse().find(it =>
+    const tableOrNote = [...items].reverse().find(it =>
       (it.type === 'table' || it.type === 'note') &&
       world.x >= it.x && world.x <= it.x + it.w &&
       world.y >= it.y && world.y <= it.y + it.h
     );
+    if (tableOrNote) return tableOrNote;
+
+    // Zones weren't hit-testable at all before — right-clicking one always
+    // came back empty, so the context menu (delete, lock, etc.) had nothing
+    // to target.
+    const zones = current?.zones || [];
+    const zoneHit = [...zones].reverse().find(z =>
+      world.x >= z.x && world.x <= z.x + z.w &&
+      world.y >= z.y && world.y <= z.y + z.h
+    );
+    if (zoneHit) return zoneHit;
+
+    // Walls are polylines, not boxes — same problem, never hit-testable.
+    // Check distance from the click point to each wall segment instead.
+    const walls = current?.walls || [];
+    for (let i = walls.length - 1; i >= 0; i--) {
+      const wall = walls[i];
+      const pts = wall.points || [];
+      const tolerance = (wall.thickness || 10) / 2 + 6;
+      for (let p = 0; p < pts.length - 1; p++) {
+        if (distToSegment(world, pts[p], pts[p + 1]) <= tolerance) return wall;
+      }
+    }
+    return null;
+  }
+
+  function distToSegment(pt, a, b) {
+    const dx = b.x - a.x, dy = b.y - a.y;
+    const lenSq = dx * dx + dy * dy;
+    if (lenSq === 0) return Math.hypot(pt.x - a.x, pt.y - a.y);
+    let t = ((pt.x - a.x) * dx + (pt.y - a.y) * dy) / lenSq;
+    t = Math.max(0, Math.min(1, t));
+    const projX = a.x + t * dx, projY = a.y + t * dy;
+    return Math.hypot(pt.x - projX, pt.y - projY);
   }
 
   function addTableAt(world) {
