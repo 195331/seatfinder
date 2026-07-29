@@ -42,6 +42,77 @@ const DEFAULT_PRESETS = [
   { id: 'family', name: 'Family Dinner', icon: '👨‍👩‍👧‍👦', filters: { isKidFriendly: true, seatingLevel: 'moderate' } },
 ];
 
+// Rule-based "smart search" — maps everyday words to real filters against
+// existing restaurant data (ratings, price level, boolean amenities,
+// recency). No AI/LLM calls, so it costs nothing and returns instantly.
+// Multi-word phrases are checked before the query is split, so "family
+// friendly" and "fine dining" match as whole phrases.
+const SEARCH_SYNONYMS = [
+  { triggers: ['trendy', 'hip', 'chic', 'hipster', 'stylish', 'instagrammable', 'aesthetic'],
+    test: r => (r.average_rating || 0) >= 4.2 && (r.has_bar_seating || r.has_live_music) },
+  { triggers: ['cozy', 'intimate', 'romantic', 'date night', 'quiet', 'chill spot', 'low key', 'low-key'],
+    test: r => !r.has_live_music && (r.price_level || 0) >= 2 },
+  { triggers: ['lively', 'energetic', 'buzzing', 'vibrant', 'party', 'nightlife', 'fun atmosphere'],
+    test: r => r.has_bar_seating || r.has_live_music },
+  { triggers: ['upscale', 'fancy', 'fine dining', 'high end', 'high-end', 'luxury', 'elegant', 'special occasion'],
+    test: r => (r.price_level || 0) >= 3 },
+  { triggers: ['cheap', 'budget', 'affordable', 'inexpensive', 'low cost', 'value', 'cheap eats', 'wallet friendly'],
+    test: r => (r.price_level || 0) > 0 && (r.price_level || 0) <= 1 },
+  { triggers: ['family friendly', 'kid friendly', 'kids', 'family', 'kid-friendly', 'good for kids', 'toddler friendly'],
+    test: r => r.is_kid_friendly },
+  { triggers: ['outdoor', 'patio', 'rooftop', 'al fresco', 'outside seating', 'garden seating', 'terrace'],
+    test: r => r.has_outdoor },
+  { triggers: ['live music', 'music', 'band', 'live band', 'dj', 'karaoke'],
+    test: r => r.has_live_music },
+  { triggers: ['bar', 'drinks', 'cocktails', 'happy hour', 'bar seating', 'wine', 'beer', 'brewery'],
+    test: r => r.has_bar_seating },
+  { triggers: ['parking', 'valet', 'easy parking'],
+    test: r => r.has_parking },
+  { triggers: ['wifi', 'wi-fi', 'internet', 'work friendly', 'laptop friendly', 'good for working'],
+    test: r => r.has_wifi },
+  { triggers: ['top rated', 'best', 'highly rated', 'great', 'excellent', 'must try', 'must-try', 'amazing'],
+    test: r => (r.average_rating || 0) >= 4.5 },
+  { triggers: ['popular', 'crowd favorite', 'busy', 'well known', 'well-known', 'famous', 'hyped'],
+    test: r => (r.favorite_count || 0) >= 5 || (r.review_count || 0) >= 10 },
+  { triggers: ['reliable', 'consistent', 'dependable', 'always good', 'never disappoints'],
+    test: r => (r.reliability_score || 0) >= 80 },
+  { triggers: ['new', 'newest', 'just opened', 'recently opened', 'new spot'],
+    test: r => r.created_at && (Date.now() - new Date(r.created_at).getTime()) < 1000 * 60 * 60 * 24 * 90 },
+  { triggers: ['hidden gem', 'underrated', 'off the beaten path', 'lesser known'],
+    test: r => (r.average_rating || 0) >= 4.3 && (r.review_count || 0) < 30 },
+  { triggers: ['group friendly', 'big groups', 'large party', 'large parties'],
+    test: r => (r.total_seats || 0) >= 40 },
+];
+
+// Handled separately since it depends on userLocation/distance rather
+// than a simple boolean field on the restaurant itself.
+const NEARBY_TRIGGERS = ['nearby', 'near me', 'close by', 'close', 'around here', 'walking distance'];
+
+function parseSmartSearch(rawQuery) {
+  let remaining = ` ${rawQuery.toLowerCase()} `;
+  const tests = [];
+  let wantsNearby = false;
+
+  for (const rule of SEARCH_SYNONYMS) {
+    for (const trigger of rule.triggers) {
+      if (remaining.includes(trigger)) {
+        tests.push(rule.test);
+        remaining = remaining.replace(trigger, ' ');
+        break; // one match per rule is enough
+      }
+    }
+  }
+  for (const trigger of NEARBY_TRIGGERS) {
+    if (remaining.includes(trigger)) {
+      wantsNearby = true;
+      remaining = remaining.replace(trigger, ' ');
+      break;
+    }
+  }
+
+  return { tests, wantsNearby, freeText: remaining.replace(/\s+/g, ' ').trim() };
+}
+
 export default function Home() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -228,14 +299,39 @@ export default function Home() {
       }));
     }
 
-    // Search
+    // Search — smart, rule-based, no AI calls. Words like "trendy",
+    // "family friendly", "cheap", "nearby" map to real filters against
+    // existing data; anything left over falls back to plain text match
+    // against name/cuisine/neighborhood.
+    let smartNearby = false;
     if (search) {
-      const searchLower = search.toLowerCase();
-      result = result.filter(r => 
-        r.name?.toLowerCase().includes(searchLower) ||
-        r.cuisine?.toLowerCase().includes(searchLower) ||
-        r.neighborhood?.toLowerCase().includes(searchLower)
-      );
+      const { tests, wantsNearby, freeText } = parseSmartSearch(search);
+      smartNearby = wantsNearby;
+
+      if (tests.length > 0) {
+        result = result.filter(r => tests.every(test => test(r)));
+      }
+
+      if (wantsNearby) {
+        if (userLocation) {
+          result = result
+            .filter(r => r.distance != null && r.distance <= 20)
+            .sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity));
+        }
+        // If location isn't available yet, the existing on-mount geolocation
+        // prompt (further up in this component) will have already asked —
+        // nothing further to do here.
+      }
+
+      if (freeText) {
+        const searchLower = freeText;
+        result = result.filter(r =>
+          r.name?.toLowerCase().includes(searchLower) ||
+          r.cuisine?.toLowerCase().includes(searchLower) ||
+          r.neighborhood?.toLowerCase().includes(searchLower) ||
+          r.description?.toLowerCase().includes(searchLower)
+        );
+      }
     }
 
     // Apply user preferences from settings
@@ -278,7 +374,7 @@ export default function Home() {
 
     // Sorting
     result.sort((a, b) => {
-      if (sortBy === 'distance' && userLocation) {
+      if ((sortBy === 'distance' || smartNearby) && userLocation) {
         if (!a.distance) return 1;
         if (!b.distance) return -1;
         return a.distance - b.distance;
