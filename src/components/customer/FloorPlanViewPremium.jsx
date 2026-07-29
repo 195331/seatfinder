@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { toast } from "sonner";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -133,18 +134,28 @@ export default function FloorPlanViewPremium({
 
   // If tables prop doesn't contain mapping, fetch table entity as fallback
   const getTableEntityForFloorplanId = async (floorplanItemId) => {
-    const local = (Array.isArray(tables) ? tables : []).find((t) => t.floorplan_item_id === floorplanItemId);
+    const localList = Array.isArray(tables) ? tables : [];
+    // Match by floorplan_item_id first (the normal case), falling back to
+    // the table's own primary key — some tables (e.g. migrated from the
+    // registration flow) end up with floorplan_item_id === id, and this
+    // keeps reservations working even if that field is ever out of sync.
+    const local = localList.find((t) => t.floorplan_item_id === floorplanItemId)
+      || localList.find((t) => t.id === floorplanItemId);
     if (local) return local;
 
     // fallback fetch (only if restaurantId provided)
     if (!restaurantId) return null;
     try {
-      const res = await base44.entities.Table.filter({
+      const byFpId = await base44.entities.Table.filter({
         restaurant_id: restaurantId,
         floorplan_item_id: floorplanItemId
       });
-      return Array.isArray(res) ? res[0] : null;
-    } catch {
+      if (Array.isArray(byFpId) && byFpId[0]) return byFpId[0];
+
+      const byId = await base44.entities.Table.filter({ id: floorplanItemId });
+      return Array.isArray(byId) ? byId[0] : null;
+    } catch (err) {
+      console.error('getTableEntityForFloorplanId failed:', err);
       return null;
     }
   };
@@ -153,7 +164,11 @@ export default function FloorPlanViewPremium({
     if (!tableObj?.id) return;
 
     const tableEntity = await getTableEntityForFloorplanId(tableObj.id);
-    if (!tableEntity) return; // nothing to reserve if mapping doesn't exist
+    if (!tableEntity) {
+      console.error('No matching Table row for floor plan item:', tableObj.id);
+      toast.error("Couldn't find that table's booking info. Try refreshing the page.");
+      return;
+    }
 
     if (tableEntity.status === "occupied" || tableEntity.status === "reserved") return;
 
