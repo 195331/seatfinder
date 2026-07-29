@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { format, parseISO, isAfter } from 'date-fns';
 import { base44 } from '@/api/base44Client';
 import { createPageUrl } from '@/utils';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -28,6 +28,15 @@ const TIME_SLOTS = [
 ];
 
 export default function ReservationCard({ reservation, restaurant, onCancel, onModify }) {
+  const { data: assignedTable } = useQuery({
+    queryKey: ['reservationTable', reservation.table_id],
+    queryFn: async () => {
+      const res = await base44.entities.Table.filter({ id: reservation.table_id });
+      return Array.isArray(res) ? res[0] : null;
+    },
+    enabled: !!reservation.table_id,
+  });
+
   const queryClient = useQueryClient();
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editDate, setEditDate] = useState(null);
@@ -117,6 +126,13 @@ export default function ReservationCard({ reservation, restaurant, onCancel, onM
                   <Users className="w-4 h-4 text-slate-400" />
                   {reservation.party_size} guests
                 </div>
+                {assignedTable?.label && (
+                  <div className="flex items-center gap-1.5">
+                    <Badge variant="outline" className="text-xs font-medium">
+                      Table {assignedTable.label}
+                    </Badge>
+                  </div>
+                )}
                 {restaurant?.address && (
                   <div className="flex items-center gap-1.5 truncate">
                     <MapPin className="w-4 h-4 text-slate-400 shrink-0" />

@@ -57,6 +57,14 @@ export default function CheckIn() {
   });
   const restaurant = restaurantRows[0] || null;
 
+  // Fetch the assigned table so its label can be shown to the customer
+  const { data: tableRows = [] } = useQuery({
+    queryKey: ['checkInTable', reservation?.table_id],
+    queryFn: () => base44.entities.Table.filter({ id: reservation.table_id }),
+    enabled: !!reservation?.table_id,
+  });
+  const assignedTable = tableRows[0] || null;
+
   const queryClient = useQueryClient();
 
   const checkInMutation = useMutation({
@@ -194,7 +202,14 @@ export default function CheckIn() {
                     <>
                       <CheckCircle className="w-10 h-10 text-emerald-600 mx-auto mb-2" />
                       <p className="font-semibold text-emerald-800">You're checked in!</p>
-                      <p className="text-sm text-emerald-600 mt-1">Welcome! Your table is ready.</p>
+                      {assignedTable?.label ? (
+                        <>
+                          <p className="text-sm text-emerald-600 mt-1">Welcome! Head to your table:</p>
+                          <p className="text-3xl font-bold text-emerald-700 mt-2">Table {assignedTable.label}</p>
+                        </>
+                      ) : (
+                        <p className="text-sm text-emerald-600 mt-1">Welcome! Your table is ready — a host will seat you.</p>
+                      )}
                     </>
                   )}
                   {['cancelled', 'declined'].includes(reservation.status) && (
