@@ -59,7 +59,7 @@ export default function AITableAssigner({ restaurantId, waitlistEntries, tables,
         user_name: entry.guest_name,
         user_email: entry.guest_phone ? `waitlist-${entry.id}@pending` : null,
         party_size: entry.party_size,
-        reservation_date: new Date().toISOString().split('T')[0],
+        reserved_at: new Date().toISOString().split('T')[0],
         reservation_time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
         status: 'pending',
         notes: `AI-suggested from waitlist. Table ${table.label} for ${entry.party_size} guests.`

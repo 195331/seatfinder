@@ -14,7 +14,7 @@ export default function LiveSeatingWaitlist({
   selectedEntry 
 }) {
   const arrivingSoon = (reservations || []).filter(r => {
-    const resTime = moment(`${r.reservation_date} ${r.reservation_time}`);
+    const resTime = moment(`${r.reserved_at} ${r.reservation_time}`);
     const diff = resTime.diff(moment(), 'minutes');
     return diff > 0 && diff <= 30;
   });
@@ -97,7 +97,7 @@ export default function LiveSeatingWaitlist({
           <CardContent className="p-2">
             <div className="space-y-1">
               {(arrivingSoon || []).map(res => {
-                const resTime = moment(`${res.reservation_date} ${res.reservation_time}`);
+                const resTime = moment(`${res.reserved_at} ${res.reservation_time}`);
                 const minsUntil = resTime.diff(moment(), 'minutes');
                 
                 return (

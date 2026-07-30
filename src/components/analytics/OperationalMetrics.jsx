@@ -37,7 +37,7 @@ export default function OperationalMetrics({ restaurantId }) {
   const tableTurnoverRate = useMemo(() => {
     const dailyReservations = {};
     reservations.forEach(r => {
-      const date = moment(r.reservation_date).format('YYYY-MM-DD');
+      const date = moment(r.reserved_at).format('YYYY-MM-DD');
       dailyReservations[date] = (dailyReservations[date] || 0) + 1;
     });
     const avgDaily = Object.values(dailyReservations).reduce((a, b) => a + b, 0) / Math.max(1, Object.keys(dailyReservations).length);

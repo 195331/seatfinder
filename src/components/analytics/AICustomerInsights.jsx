@@ -41,7 +41,7 @@ export default function AICustomerInsights({ restaurantId }) {
       // Day of week analysis
       const dayCounts = {};
       reservations.forEach(r => {
-        const day = moment(r.reservation_date).format('dddd');
+        const day = moment(r.reserved_at).format('dddd');
         dayCounts[day] = (dayCounts[day] || 0) + 1;
       });
 

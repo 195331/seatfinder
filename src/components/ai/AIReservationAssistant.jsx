@@ -84,7 +84,7 @@ Suggest the best table based on party size and availability.
             user_name: aiResponse.guest_name || currentUser.full_name,
             user_email: currentUser.email,
             party_size: aiResponse.party_size,
-            reservation_date: aiResponse.date,
+            reserved_at: aiResponse.date,
             reservation_time: aiResponse.time,
             status: restaurant.instant_confirm_enabled ? 'approved' : 'pending'
           });
@@ -150,7 +150,7 @@ Suggest the best table based on party size and availability.
               <p className="text-sm">{msg.content}</p>
               {msg.reservation && (
                 <div className="mt-2 pt-2 border-t border-slate-200 text-xs">
-                  <p>📅 {msg.reservation.reservation_date} at {msg.reservation.reservation_time}</p>
+                  <p>📅 {msg.reservation.reserved_at} at {msg.reservation.reservation_time}</p>
                   <p>👥 Party of {msg.reservation.party_size}</p>
                 </div>
               )}

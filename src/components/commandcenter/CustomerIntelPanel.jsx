@@ -172,7 +172,7 @@ function ChurnPanel({ restaurantId }) {
         if (!r.user_id) return;
         if (!activity[r.user_id]) activity[r.user_id] = { name: r.user_name, visits: 0, lastVisit: null };
         activity[r.user_id].visits++;
-        const d = moment(r.reservation_date);
+        const d = moment(r.reserved_at);
         if (!activity[r.user_id].lastVisit || d.isAfter(activity[r.user_id].lastVisit)) activity[r.user_id].lastVisit = d;
       });
       const atRisk = Object.values(activity).filter(c => moment().diff(c.lastVisit, 'days') > 60 && c.visits >= 2);

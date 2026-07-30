@@ -8,9 +8,9 @@ import { toast } from 'sonner';
 
 // Returns minutes past the reservation time (positive = overdue)
 function minutesPast(reservation) {
-  if (!reservation.reservation_date || !reservation.reservation_time) return 0;
+  if (!reservation.reserved_at || !reservation.reservation_time) return 0;
   const [h, m] = reservation.reservation_time.split(':').map(Number);
-  const resTime = new Date(reservation.reservation_date);
+  const resTime = new Date(reservation.reserved_at);
   resTime.setHours(h, m, 0, 0);
   return (Date.now() - resTime.getTime()) / 60000;
 }

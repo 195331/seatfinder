@@ -86,7 +86,7 @@ export default function ReservationManagerPremium({ reservations = [], restauran
         const { conflict, conflicting } = await checkTableConflict(tableId, date, time, reservationId);
         if (conflict) {
           throw new Error(
-            `Double-booking conflict: Table is already reserved for ${conflicting.user_name || 'another guest'} at ${conflicting.reservation_time} on ${conflicting.reservation_date}.`
+            `Double-booking conflict: Table is already reserved for ${conflicting.user_name || 'another guest'} at ${conflicting.reservation_time} on ${conflicting.reserved_at}.`
           );
         }
       }
@@ -144,7 +144,7 @@ export default function ReservationManagerPremium({ reservations = [], restauran
   const rescheduleMutation = useMutation({
     mutationFn: async ({ reservationId, newDate, newTime, userEmail, userName, partySize }) => {
       await base44.entities.Reservation.update(reservationId, {
-        reservation_date: newDate,
+        reserved_at: newDate,
         reservation_time: newTime,
         owner_response_at: new Date().toISOString()
       });
@@ -185,7 +185,7 @@ export default function ReservationManagerPremium({ reservations = [], restauran
       userName: reservation.user_name,
       userId: reservation.user_id,
       partySize: reservation.party_size,
-      date: reservation.reservation_date,
+      date: reservation.reserved_at,
       time: reservation.reservation_time,
       tableId: reservation.table_id
     });
@@ -199,7 +199,7 @@ export default function ReservationManagerPremium({ reservations = [], restauran
       userName: reservation.user_name,
       userId: reservation.user_id,
       partySize: reservation.party_size,
-      date: reservation.reservation_date,
+      date: reservation.reserved_at,
       time: reservation.reservation_time,
       tableId: reservation.table_id
     });
@@ -207,7 +207,7 @@ export default function ReservationManagerPremium({ reservations = [], restauran
 
   const handleReschedule = (reservation) => {
     setRescheduleDialog({ open: true, reservation });
-    setNewDate(new Date(reservation.reservation_date));
+    setNewDate(new Date(reservation.reserved_at));
     setNewTime(reservation.reservation_time);
   };
 
@@ -264,7 +264,7 @@ export default function ReservationManagerPremium({ reservations = [], restauran
                     <div className="flex flex-wrap gap-4 mb-4 text-sm">
                       <div className="flex items-center gap-1.5 text-slate-600">
                         <CalendarIcon className="w-4 h-4" />
-                        {moment(reservation.reservation_date).format('ddd, MMM D')} at {formatTime(reservation.reservation_time)}
+                        {moment(reservation.reserved_at).format('ddd, MMM D')} at {formatTime(reservation.reservation_time)}
                       </div>
                       <div className="flex items-center gap-1.5 text-slate-600">
                        <Users className="w-4 h-4" />
@@ -380,7 +380,7 @@ export default function ReservationManagerPremium({ reservations = [], restauran
                     <div className="flex-1">
                       <p className="font-medium text-slate-900">{reservation.user_name}</p>
                       <p className="text-sm text-slate-600">
-                       {moment(reservation.reservation_date).format('MMM D')} at {formatTime(reservation.reservation_time)} • {reservation.party_size} guests • Table {tableLabel}
+                       {moment(reservation.reserved_at).format('MMM D')} at {formatTime(reservation.reservation_time)} • {reservation.party_size} guests • Table {tableLabel}
                       </p>
                         <p className="text-xs text-slate-400">Reserved on {moment(reservation.created_date).format('MMM D, YYYY [at] h:mm A')}</p>
                       {(reservation.status === 'arrived_early' || reservation.status === 'checked_in') && (
@@ -420,7 +420,7 @@ export default function ReservationManagerPremium({ reservations = [], restauran
               <div className="p-3 bg-slate-50 rounded-lg">
                 <p className="font-medium">{rescheduleDialog.reservation?.user_name}</p>
                 <p className="text-sm text-slate-600">
-                  Originally: {moment(rescheduleDialog.reservation?.reservation_date).format('MMM D')} at {formatTime(rescheduleDialog.reservation?.reservation_time)}
+                  Originally: {moment(rescheduleDialog.reservation?.reserved_at).format('MMM D')} at {formatTime(rescheduleDialog.reservation?.reservation_time)}
                 </p>
               </div>
 

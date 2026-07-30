@@ -126,9 +126,9 @@ export default function MyReservations() {
   const now = new Date();
   const upcomingReservations = reservations.filter(r => {
     if (r.status === 'cancelled') return false;
-    if (!r.reservation_date) return false;
+    if (!r.reserved_at) return false;
     try {
-      return isAfter(parseISO(r.reservation_date), now);
+      return isAfter(parseISO(r.reserved_at), now);
     } catch {
       return false;
     }
@@ -136,9 +136,9 @@ export default function MyReservations() {
   
   const pastReservations = reservations.filter(r => {
     if (r.status === 'cancelled') return false;
-    if (!r.reservation_date) return true;
+    if (!r.reserved_at) return true;
     try {
-      return !isAfter(parseISO(r.reservation_date), now);
+      return !isAfter(parseISO(r.reserved_at), now);
     } catch {
       return true;
     }

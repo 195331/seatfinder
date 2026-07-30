@@ -64,7 +64,7 @@ export default function AIReservationManager({ restaurantId, restaurantName, res
         type: isApproved ? 'reservation_approved' : 'reservation_declined',
         title: isApproved ? 'Reservation Confirmed!' : 'Reservation Update',
         message: isApproved
-          ? `Your reservation for ${reservation.party_size} guests on ${reservation.reservation_date} at ${reservation.reservation_time} has been confirmed.`
+          ? `Your reservation for ${reservation.party_size} guests on ${reservation.reserved_at} at ${reservation.reservation_time} has been confirmed.`
           : `Your reservation request could not be confirmed. ${reason || 'Please try a different time.'}`,
         restaurant_name: restaurantName,
         reservation_id: reservation.id
@@ -78,7 +78,7 @@ export default function AIReservationManager({ restaurantId, restaurantName, res
             ? `Reservation confirmed at ${restaurantName}`
             : `Reservation update from ${restaurantName}`,
           body: isApproved
-            ? `Your reservation is confirmed!\n\nDetails:\n- Date: ${reservation.reservation_date}\n- Time: ${reservation.reservation_time}\n- Party: ${reservation.party_size} guests\n\nSee you soon!`
+            ? `Your reservation is confirmed!\n\nDetails:\n- Date: ${reservation.reserved_at}\n- Time: ${reservation.reservation_time}\n- Party: ${reservation.party_size} guests\n\nSee you soon!`
             : `We're sorry, but your reservation request could not be confirmed.\n\n${reason || 'Please try a different time or contact us directly.'}`
         });
       }
@@ -114,7 +114,7 @@ export default function AIReservationManager({ restaurantId, restaurantName, res
     }
 
     // Check advance booking time
-    const reservationDate = new Date(`${reservation.reservation_date}T${reservation.reservation_time || '00:00'}`);
+    const reservationDate = new Date(`${reservation.reserved_at}T${reservation.reservation_time || '00:00'}`);
     const now = new Date();
     const hoursUntil = (reservationDate - now) / (1000 * 60 * 60);
 
@@ -130,7 +130,7 @@ export default function AIReservationManager({ restaurantId, restaurantName, res
 
     // Check day of week
     if (rules.daysOfWeek.length > 0) {
-      const resvDay = new Date(reservation.reservation_date).getDay();
+      const resvDay = new Date(reservation.reserved_at).getDay();
       if (!rules.daysOfWeek.includes(resvDay)) {
         issues.push(`Day not covered by any auto-approve rule`);
         canAutoApprove = false;
@@ -307,7 +307,7 @@ export default function AIReservationManager({ restaurantId, restaurantName, res
                   
                   <div className="flex items-center gap-2 text-xs text-slate-500 mb-2">
                     <Clock className="w-3 h-3" />
-                    {reservation.reservation_date} at {reservation.reservation_time}
+                    {reservation.reserved_at} at {reservation.reservation_time}
                   </div>
 
                   {issues.length > 0 && (

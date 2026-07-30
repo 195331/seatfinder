@@ -182,7 +182,7 @@ Return JSON:
         user_name: currentUser.full_name,
         user_email: currentUser.email,
         party_size: request.partySize,
-        reservation_date: suggestionData.date,
+        reserved_at: suggestionData.date,
         reservation_time: suggestionData.time,
         status: restaurant.instant_confirm_enabled ? 'approved' : 'pending',
         special_requests: request.specialRequests,

@@ -52,7 +52,7 @@ async function getSuperHubContext(restaurantId) {
 
   const now = moment();
   const todayStr = now.format('YYYY-MM-DD');
-  const activeReservations = reservations.filter(r => r.reservation_date === todayStr);
+  const activeReservations = reservations.filter(r => r.reserved_at === todayStr);
 
   const next6Hours = [];
   for (let i = 0; i < 6; i++) {
@@ -398,7 +398,7 @@ export default function OwnerAnalytics() {
     });
   };
 
-  const filteredReservations = getFilteredData(reservations, 'reservation_date');
+  const filteredReservations = getFilteredData(reservations, 'reserved_at');
   const filteredWaitlist = getFilteredData(waitlistEntries);
   const filteredReviews = getFilteredData(reviews);
 

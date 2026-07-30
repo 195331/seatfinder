@@ -130,10 +130,10 @@ export default function ProfileDrawer({ currentUser, onLogout, open: controlledO
   });
 
   const upcomingReservations = reservations.filter(r => 
-    r.status !== 'cancelled' && new Date(r.reservation_date) >= new Date()
+    r.status !== 'cancelled' && new Date(r.reserved_at) >= new Date()
   );
   const pastReservations = reservations.filter(r => 
-    r.status === 'cancelled' || new Date(r.reservation_date) < new Date()
+    r.status === 'cancelled' || new Date(r.reserved_at) < new Date()
   );
 
   const getUserAvatar = () => {
@@ -400,7 +400,7 @@ export default function ProfileDrawer({ currentUser, onLogout, open: controlledO
                             <div>
                               <p className="font-medium">{res.user_name || 'Reservation'}</p>
                               <p className="text-sm text-slate-500">
-                                {moment(res.reservation_date).format('MMM D')} at {res.reservation_time}
+                                {moment(res.reserved_at).format('MMM D')} at {res.reservation_time}
                               </p>
                               <p className="text-sm text-slate-500">Party of {res.party_size}</p>
                             </div>
@@ -429,7 +429,7 @@ export default function ProfileDrawer({ currentUser, onLogout, open: controlledO
                             <div>
                               <p className="font-medium">{res.user_name || 'Reservation'}</p>
                               <p className="text-sm text-slate-500">
-                                {moment(res.reservation_date).format('MMM D, YYYY')}
+                                {moment(res.reserved_at).format('MMM D, YYYY')}
                               </p>
                             </div>
                             <Badge variant="secondary">{res.status}</Badge>

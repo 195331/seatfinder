@@ -16,7 +16,7 @@ export default function ReservationTrendsChart({ reservations }) {
       }
       
       reservations.forEach(r => {
-        const date = moment(r.reservation_date).format('MMM DD');
+        const date = moment(r.reserved_at).format('MMM DD');
         if (last30Days[date]) {
           last30Days[date].reservations++;
           if (r.status === 'approved') last30Days[date].approved++;
@@ -33,7 +33,7 @@ export default function ReservationTrendsChart({ reservations }) {
       }
       
       reservations.forEach(r => {
-        const week = moment(r.reservation_date).startOf('week').format('MMM D');
+        const week = moment(r.reserved_at).startOf('week').format('MMM D');
         if (last12Weeks[week]) {
           last12Weeks[week].reservations++;
           if (r.status === 'approved') last12Weeks[week].approved++;
@@ -50,7 +50,7 @@ export default function ReservationTrendsChart({ reservations }) {
       }
       
       reservations.forEach(r => {
-        const month = moment(r.reservation_date).format('MMM YYYY');
+        const month = moment(r.reserved_at).format('MMM YYYY');
         if (last12Months[month]) {
           last12Months[month].reservations++;
           if (r.status === 'approved') last12Months[month].approved++;

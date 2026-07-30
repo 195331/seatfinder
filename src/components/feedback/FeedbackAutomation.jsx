@@ -13,11 +13,11 @@ export default function FeedbackAutomation() {
       
       const reservations = await base44.entities.Reservation.filter({ 
         status: 'approved',
-        reservation_date: yesterday.toISOString().split('T')[0]
+        reserved_at: yesterday.toISOString().split('T')[0]
       });
 
       return reservations.filter(r => {
-        const resTime = new Date(`${r.reservation_date}T${r.reservation_time}`);
+        const resTime = new Date(`${r.reserved_at}T${r.reservation_time}`);
         const now = new Date();
         const hoursSince = (now - resTime) / (1000 * 60 * 60);
         return hoursSince >= 2 && hoursSince <= 24;

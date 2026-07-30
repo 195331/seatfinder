@@ -103,7 +103,7 @@ export default function ReservationSuccess({
             <div className="space-y-2">
               <div className="flex items-center gap-3 text-sm">
                 <Calendar className="w-4 h-4 text-emerald-600" />
-                <span className="text-slate-700">{reservation.reservation_date}</span>
+                <span className="text-slate-700">{reservation.reserved_at}</span>
               </div>
               <div className="flex items-center gap-3 text-sm">
                 <Clock className="w-4 h-4 text-emerald-600" />

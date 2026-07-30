@@ -24,7 +24,7 @@ export default function EditPreOrder({
   const [specialInstructions, setSpecialInstructions] = useState(preOrder?.special_instructions || '');
 
   // Calculate deadline
-  const resTime = moment(`${reservation.reservation_date} ${reservation.reservation_time}`);
+  const resTime = moment(`${reservation.reserved_at} ${reservation.reservation_time}`);
   const deadlineMinutes = restaurant.preorder_deadline_minutes || 30;
   const deadline = resTime.clone().subtract(deadlineMinutes, 'minutes');
   const isPastDeadline = moment().isAfter(deadline);

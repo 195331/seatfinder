@@ -11,7 +11,7 @@ export default function StaffNotifications({ restaurant }) {
       const today = new Date().toISOString().split('T')[0];
       const reservations = await base44.entities.Reservation.filter({
         restaurant_id: restaurant.id,
-        reservation_date: today,
+        reserved_at: today,
         status: 'approved'
       });
 
@@ -19,7 +19,7 @@ export default function StaffNotifications({ restaurant }) {
       const in30Min = new Date(now.getTime() + 30 * 60000);
 
       return reservations.filter(r => {
-        const resTime = new Date(`${r.reservation_date}T${r.reservation_time}`);
+        const resTime = new Date(`${r.reserved_at}T${r.reservation_time}`);
         return resTime >= now && resTime <= in30Min;
       });
     },
@@ -33,7 +33,7 @@ export default function StaffNotifications({ restaurant }) {
       const today = new Date().toISOString().split('T')[0];
       const reservations = await base44.entities.Reservation.filter({
         restaurant_id: restaurant.id,
-        reservation_date: today,
+        reserved_at: today,
         status: 'approved'
       }, 'reservation_time');
 
@@ -44,8 +44,8 @@ export default function StaffNotifications({ restaurant }) {
         const next = reservations[i + 1];
         
         if (current.table_id === next.table_id) {
-          const currentTime = new Date(`${current.reservation_date}T${current.reservation_time}`);
-          const nextTime = new Date(`${next.reservation_date}T${next.reservation_time}`);
+          const currentTime = new Date(`${current.reserved_at}T${current.reservation_time}`);
+          const nextTime = new Date(`${next.reserved_at}T${next.reservation_time}`);
           const gapMinutes = (nextTime - currentTime) / 60000;
           
           if (gapMinutes < 90) {
@@ -78,7 +78,7 @@ export default function StaffNotifications({ restaurant }) {
   useEffect(() => {
     if (upcomingReservations.length > 0) {
       upcomingReservations.forEach(res => {
-        const resTime = new Date(`${res.reservation_date}T${res.reservation_time}`);
+        const resTime = new Date(`${res.reserved_at}T${res.reservation_time}`);
         const minutesUntil = Math.round((resTime - new Date()) / 60000);
         
         toast.info(

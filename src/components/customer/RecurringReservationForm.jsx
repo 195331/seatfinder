@@ -53,7 +53,7 @@ export default function RecurringReservationForm({
         special_requests: formData.special_requests,
         dietary_needs: formData.dietary_needs,
         notes: formData.notes,
-        next_reservation_date: formData.start_date.toISOString().split('T')[0]
+        next_reserved_at: formData.start_date.toISOString().split('T')[0]
       });
 
       // Create first reservation in the series
@@ -64,7 +64,7 @@ export default function RecurringReservationForm({
         user_name: currentUser.full_name,
         user_email: currentUser.email,
         party_size: formData.party_size,
-        reservation_date: formData.start_date.toISOString().split('T')[0],
+        reserved_at: formData.start_date.toISOString().split('T')[0],
         reservation_time: formData.time,
         special_requests: formData.special_requests,
         dietary_needs: formData.dietary_needs,
