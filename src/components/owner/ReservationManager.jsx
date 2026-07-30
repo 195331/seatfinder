@@ -110,7 +110,7 @@ export default function ReservationManager({ reservations, restaurantName }) {
       userName: reservation.user_name,
       userId: reservation.user_id,
       partySize: reservation.party_size,
-      date: reservation.reservation_date,
+      date: reservation.reserved_at,
       time: reservation.reservation_time
     });
   };
@@ -123,7 +123,7 @@ export default function ReservationManager({ reservations, restaurantName }) {
       userName: reservation.user_name,
       userId: reservation.user_id,
       partySize: reservation.party_size,
-      date: reservation.reservation_date,
+      date: reservation.reserved_at,
       time: reservation.reservation_time
     });
   };
@@ -164,7 +164,7 @@ export default function ReservationManager({ reservations, restaurantName }) {
                   <div className="flex flex-wrap gap-4 mb-4 text-sm">
                     <div className="flex items-center gap-1.5 text-slate-600">
                       <Calendar className="w-4 h-4" />
-                      {moment(reservation.reservation_date).format('ddd, MMM D')} at {formatTime(reservation.reservation_time)}
+                      {moment(reservation.reserved_at).format('ddd, MMM D')} at {formatTime(reservation.reservation_time)}
                     </div>
                     <div className="flex items-center gap-1.5 text-slate-600">
                       <Users className="w-4 h-4" />
@@ -278,7 +278,7 @@ export default function ReservationManager({ reservations, restaurantName }) {
                   <div className="flex-1">
                     <p className="font-medium text-slate-900">{reservation.user_name}</p>
                     <p className="text-sm text-slate-600">
-                      {moment(reservation.reservation_date).format('MMM D')} at {formatTime(reservation.reservation_time)} • {reservation.party_size} guests
+                      {moment(reservation.reserved_at).format('MMM D')} at {formatTime(reservation.reservation_time)} • {reservation.party_size} guests
                     </p>
                     <p className="text-xs text-slate-400">Reserved on {moment(reservation.created_date).format('MMM D, YYYY [at] h:mm A')}</p>
                     {(() => {

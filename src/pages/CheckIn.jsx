@@ -127,7 +127,7 @@ export default function CheckIn() {
     );
   }
 
-  const diffMin = diffMinutes(reservation.reservation_date, reservation.reservation_time);
+  const diffMin = diffMinutes(reservation.reserved_at, reservation.reservation_time);
   const gate = getGateState(diffMin);
 
   const isAlreadyActioned = ['arrived_early', 'checked_in', 'cancelled', 'declined'].includes(reservation.status);
@@ -158,7 +158,7 @@ export default function CheckIn() {
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div className="flex items-center gap-2 text-slate-600">
                 <Calendar className="w-4 h-4 text-slate-400" />
-                {reservation.reservation_date && format(parseISO(reservation.reservation_date), 'EEE, MMM d')}
+                {reservation.reserved_at && format(parseISO(reservation.reserved_at), 'EEE, MMM d')}
               </div>
               <div className="flex items-center gap-2 text-slate-600">
                 <Clock className="w-4 h-4 text-slate-400" />

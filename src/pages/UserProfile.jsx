@@ -213,7 +213,7 @@ export default function UserProfile() {
                       <div className="flex-1">
                         <p className="font-medium text-slate-900">Visited a restaurant</p>
                         <p className="text-sm text-slate-500">
-                          Party of {reservation.party_size} • {moment(reservation.reservation_date).format('MMM D, YYYY')}
+                          Party of {reservation.party_size} • {moment(reservation.reserved_at).format('MMM D, YYYY')}
                         </p>
                       </div>
                     </div>

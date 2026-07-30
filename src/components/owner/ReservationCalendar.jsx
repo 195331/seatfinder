@@ -67,7 +67,7 @@ export default function ReservationCalendar({ restaurantId, restaurantName }) {
 
   const dayReservations = useMemo(() => {
     let filtered = (reservations || []).filter(r => 
-      moment(r.reservation_date).format('YYYY-MM-DD') === moment(currentDate).format('YYYY-MM-DD')
+      moment(r.reserved_at).format('YYYY-MM-DD') === moment(currentDate).format('YYYY-MM-DD')
     );
     
     if (filters.status !== 'all') {
@@ -84,7 +84,7 @@ export default function ReservationCalendar({ restaurantId, restaurantName }) {
   const checkConflict = (date, time, partySize, excludeId = null) => {
     const timeSlot = (reservations || []).filter(r => 
       r.id !== excludeId &&
-      r.reservation_date === date &&
+      r.reserved_at === date &&
       r.reservation_time === time &&
       r.status !== 'cancelled' &&
       r.status !== 'declined'
@@ -214,7 +214,7 @@ export default function ReservationCalendar({ restaurantId, restaurantName }) {
               onClickTimeSlot={(hour) => {
                 setNewReservation({
                   party_size: 2,
-                  reservation_date: moment(currentDate).format('YYYY-MM-DD'),
+                  reserved_at: moment(currentDate).format('YYYY-MM-DD'),
                   reservation_time: `${hour}:00`
                 });
                 setShowNewDialog(true);
@@ -284,7 +284,7 @@ export default function ReservationCalendar({ restaurantId, restaurantName }) {
                   <div>
                     <p className="text-sm text-slate-500">Date & Time</p>
                     <p className="font-semibold">
-                      {moment(selectedReservation.reservation_date).format('MMM D, YYYY')} at {selectedReservation.reservation_time}
+                      {moment(selectedReservation.reserved_at).format('MMM D, YYYY')} at {selectedReservation.reservation_time}
                     </p>
                   </div>
                   {selectedReservation.notes && (
@@ -358,8 +358,8 @@ export default function ReservationCalendar({ restaurantId, restaurantName }) {
                       <Label>Date</Label>
                       <Input
                         type="date"
-                        value={selectedReservation.reservation_date}
-                        onChange={(e) => setSelectedReservation({ ...selectedReservation, reservation_date: e.target.value })}
+                        value={selectedReservation.reserved_at}
+                        onChange={(e) => setSelectedReservation({ ...selectedReservation, reserved_at: e.target.value })}
                       />
                     </div>
                     <div>
@@ -387,7 +387,7 @@ export default function ReservationCalendar({ restaurantId, restaurantName }) {
                       onChange={(e) => setSelectedReservation({ ...selectedReservation, notes: e.target.value })}
                     />
                   </div>
-                  {checkConflict(selectedReservation.reservation_date, selectedReservation.reservation_time, selectedReservation.party_size, selectedReservation.id) && (
+                  {checkConflict(selectedReservation.reserved_at, selectedReservation.reservation_time, selectedReservation.party_size, selectedReservation.id) && (
                     <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
                       <AlertTriangle className="w-4 h-4 text-amber-600" />
                       <p className="text-sm text-amber-800">Warning: This time slot may exceed capacity</p>
@@ -403,7 +403,7 @@ export default function ReservationCalendar({ restaurantId, restaurantName }) {
                           id: selectedReservation.id,
                           data: {
                             user_name: selectedReservation.user_name,
-                            reservation_date: selectedReservation.reservation_date,
+                            reserved_at: selectedReservation.reserved_at,
                             reservation_time: selectedReservation.reservation_time,
                             party_size: selectedReservation.party_size,
                             notes: selectedReservation.notes
@@ -443,8 +443,8 @@ export default function ReservationCalendar({ restaurantId, restaurantName }) {
                 <Label>Date</Label>
                 <Input
                   type="date"
-                  value={newReservation.reservation_date || moment(currentDate).format('YYYY-MM-DD')}
-                  onChange={(e) => setNewReservation({ ...newReservation, reservation_date: e.target.value })}
+                  value={newReservation.reserved_at || moment(currentDate).format('YYYY-MM-DD')}
+                  onChange={(e) => setNewReservation({ ...newReservation, reserved_at: e.target.value })}
                 />
               </div>
               <div>
@@ -530,7 +530,7 @@ export default function ReservationCalendar({ restaurantId, restaurantName }) {
               </div>
               <Switch checked={skipRules} onCheckedChange={setSkipRules} />
             </div>
-            {checkConflict(newReservation.reservation_date, newReservation.reservation_time, newReservation.party_size) && (
+            {checkConflict(newReservation.reserved_at, newReservation.reservation_time, newReservation.party_size) && (
               <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
                 <AlertTriangle className="w-4 h-4 text-amber-600" />
                 <p className="text-sm text-amber-800">Warning: This time slot may exceed capacity</p>
@@ -603,7 +603,7 @@ function WeekView({ date, reservations, onSelectReservation, getStatusColor }) {
     <div className="grid grid-cols-7 gap-2">
       {(weekDays || []).map(day => {
         const dayReservations = (reservations || []).filter(r =>
-          moment(r.reservation_date).format('YYYY-MM-DD') === day.format('YYYY-MM-DD')
+          moment(r.reserved_at).format('YYYY-MM-DD') === day.format('YYYY-MM-DD')
         );
 
         return (
@@ -655,7 +655,7 @@ function MonthView({ date, reservations, onSelectDate }) {
       ))}
       {(days || []).map(day => {
         const dayReservations = (reservations || []).filter(r =>
-          moment(r.reservation_date).format('YYYY-MM-DD') === day.format('YYYY-MM-DD')
+          moment(r.reserved_at).format('YYYY-MM-DD') === day.format('YYYY-MM-DD')
         );
         const isCurrentMonth = day.month() === monthStart.month();
 

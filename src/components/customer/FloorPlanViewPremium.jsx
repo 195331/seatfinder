@@ -231,7 +231,7 @@ export default function FloorPlanViewPremium({
     if (tableEntity) {
       setSelectedTable(tableEntity);
       setReservationData({
-        date: returnToReservation.reservation_date ? new Date(returnToReservation.reservation_date) : null,
+        date: returnToReservation.reserved_at ? new Date(returnToReservation.reserved_at) : null,
         time: returnToReservation.reservation_time || "",
         partySize: returnToReservation.party_size || 2,
         notes: returnToReservation.notes || "",
@@ -261,7 +261,7 @@ export default function FloorPlanViewPremium({
 
     onReserveTable?.({
       table_id: selectedTable.id,
-      reservation_date: format(reservationData.date, "yyyy-MM-dd"),
+      reserved_at: format(reservationData.date, "yyyy-MM-dd"),
       reservation_time: reservationData.time,
       party_size: reservationData.partySize,
       notes,

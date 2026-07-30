@@ -62,7 +62,7 @@ ${context.user ? `User Info:
 - Email: ${context.user.email}` : 'User: Guest (not logged in)'}
 
 ${context.reservation ? `Current Reservation:
-- Date: ${context.reservation.reservation_date}
+- Date: ${context.reservation.reserved_at}
 - Time: ${context.reservation.reservation_time}
 - Party Size: ${context.reservation.party_size}
 - Status: ${context.reservation.status}

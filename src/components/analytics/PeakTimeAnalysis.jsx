@@ -11,7 +11,7 @@ export default function PeakTimeAnalysis({ reservations, waitlistEntries }) {
     const dayCounts = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
     
     reservations.forEach(r => {
-      const day = moment(r.reservation_date).day();
+      const day = moment(r.reserved_at).day();
       dayCounts[day]++;
     });
     

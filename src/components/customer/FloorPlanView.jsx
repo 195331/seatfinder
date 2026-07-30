@@ -70,7 +70,7 @@ export default function FloorPlanView({
     
     onReserveTable({
       table_id: selectedTable.id,
-      reservation_date: format(reservationData.date, 'yyyy-MM-dd'),
+      reserved_at: format(reservationData.date, 'yyyy-MM-dd'),
       reservation_time: reservationData.time,
       party_size: reservationData.partySize,
       notes: reservationData.notes

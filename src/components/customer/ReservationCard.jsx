@@ -45,7 +45,7 @@ export default function ReservationCard({ reservation, restaurant, onCancel, onM
 
   const status = STATUS_CONFIG[reservation.status] || STATUS_CONFIG.pending;
   const StatusIcon = status.icon;
-  const isUpcoming = reservation.reservation_date && isAfter(parseISO(reservation.reservation_date), new Date());
+  const isUpcoming = reservation.reserved_at && isAfter(parseISO(reservation.reserved_at), new Date());
   const canModify = ['pending', 'approved'].includes(reservation.status) && isUpcoming;
 
   const updateReservationMutation = useMutation({
@@ -56,7 +56,7 @@ export default function ReservationCard({ reservation, restaurant, onCancel, onM
       await base44.integrations.Core.SendEmail({
         to: reservation.user_email,
         subject: 'Reservation Updated',
-        body: `Your reservation at ${restaurant?.name} has been updated to ${format(parseISO(updates.reservation_date), 'PPP')} at ${updates.reservation_time} for ${updates.party_size} guests.`
+        body: `Your reservation at ${restaurant?.name} has been updated to ${format(parseISO(updates.reserved_at), 'PPP')} at ${updates.reservation_time} for ${updates.party_size} guests.`
       }).catch(() => {});
     },
     onSuccess: () => {
@@ -67,7 +67,7 @@ export default function ReservationCard({ reservation, restaurant, onCancel, onM
   });
 
   const handleOpenEdit = () => {
-    setEditDate(parseISO(reservation.reservation_date));
+    setEditDate(parseISO(reservation.reserved_at));
     setEditTime(reservation.reservation_time);
     setEditPartySize(reservation.party_size);
     setShowEditDialog(true);
@@ -77,7 +77,7 @@ export default function ReservationCard({ reservation, restaurant, onCancel, onM
     if (!editDate || !editTime) return;
     
     updateReservationMutation.mutate({
-      reservation_date: format(editDate, 'yyyy-MM-dd'),
+      reserved_at: format(editDate, 'yyyy-MM-dd'),
       reservation_time: editTime,
       party_size: editPartySize
     });
@@ -116,7 +116,7 @@ export default function ReservationCard({ reservation, restaurant, onCancel, onM
               <div className="grid grid-cols-2 gap-2 text-sm text-slate-600 mt-3">
                 <div className="flex items-center gap-1.5">
                   <Calendar className="w-4 h-4 text-slate-400" />
-                  {reservation.reservation_date && format(parseISO(reservation.reservation_date), 'MMM d, yyyy')}
+                  {reservation.reserved_at && format(parseISO(reservation.reserved_at), 'MMM d, yyyy')}
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Clock className="w-4 h-4 text-slate-400" />

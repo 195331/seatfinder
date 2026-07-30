@@ -32,7 +32,7 @@ export default function PeakDemandAnalysis({ restaurantId }) {
     const avgOccupancy = dayRecords.length > 0
       ? dayRecords.reduce((sum, h) => sum + (h.occupancy_percent || 0), 0) / dayRecords.length
       : 0;
-    const reservationCount = reservations.filter(r => new Date(r.reservation_date).getDay() === idx).length;
+    const reservationCount = reservations.filter(r => new Date(r.reserved_at).getDay() === idx).length;
     
     return {
       day,

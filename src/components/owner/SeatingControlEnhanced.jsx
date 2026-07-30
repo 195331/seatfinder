@@ -88,7 +88,7 @@ export default function SeatingControlEnhanced({
     queryFn: () => base44.entities.Reservation.filter({
       restaurant_id: restaurant.id,
       status: 'checked_in',
-      reservation_date: moment().format('YYYY-MM-DD'),
+      reserved_at: moment().format('YYYY-MM-DD'),
     }),
     enabled: !!restaurant?.id && !data?.manual_override_active,
     refetchInterval: 15000,

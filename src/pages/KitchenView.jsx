@@ -90,8 +90,8 @@ export default function KitchenView() {
     })
     .filter(Boolean)
     .sort((a, b) => {
-      const aTime = moment(`${a.reservation.reservation_date} ${a.reservation.reservation_time}`);
-      const bTime = moment(`${b.reservation.reservation_date} ${b.reservation.reservation_time}`);
+      const aTime = moment(`${a.reservation.reserved_at} ${a.reservation.reservation_time}`);
+      const bTime = moment(`${b.reservation.reserved_at} ${b.reservation.reservation_time}`);
       return aTime.diff(bTime);
     });
 
@@ -235,7 +235,7 @@ export default function KitchenView() {
         ) : (
           <div className="grid gap-6">
             {filteredOrders.map(order => {
-              const resTime = moment(`${order.reservation.reservation_date} ${order.reservation.reservation_time}`);
+              const resTime = moment(`${order.reservation.reserved_at} ${order.reservation.reservation_time}`);
               const timeUntil = resTime.diff(moment(), 'minutes');
               const isUrgent = timeUntil <= 30 && timeUntil > 0;
 

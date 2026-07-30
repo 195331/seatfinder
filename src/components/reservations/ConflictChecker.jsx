@@ -18,7 +18,7 @@ export async function checkTableConflict(tableId, date, time, excludeReservation
   const activeStatuses = ['approved', 'arrived_early', 'checked_in', 'pending'];
   const existing = await base44.entities.Reservation.filter({
     table_id: tableId,
-    reservation_date: date,
+    reserved_at: date,
   });
 
   const requestedMinutes = timeToMinutes(time);

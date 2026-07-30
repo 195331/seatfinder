@@ -68,7 +68,7 @@ export default function Leaderboard({ currentUser }) {
 
   // Most Active Diners
   const mostActiveDiners = React.useMemo(() => {
-    const filteredReservations = getFilteredData(allReservations, 'reservation_date');
+    const filteredReservations = getFilteredData(allReservations, 'reserved_at');
     const dinerCounts = {};
     
     filteredReservations.forEach(reservation => {

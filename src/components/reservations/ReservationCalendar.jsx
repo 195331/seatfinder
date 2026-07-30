@@ -38,8 +38,8 @@ export default function ReservationCalendar({ reservations = [], restaurantMap =
   const reservationsByDate = useMemo(() => {
     const map = {};
     reservations.forEach(r => {
-      if (!r.reservation_date) return;
-      const key = r.reservation_date.split('T')[0];
+      if (!r.reserved_at) return;
+      const key = r.reserved_at.split('T')[0];
       if (!map[key]) map[key] = [];
       map[key].push(r);
     });
@@ -214,8 +214,8 @@ export default function ReservationCalendar({ reservations = [], restaurantMap =
                 <div className="p-3 bg-slate-50 rounded-xl">
                   <p className="text-xs text-slate-500 mb-1">Date</p>
                   <p className="font-semibold text-sm">
-                    {detailReservation.reservation_date
-                      ? format(parseISO(detailReservation.reservation_date), 'MMM d, yyyy')
+                    {detailReservation.reserved_at
+                      ? format(parseISO(detailReservation.reserved_at), 'MMM d, yyyy')
                       : '—'}
                   </p>
                 </div>

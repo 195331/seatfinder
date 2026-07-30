@@ -42,7 +42,7 @@ export default function LiveSeating({ restaurant, onViewReservations }) {
     queryFn: () => base44.entities.Reservation.filter({ 
       restaurant_id: restaurant.id,
       status: 'approved',
-      reservation_date: moment().format('YYYY-MM-DD')
+      reserved_at: moment().format('YYYY-MM-DD')
     }),
     enabled: !!restaurant.id,
     refetchInterval: 30000

@@ -15,16 +15,16 @@ export default function CustomerRetention({ reservations }) {
             email: r.user_email,
             name: r.user_name,
             count: 0,
-            firstVisit: r.reservation_date,
-            lastVisit: r.reservation_date
+            firstVisit: r.reserved_at,
+            lastVisit: r.reserved_at
           };
         }
         userReservations[r.user_email].count++;
-        if (r.reservation_date < userReservations[r.user_email].firstVisit) {
-          userReservations[r.user_email].firstVisit = r.reservation_date;
+        if (r.reserved_at < userReservations[r.user_email].firstVisit) {
+          userReservations[r.user_email].firstVisit = r.reserved_at;
         }
-        if (r.reservation_date > userReservations[r.user_email].lastVisit) {
-          userReservations[r.user_email].lastVisit = r.reservation_date;
+        if (r.reserved_at > userReservations[r.user_email].lastVisit) {
+          userReservations[r.user_email].lastVisit = r.reserved_at;
         }
       }
     });

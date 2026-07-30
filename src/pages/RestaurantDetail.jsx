@@ -225,10 +225,10 @@ export default function RestaurantDetail() {
           }
         }
         // --- Date/time conflict check: prevent double-booking same table/slot ---
-        if (payload.reservation_date && payload.reservation_time) {
+        if (payload.reserved_at && payload.reservation_time) {
           const { conflict: timeConflict } = await checkTableConflict(
             payload.table_id,
-            payload.reservation_date,
+            payload.reserved_at,
             payload.reservation_time
           );
           if (timeConflict) {
@@ -257,8 +257,8 @@ export default function RestaurantDetail() {
       
       try {
         const rules = await base44.entities.ReservationRule.filter({ restaurant_id: restaurantId, is_active: true });
-        if (rules.length > 0 && payload.reservation_date && payload.reservation_time) {
-          const reservationDate = new Date(payload.reservation_date);
+        if (rules.length > 0 && payload.reserved_at && payload.reservation_time) {
+          const reservationDate = new Date(payload.reserved_at);
           const dayOfWeek = reservationDate.getDay(); // 0=Sun
           const reservationTime = payload.reservation_time;
           const partySize = payload.party_size || 2;

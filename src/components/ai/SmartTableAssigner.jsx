@@ -12,7 +12,7 @@ export default function SmartTableAssigner({ reservation, restaurant, onTableAss
       const tables = await base44.entities.Table.filter({ restaurant_id: restaurant.id, status: 'free' });
       const reservations = await base44.entities.Reservation.filter({
         restaurant_id: restaurant.id,
-        reservation_date: reservation.reservation_date,
+        reserved_at: reservation.reserved_at,
         status: 'approved'
       });
 
