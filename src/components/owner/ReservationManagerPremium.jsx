@@ -103,32 +103,39 @@ export default function ReservationManagerPremium({ reservations = [], restauran
         await base44.entities.Table.update(tableId, { status: 'free' });
       }
 
-      // Notifications
-      const notificationTitle = status === 'approved' 
-        ? 'Reservation Confirmed!'
-        : 'Reservation Update';
-      
-      const notificationMessage = status === 'approved'
-        ? `Your reservation for ${partySize} guests on ${date} at ${time} has been confirmed. See you soon!`
-        : `Unfortunately, your reservation request for ${date} at ${time} could not be confirmed. Please try a different time or contact the restaurant.`;
+      // Notifications — best-effort. A failed email/notification should
+      // never make the whole approve/decline action look like it failed,
+      // since the actual reservation + table status updates above already
+      // succeeded by this point.
+      try {
+        const notificationTitle = status === 'approved'
+          ? 'Reservation Confirmed!'
+          : 'Reservation Update';
 
-      await base44.entities.Notification.create({
-        user_id: userId,
-        user_email: userEmail,
-        type: status === 'approved' ? 'reservation_approved' : 'reservation_declined',
-        title: notificationTitle,
-        message: notificationMessage,
-        restaurant_name: restaurantName,
-        reservation_id: reservationId
-      });
+        const notificationMessage = status === 'approved'
+          ? `Your reservation for ${partySize} guests on ${date} at ${time} has been confirmed. See you soon!`
+          : `Unfortunately, your reservation request for ${date} at ${time} could not be confirmed. Please try a different time or contact the restaurant.`;
 
-      await base44.integrations.Core.SendEmail({
-        to: userEmail,
-        subject: status === 'approved' 
-          ? `Your reservation at ${restaurantName} is confirmed!`
-          : `Reservation update from ${restaurantName}`,
-        body: notificationMessage
-      });
+        await base44.entities.Notification.create({
+          user_id: userId,
+          user_email: userEmail,
+          type: status === 'approved' ? 'reservation_approved' : 'reservation_declined',
+          title: notificationTitle,
+          message: notificationMessage,
+          restaurant_name: restaurantName,
+          reservation_id: reservationId
+        });
+
+        await base44.integrations.Core.SendEmail({
+          to: userEmail,
+          subject: status === 'approved'
+            ? `Your reservation at ${restaurantName} is confirmed!`
+            : `Reservation update from ${restaurantName}`,
+          body: notificationMessage
+        });
+      } catch (notifyErr) {
+        console.warn('Reservation updated, but notification/email failed:', notifyErr);
+      }
     },
     onSuccess: (_, { status }) => {
       queryClient.invalidateQueries(['reservations']);
@@ -136,8 +143,9 @@ export default function ReservationManagerPremium({ reservations = [], restauran
 
       toast.success(status === 'approved' ? 'Reservation approved! Table marked as reserved.' : 'Reservation declined. Customer notified.');
     },
-    onError: () => {
-      toast.error("Failed to update reservation");
+    onError: (error) => {
+      console.error('Failed to update reservation:', error);
+      toast.error(`Failed to update reservation: ${error?.message || 'Unknown error'}`);
     }
   });
 
