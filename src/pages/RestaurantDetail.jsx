@@ -293,14 +293,18 @@ export default function RestaurantDetail() {
         }
       } catch {}
 
-      // Create reservation with pre-order if cart has items
+      // Create reservation with pre-order if cart has items.
+      // skipPreOrder is a local UI-only flag (controls whether the
+      // pre-order step is shown) — never meant to be persisted, so it's
+      // excluded here rather than spread straight into the DB payload.
+      const { skipPreOrder, ...dbPayload } = payload;
       const reservationData = {
         restaurant_id: restaurantId,
         user_id: currentUser.id,
         user_name: currentUser.full_name,
         user_email: currentUser.email,
         status: autoStatus,
-        ...payload
+        ...dbPayload
       };
 
       // Generate a unique check-in token
