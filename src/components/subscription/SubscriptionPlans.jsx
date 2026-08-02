@@ -93,35 +93,85 @@ export default function SubscriptionPlans({ restaurantId, currentPlan = 'free' }
 
   const activePlan = restaurantForPlan?.subscription_plan || currentPlan;
 
+  // After a real Stripe payment, Stripe redirects back here with
+  // ?checkout=success. The actual subscription_plan change happens
+  // separately via the webhook, which can land a moment before or after
+  // this redirect — so poll briefly for the plan to actually reflect the
+  // upgrade before celebrating, rather than assuming success from the URL
+  // param alone (that param only means "payment was submitted").
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('checkout') !== 'success' || !restaurantId) return;
+
+    let attempts = 0;
+    const poll = setInterval(async () => {
+      attempts += 1;
+      const rows = await base44.entities.Restaurant.filter({ id: restaurantId });
+      const plan = rows[0]?.subscription_plan;
+      if (plan && plan !== 'free') {
+        const matched = PLANS.find(p => p.id === plan);
+        if (matched) {
+          setSuccessPlan(matched);
+          confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
+          setTimeout(() => confetti({ particleCount: 80, angle: 60, spread: 60, origin: { x: 0 } }), 300);
+          setTimeout(() => confetti({ particleCount: 80, angle: 120, spread: 60, origin: { x: 1 } }), 500);
+        }
+        queryClient.invalidateQueries({ queryKey: ['restaurant', restaurantId] });
+        clearInterval(poll);
+      } else if (attempts >= 10) {
+        clearInterval(poll);
+      }
+    }, 1500);
+
+    return () => clearInterval(poll);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [restaurantId]);
+
   const handleUpgrade = async (plan) => {
     setUpgrading(plan.id);
-    
+
     try {
-      const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-
-      // Single call: update the restaurant's subscription plan directly
-      await base44.entities.Restaurant.update(restaurantId, {
-        subscription_plan: plan.id,
-        subscription_expires_at: expiresAt
-      });
-
-      queryClient.invalidateQueries({ queryKey: ['subscription'] });
-      queryClient.invalidateQueries({ queryKey: ['ownedRestaurants'] });
-      queryClient.invalidateQueries({ queryKey: ['restaurant'] });
-      queryClient.invalidateQueries({ queryKey: ['staffRestaurants'] });
-
-      if (plan.id !== 'free') {
-        confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
-        setTimeout(() => confetti({ particleCount: 80, angle: 60, spread: 60, origin: { x: 0 } }), 300);
-        setTimeout(() => confetti({ particleCount: 80, angle: 120, spread: 60, origin: { x: 1 } }), 500);
-        setSuccessPlan(plan);
-      } else {
+      // Free plan: no payment involved, just switch directly — same as before.
+      if (plan.id === 'free') {
+        await base44.entities.Restaurant.update(restaurantId, {
+          subscription_plan: 'free',
+          subscription_expires_at: null,
+        });
+        queryClient.invalidateQueries({ queryKey: ['subscription'] });
+        queryClient.invalidateQueries({ queryKey: ['ownedRestaurants'] });
+        queryClient.invalidateQueries({ queryKey: ['restaurant'] });
+        queryClient.invalidateQueries({ queryKey: ['staffRestaurants'] });
         toast.success('Switched to Free plan.');
+        setUpgrading(null);
+        return;
       }
+
+      // Paid plans: real Stripe Checkout. The restaurant's subscription_plan
+      // is only ever actually changed by the Worker's webhook handler once
+      // Stripe confirms payment — never directly from the browser.
+      const currentUser = await base44.auth.me();
+      const res = await fetch('/api/stripe/create-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          restaurantId,
+          planId: plan.id,
+          customerEmail: currentUser?.email,
+          successUrl: `${window.location.origin}/Pricing?restaurant_id=${restaurantId}&checkout=success`,
+          cancelUrl: `${window.location.origin}/Pricing?restaurant_id=${restaurantId}&checkout=canceled`,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not start checkout');
+
+      window.location.href = data.url;
+      // Intentionally not clearing `upgrading` here — the page is navigating
+      // away to Stripe, so the loading state should persist until it does.
+      return;
     } catch (error) {
-      toast.error('Failed to change plan: ' + error.message);
+      toast.error('Failed to start checkout: ' + error.message);
     }
-    
+
     setUpgrading(null);
   };
 
